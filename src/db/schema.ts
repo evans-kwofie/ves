@@ -9,50 +9,112 @@ async function safeAlter(query: string) {
 }
 
 export async function initDb(): Promise<void> {
+  // Better Auth tables — created here so fresh deploys work without running drizzle-kit manually.
+  await db.executeMultiple(`
+    CREATE TABLE IF NOT EXISTS \`user\` (
+      \`id\` text PRIMARY KEY NOT NULL,
+      \`name\` text NOT NULL,
+      \`email\` text NOT NULL,
+      \`email_verified\` integer NOT NULL,
+      \`image\` text,
+      \`created_at\` integer NOT NULL,
+      \`updated_at\` integer NOT NULL
+    );
+    CREATE UNIQUE INDEX IF NOT EXISTS \`user_email_unique\` ON \`user\` (\`email\`);
+
+    CREATE TABLE IF NOT EXISTS \`session\` (
+      \`id\` text PRIMARY KEY NOT NULL,
+      \`expires_at\` integer NOT NULL,
+      \`token\` text NOT NULL,
+      \`created_at\` integer NOT NULL,
+      \`updated_at\` integer NOT NULL,
+      \`ip_address\` text,
+      \`user_agent\` text,
+      \`user_id\` text NOT NULL,
+      \`active_organization_id\` text,
+      FOREIGN KEY (\`user_id\`) REFERENCES \`user\`(\`id\`) ON DELETE CASCADE
+    );
+    CREATE UNIQUE INDEX IF NOT EXISTS \`session_token_unique\` ON \`session\` (\`token\`);
+
+    CREATE TABLE IF NOT EXISTS \`account\` (
+      \`id\` text PRIMARY KEY NOT NULL,
+      \`account_id\` text NOT NULL,
+      \`provider_id\` text NOT NULL,
+      \`user_id\` text NOT NULL,
+      \`access_token\` text,
+      \`refresh_token\` text,
+      \`id_token\` text,
+      \`access_token_expires_at\` integer,
+      \`refresh_token_expires_at\` integer,
+      \`scope\` text,
+      \`password\` text,
+      \`created_at\` integer NOT NULL,
+      \`updated_at\` integer NOT NULL,
+      FOREIGN KEY (\`user_id\`) REFERENCES \`user\`(\`id\`) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS \`verification\` (
+      \`id\` text PRIMARY KEY NOT NULL,
+      \`identifier\` text NOT NULL,
+      \`value\` text NOT NULL,
+      \`expires_at\` integer NOT NULL,
+      \`created_at\` integer,
+      \`updated_at\` integer
+    );
+
+    CREATE TABLE IF NOT EXISTS \`organization\` (
+      \`id\` text PRIMARY KEY NOT NULL,
+      \`name\` text NOT NULL,
+      \`slug\` text,
+      \`logo\` text,
+      \`created_at\` integer NOT NULL,
+      \`metadata\` text
+    );
+    CREATE UNIQUE INDEX IF NOT EXISTS \`organization_slug_unique\` ON \`organization\` (\`slug\`);
+
+    CREATE TABLE IF NOT EXISTS \`member\` (
+      \`id\` text PRIMARY KEY NOT NULL,
+      \`organization_id\` text NOT NULL,
+      \`user_id\` text NOT NULL,
+      \`role\` text NOT NULL,
+      \`created_at\` integer NOT NULL,
+      FOREIGN KEY (\`organization_id\`) REFERENCES \`organization\`(\`id\`) ON DELETE CASCADE,
+      FOREIGN KEY (\`user_id\`) REFERENCES \`user\`(\`id\`) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS \`invitation\` (
+      \`id\` text PRIMARY KEY NOT NULL,
+      \`organization_id\` text NOT NULL,
+      \`email\` text NOT NULL,
+      \`role\` text,
+      \`status\` text NOT NULL,
+      \`expires_at\` integer NOT NULL,
+      \`inviter_id\` text NOT NULL,
+      FOREIGN KEY (\`organization_id\`) REFERENCES \`organization\`(\`id\`) ON DELETE CASCADE,
+      FOREIGN KEY (\`inviter_id\`) REFERENCES \`user\`(\`id\`) ON DELETE CASCADE
+    );
+  `);
+
   await db.executeMultiple(`
     PRAGMA foreign_keys = ON;
 
     -- ========================
-    -- CORE: USERS + ORGS
+    -- ICP / PRODUCT CONTEXT
     -- ========================
 
-    CREATE TABLE IF NOT EXISTS users (
+    CREATE TABLE IF NOT EXISTS organization_profile (
       id TEXT PRIMARY KEY,
-      email TEXT NOT NULL UNIQUE,
-      name TEXT,
-      avatar_url TEXT,
-      current_organization_id TEXT,
-      created_at TEXT NOT NULL,
-      updated_at TEXT NOT NULL
-    );
-
-    CREATE TABLE IF NOT EXISTS organizations (
-      id TEXT PRIMARY KEY,
-      name TEXT NOT NULL,
-
-      -- ICP context
+      organization_id TEXT NOT NULL UNIQUE,
+      product_description TEXT,
+      value_proposition TEXT,
       industry TEXT,
       target_customer TEXT,
       company_size TEXT,
       region TEXT,
       website_url TEXT,
-      twitter_url TEXT
-
-      -- product context
-      product_description TEXT,
-      value_proposition TEXT,
-
+      twitter_url TEXT,
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL
-    );
-
-    CREATE TABLE IF NOT EXISTS memberships (
-      id TEXT PRIMARY KEY,
-      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-      organization_id TEXT NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
-      role TEXT NOT NULL CHECK(role IN ('owner','admin','member')),
-      created_at TEXT NOT NULL,
-      UNIQUE(user_id, organization_id)
     );
 
     -- ========================
@@ -61,7 +123,7 @@ export async function initDb(): Promise<void> {
 
     CREATE TABLE IF NOT EXISTS keywords (
       id TEXT PRIMARY KEY,
-      organization_id TEXT NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+      organization_id TEXT NOT NULL,
       keyword TEXT NOT NULL,
       is_active INTEGER NOT NULL DEFAULT 1,
       created_at TEXT NOT NULL,
@@ -82,7 +144,7 @@ export async function initDb(): Promise<void> {
 
     CREATE TABLE IF NOT EXISTS leads (
       id TEXT PRIMARY KEY,
-      organization_id TEXT NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+      organization_id TEXT NOT NULL,
 
       company TEXT NOT NULL,
       website TEXT NOT NULL,
@@ -90,20 +152,16 @@ export async function initDb(): Promise<void> {
       ceo TEXT NOT NULL,
 
       email TEXT UNIQUE,
-
       linkedin_url TEXT,
       linkedin_hint TEXT,
 
       source TEXT,
       keyword_id TEXT REFERENCES keywords(id),
 
-      -- PIPELINE
       pipeline_stage TEXT NOT NULL DEFAULT 'discovered',
-      -- discovered | enriching | enriched | validated | failed
 
       enrichment_attempts INTEGER DEFAULT 0,
 
-      -- VALIDATION
       is_valid INTEGER,
       validation_errors TEXT DEFAULT '[]',
       website_valid INTEGER,
@@ -111,18 +169,15 @@ export async function initDb(): Promise<void> {
       company_valid INTEGER,
       validated_at TEXT,
 
-      -- SCORING
       score INTEGER,
       fit TEXT CHECK(fit IN ('HIGH','MEDIUM','LOW')),
       fit_reason TEXT,
 
-      -- OUTREACH (TEMP)
       status TEXT NOT NULL DEFAULT 'not_contacted',
       email_sent_at TEXT,
       linkedin_sent_at TEXT,
       replied_at TEXT,
 
-      -- META
       notes TEXT NOT NULL DEFAULT '',
 
       discovered_at TEXT NOT NULL,
@@ -149,7 +204,7 @@ export async function initDb(): Promise<void> {
 
     CREATE TABLE IF NOT EXISTS reddit_posts (
       id TEXT PRIMARY KEY,
-      organization_id TEXT REFERENCES organizations(id) ON DELETE CASCADE,
+      organization_id TEXT,
       reddit_id TEXT NOT NULL UNIQUE,
       subreddit TEXT NOT NULL,
       title TEXT NOT NULL,
@@ -159,12 +214,19 @@ export async function initDb(): Promise<void> {
       body TEXT NOT NULL DEFAULT '',
       keyword_id TEXT REFERENCES keywords(id) ON DELETE SET NULL,
       reply_suggestion TEXT,
+      intent_type TEXT,
+      intent_score INTEGER,
+      engagement_type TEXT,
+      engagement_score INTEGER,
+      comment_count INTEGER,
+      has_replies INTEGER,
+      last_checked_at TEXT,
       fetched_at TEXT NOT NULL
     );
 
     CREATE TABLE IF NOT EXISTS blog_posts (
       id TEXT PRIMARY KEY,
-      organization_id TEXT REFERENCES organizations(id) ON DELETE CASCADE,
+      organization_id TEXT,
       title TEXT NOT NULL,
       slug TEXT NOT NULL UNIQUE,
       content TEXT NOT NULL,
@@ -175,7 +237,7 @@ export async function initDb(): Promise<void> {
 
     CREATE TABLE IF NOT EXISTS linkedin_posts (
       id TEXT PRIMARY KEY,
-      organization_id TEXT REFERENCES organizations(id) ON DELETE CASCADE,
+      organization_id TEXT,
       content TEXT NOT NULL,
       keyword_id TEXT REFERENCES keywords(id) ON DELETE SET NULL,
       created_at TEXT NOT NULL
@@ -197,18 +259,12 @@ export async function initDb(): Promise<void> {
     VALUES (1, 5, 0, 0, NULL);
   `);
 
-  await safeAlter(`ALTER TABLE users ADD COLUMN current_organization_id TEXT`);
+  // Safe column additions for existing DBs
   await safeAlter(`ALTER TABLE leads ADD COLUMN organization_id TEXT`);
-  await safeAlter(
-    `ALTER TABLE leads ADD COLUMN pipeline_stage TEXT DEFAULT 'discovered'`,
-  );
-  await safeAlter(
-    `ALTER TABLE leads ADD COLUMN enrichment_attempts INTEGER DEFAULT 0`,
-  );
+  await safeAlter(`ALTER TABLE leads ADD COLUMN pipeline_stage TEXT DEFAULT 'discovered'`);
+  await safeAlter(`ALTER TABLE leads ADD COLUMN enrichment_attempts INTEGER DEFAULT 0`);
   await safeAlter(`ALTER TABLE leads ADD COLUMN is_valid INTEGER`);
-  await safeAlter(
-    `ALTER TABLE leads ADD COLUMN validation_errors TEXT DEFAULT '[]'`,
-  );
+  await safeAlter(`ALTER TABLE leads ADD COLUMN validation_errors TEXT DEFAULT '[]'`);
   await safeAlter(`ALTER TABLE leads ADD COLUMN website_valid INTEGER`);
   await safeAlter(`ALTER TABLE leads ADD COLUMN person_valid INTEGER`);
   await safeAlter(`ALTER TABLE leads ADD COLUMN company_valid INTEGER`);
@@ -221,18 +277,21 @@ export async function initDb(): Promise<void> {
   await safeAlter(`ALTER TABLE leads ADD COLUMN linkedin_hint TEXT`);
   await safeAlter(`ALTER TABLE leads ADD COLUMN updated_at TEXT`);
   await safeAlter(`ALTER TABLE leads ADD COLUMN discovered_at TEXT`);
+  await safeAlter(`ALTER TABLE reddit_posts ADD COLUMN intent_type TEXT`);
+  await safeAlter(`ALTER TABLE reddit_posts ADD COLUMN intent_score INTEGER`);
+  await safeAlter(`ALTER TABLE reddit_posts ADD COLUMN engagement_type TEXT`);
+  await safeAlter(`ALTER TABLE reddit_posts ADD COLUMN engagement_score INTEGER`);
+  await safeAlter(`ALTER TABLE reddit_posts ADD COLUMN comment_count INTEGER`);
+  await safeAlter(`ALTER TABLE reddit_posts ADD COLUMN has_replies INTEGER`);
+  await safeAlter(`ALTER TABLE reddit_posts ADD COLUMN last_checked_at TEXT`);
 
   await db.executeMultiple(`
     CREATE INDEX IF NOT EXISTS idx_leads_org ON leads(organization_id);
     CREATE INDEX IF NOT EXISTS idx_leads_pipeline_stage ON leads(pipeline_stage);
     CREATE INDEX IF NOT EXISTS idx_leads_score ON leads(score);
     CREATE INDEX IF NOT EXISTS idx_leads_keyword_id ON leads(keyword_id);
-
     CREATE INDEX IF NOT EXISTS idx_keywords_org ON keywords(organization_id);
-
     CREATE INDEX IF NOT EXISTS idx_outreach_lead_id ON outreach_events(lead_id);
-
-    CREATE INDEX IF NOT EXISTS idx_memberships_user ON memberships(user_id);
-    CREATE INDEX IF NOT EXISTS idx_memberships_org ON memberships(organization_id);
+    CREATE INDEX IF NOT EXISTS idx_org_profile_org ON organization_profile(organization_id);
   `);
 }

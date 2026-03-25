@@ -8,8 +8,10 @@ import {
   Users,
   FileText,
   Bot,
+  LogOut,
 } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
+import { authClient } from "~/lib/auth-client";
 
 interface NavItem {
   to: string;
@@ -25,12 +27,17 @@ const NAV_ITEMS: NavItem[] = [
   { to: "/pipeline", label: "Pipeline", icon: <Users size={15} /> },
   { to: "/blog", label: "Blog Posts", icon: <FileText size={15} /> },
   { to: "/agent", label: "AI Agent", icon: <Bot size={15} /> },
-  { to: "/setttings/profile", label: "Profile", icon: <Users size={15} /> },
 ];
 
 export function Sidebar() {
   const routerState = useRouterState();
   const currentPath = routerState.location.pathname;
+  const { data: session } = authClient.useSession();
+
+  async function handleSignOut() {
+    await authClient.signOut();
+    window.location.href = "/sign-in";
+  }
 
   return (
     <aside className="sidebar">
@@ -62,6 +69,21 @@ export function Sidebar() {
       </nav>
 
       <div className="sidebar-footer">
+        {session?.user && (
+          <div className="sidebar-user">
+            <div className="sidebar-user-info">
+              <div className="sidebar-user-name">{session.user.name}</div>
+              <div className="sidebar-user-email">{session.user.email}</div>
+            </div>
+            <button
+              onClick={handleSignOut}
+              className="sidebar-signout"
+              title="Sign out"
+            >
+              <LogOut size={14} />
+            </button>
+          </div>
+        )}
         <ThemeToggle />
       </div>
     </aside>

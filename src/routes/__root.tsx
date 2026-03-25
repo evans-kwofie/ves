@@ -1,5 +1,12 @@
 /// <reference types="vite/client" />
-import { HeadContent, Scripts, createRootRoute, Outlet } from "@tanstack/react-router";
+import {
+  HeadContent,
+  Scripts,
+  createRootRoute,
+  Outlet,
+  redirect,
+  useMatches,
+} from "@tanstack/react-router";
 import * as React from "react";
 import { DefaultCatchBoundary } from "~/components/DefaultCatchBoundary";
 import { NotFound } from "~/components/NotFound";
@@ -8,6 +15,9 @@ import { Shell } from "~/components/layout/Shell";
 import { Toaster } from "sonner";
 import appCss from "~/styles/app.css?url";
 import { seo } from "~/utils/seo";
+import { getSessionFn } from "~/lib/session";
+
+const PUBLIC_ROUTES = ["/sign-in", "/sign-up"];
 
 export const Route = createRootRoute({
   head: () => ({
@@ -31,22 +41,50 @@ export const Route = createRootRoute({
       { rel: "icon", href: "/favicon.ico" },
     ],
   }),
+  beforeLoad: async ({ location }) => {
+    const isPublic = PUBLIC_ROUTES.some((p) => location.pathname.startsWith(p));
+    console.log("[beforeLoad] path:", location.pathname, "| isPublic:", isPublic);
+    const session = await getSessionFn();
+    console.log("[beforeLoad] session:", session ? `user=${session.user.email}` : "null");
+
+    if (!isPublic && !session) {
+      console.log("[beforeLoad] no session — redirecting to /sign-in");
+      throw redirect({ to: "/sign-in" });
+    }
+    if (isPublic && session) {
+      console.log("[beforeLoad] already authenticated — redirecting to /");
+      throw redirect({ to: "/" });
+    }
+
+    return { session };
+  },
   errorComponent: DefaultCatchBoundary,
   notFoundComponent: () => <NotFound />,
   shellComponent: RootDocument,
 });
 
 function RootDocument({ children }: { children: React.ReactNode }) {
+  const matches = useMatches();
+  const isAuthPage = matches.some(
+    (m) =>
+      typeof m.routeId === "string" &&
+      PUBLIC_ROUTES.some((p) => m.routeId.includes(p.replace("/", ""))),
+  );
+
   return (
     <html lang="en">
       <head>
         <HeadContent />
       </head>
       <body>
-        <div className="app-layout">
-          <Sidebar />
-          <Shell>{children}</Shell>
-        </div>
+        {isAuthPage ? (
+          <Outlet />
+        ) : (
+          <div className="app-layout">
+            <Sidebar />
+            <Shell>{children}</Shell>
+          </div>
+        )}
         <Toaster
           theme="dark"
           position="bottom-right"

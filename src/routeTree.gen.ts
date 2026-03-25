@@ -9,6 +9,8 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SignUpRouteImport } from './routes/sign-up'
+import { Route as SignInRouteImport } from './routes/sign-in'
 import { Route as RedditRouteImport } from './routes/reddit'
 import { Route as PipelineRouteImport } from './routes/pipeline'
 import { Route as LinkedinRouteImport } from './routes/linkedin'
@@ -33,9 +35,20 @@ import { Route as ApiEmailSendRouteImport } from './routes/api/email/send'
 import { Route as ApiDashboardStatsRouteImport } from './routes/api/dashboard/stats'
 import { Route as ApiBlogGenerateRouteImport } from './routes/api/blog/generate'
 import { Route as ApiBlogIdRouteImport } from './routes/api/blog/$id'
+import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as ApiAgentRunRouteImport } from './routes/api/agent/run'
 import { Route as ApiPipelineLeadsIdRouteImport } from './routes/api/pipeline/leads.$id'
 
+const SignUpRoute = SignUpRouteImport.update({
+  id: '/sign-up',
+  path: '/sign-up',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SignInRoute = SignInRouteImport.update({
+  id: '/sign-in',
+  path: '/sign-in',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RedditRoute = RedditRouteImport.update({
   id: '/reddit',
   path: '/reddit',
@@ -156,6 +169,11 @@ const ApiBlogIdRoute = ApiBlogIdRouteImport.update({
   path: '/api/blog/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
+  id: '/api/auth/$',
+  path: '/api/auth/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAgentRunRoute = ApiAgentRunRouteImport.update({
   id: '/api/agent/run',
   path: '/api/agent/run',
@@ -175,8 +193,11 @@ export interface FileRoutesByFullPath {
   '/linkedin': typeof LinkedinRoute
   '/pipeline': typeof PipelineRoute
   '/reddit': typeof RedditRoute
+  '/sign-in': typeof SignInRoute
+  '/sign-up': typeof SignUpRoute
   '/settings/profile': typeof SettingsProfileRoute
   '/api/agent/run': typeof ApiAgentRunRoute
+  '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/blog/$id': typeof ApiBlogIdRoute
   '/api/blog/generate': typeof ApiBlogGenerateRoute
   '/api/dashboard/stats': typeof ApiDashboardStatsRoute
@@ -203,8 +224,11 @@ export interface FileRoutesByTo {
   '/linkedin': typeof LinkedinRoute
   '/pipeline': typeof PipelineRoute
   '/reddit': typeof RedditRoute
+  '/sign-in': typeof SignInRoute
+  '/sign-up': typeof SignUpRoute
   '/settings/profile': typeof SettingsProfileRoute
   '/api/agent/run': typeof ApiAgentRunRoute
+  '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/blog/$id': typeof ApiBlogIdRoute
   '/api/blog/generate': typeof ApiBlogGenerateRoute
   '/api/dashboard/stats': typeof ApiDashboardStatsRoute
@@ -232,8 +256,11 @@ export interface FileRoutesById {
   '/linkedin': typeof LinkedinRoute
   '/pipeline': typeof PipelineRoute
   '/reddit': typeof RedditRoute
+  '/sign-in': typeof SignInRoute
+  '/sign-up': typeof SignUpRoute
   '/settings/profile': typeof SettingsProfileRoute
   '/api/agent/run': typeof ApiAgentRunRoute
+  '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/blog/$id': typeof ApiBlogIdRoute
   '/api/blog/generate': typeof ApiBlogGenerateRoute
   '/api/dashboard/stats': typeof ApiDashboardStatsRoute
@@ -262,8 +289,11 @@ export interface FileRouteTypes {
     | '/linkedin'
     | '/pipeline'
     | '/reddit'
+    | '/sign-in'
+    | '/sign-up'
     | '/settings/profile'
     | '/api/agent/run'
+    | '/api/auth/$'
     | '/api/blog/$id'
     | '/api/blog/generate'
     | '/api/dashboard/stats'
@@ -290,8 +320,11 @@ export interface FileRouteTypes {
     | '/linkedin'
     | '/pipeline'
     | '/reddit'
+    | '/sign-in'
+    | '/sign-up'
     | '/settings/profile'
     | '/api/agent/run'
+    | '/api/auth/$'
     | '/api/blog/$id'
     | '/api/blog/generate'
     | '/api/dashboard/stats'
@@ -318,8 +351,11 @@ export interface FileRouteTypes {
     | '/linkedin'
     | '/pipeline'
     | '/reddit'
+    | '/sign-in'
+    | '/sign-up'
     | '/settings/profile'
     | '/api/agent/run'
+    | '/api/auth/$'
     | '/api/blog/$id'
     | '/api/blog/generate'
     | '/api/dashboard/stats'
@@ -347,8 +383,11 @@ export interface RootRouteChildren {
   LinkedinRoute: typeof LinkedinRoute
   PipelineRoute: typeof PipelineRoute
   RedditRoute: typeof RedditRoute
+  SignInRoute: typeof SignInRoute
+  SignUpRoute: typeof SignUpRoute
   SettingsProfileRoute: typeof SettingsProfileRoute
   ApiAgentRunRoute: typeof ApiAgentRunRoute
+  ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiBlogIdRoute: typeof ApiBlogIdRoute
   ApiBlogGenerateRoute: typeof ApiBlogGenerateRoute
   ApiDashboardStatsRoute: typeof ApiDashboardStatsRoute
@@ -369,6 +408,20 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/sign-up': {
+      id: '/sign-up'
+      path: '/sign-up'
+      fullPath: '/sign-up'
+      preLoaderRoute: typeof SignUpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sign-in': {
+      id: '/sign-in'
+      path: '/sign-in'
+      fullPath: '/sign-in'
+      preLoaderRoute: typeof SignInRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/reddit': {
       id: '/reddit'
       path: '/reddit'
@@ -537,6 +590,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiBlogIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/auth/$': {
+      id: '/api/auth/$'
+      path: '/api/auth/$'
+      fullPath: '/api/auth/$'
+      preLoaderRoute: typeof ApiAuthSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/agent/run': {
       id: '/api/agent/run'
       path: '/api/agent/run'
@@ -573,8 +633,11 @@ const rootRouteChildren: RootRouteChildren = {
   LinkedinRoute: LinkedinRoute,
   PipelineRoute: PipelineRoute,
   RedditRoute: RedditRoute,
+  SignInRoute: SignInRoute,
+  SignUpRoute: SignUpRoute,
   SettingsProfileRoute: SettingsProfileRoute,
   ApiAgentRunRoute: ApiAgentRunRoute,
+  ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiBlogIdRoute: ApiBlogIdRoute,
   ApiBlogGenerateRoute: ApiBlogGenerateRoute,
   ApiDashboardStatsRoute: ApiDashboardStatsRoute,
