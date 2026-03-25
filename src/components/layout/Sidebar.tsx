@@ -25,6 +25,7 @@ const NAV_ITEMS: NavItem[] = [
   { to: "/pipeline", label: "Pipeline", icon: <Users size={15} /> },
   { to: "/blog", label: "Blog Posts", icon: <FileText size={15} /> },
   { to: "/agent", label: "AI Agent", icon: <Bot size={15} /> },
+  { to: "/setttings/profile", label: "Profile", icon: <Users size={15} /> },
 ];
 
 export function Sidebar() {
@@ -44,7 +45,9 @@ export function Sidebar() {
         <div className="sidebar-section-label">Navigate</div>
         {NAV_ITEMS.map((item) => {
           const isActive =
-            item.to === "/" ? currentPath === "/" : currentPath.startsWith(item.to);
+            item.to === "/"
+              ? currentPath === "/"
+              : currentPath.startsWith(item.to);
           return (
             <Link
               key={item.to}

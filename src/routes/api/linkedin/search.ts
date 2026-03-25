@@ -7,7 +7,10 @@ const requestSchema = z.object({
   keyword: z.string().min(1).max(200),
 });
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, maxRetries: 2 });
+const client = new Anthropic({
+  apiKey: process.env.ANTHROPIC_API_KEY,
+  maxRetries: 2,
+});
 
 export const Route = createFileRoute("/api/linkedin/search")({
   server: {
@@ -24,36 +27,57 @@ export const Route = createFileRoute("/api/linkedin/search")({
         }
 
         const parsed = requestSchema.safeParse(body);
+        console.log("request body", parsed);
         if (!parsed.success) {
-          return new Response(JSON.stringify({ error: parsed.error.flatten() }), {
-            status: 422,
-            headers: { "Content-Type": "application/json" },
-          });
+          return new Response(
+            JSON.stringify({ error: parsed.error.flatten() }),
+            {
+              status: 422,
+              headers: { "Content-Type": "application/json" },
+            },
+          );
         }
 
         const { keyword } = parsed.data;
 
-        const prompt = `Search for 5-8 B2B SaaS companies and their founders/CEOs related to the keyword: "${keyword}".
+        const prompt = `
+        Find 5-8 B2B SaaS companies related to "${keyword}" that are likely to benefit from tools in this space.
 
-For each, return a JSON array with objects containing:
-- company: company name
-- name: founder or CEO name
-- linkedinUrl: their LinkedIn profile URL
-- whatTheyDo: one sentence about what the company does
-- website: company website URL
+        Prioritize:
+        - Recently active or growing companies
+        - Clear SaaS business models
+        - Founders or CEOs with a visible online presence
 
-Search for real companies. Return ONLY a valid JSON array, no markdown, no extra text.`;
+        Return a JSON array with:
+        - company: company name
+        - name: founder or CEO name
+        - role: their role (e.g. CEO, Co-founder)
+        - whatTheyDo: one clear, specific sentence (no fluff)
+        - website: official company website
+        - linkedinHint: best guess of their LinkedIn name/slug (NOT a full URL)
+
+        Rules:
+        - Do NOT hallucinate exact LinkedIn URLs
+        - Keep answers realistic and verifiable
+        - No markdown, only JSON
+        `;
 
         const requestParams: Record<string, unknown> = {
           model: "claude-sonnet-4-6",
           max_tokens: 2048,
-          tools: [{ type: "web_search_20260209" as const, name: "web_search" as const }],
+          tools: [
+            {
+              type: "web_search_20260209" as const,
+              name: "web_search" as const,
+            },
+          ],
           messages: [{ role: "user", content: prompt }],
         };
 
         const response = await client.messages.create(
           requestParams as unknown as Anthropic.MessageCreateParamsNonStreaming,
         );
+        console.log("agent response ", response);
 
         // Extract text from response
         let rawText = "";
@@ -80,8 +104,12 @@ Search for real companies. Return ONLY a valid JSON array, no markdown, no extra
               .map((item) => ({
                 company: String((item as LinkedInLeadResult).company ?? ""),
                 name: String((item as LinkedInLeadResult).name ?? ""),
-                linkedinUrl: String((item as LinkedInLeadResult).linkedinUrl ?? ""),
-                whatTheyDo: String((item as LinkedInLeadResult).whatTheyDo ?? ""),
+                linkedinUrl: String(
+                  (item as LinkedInLeadResult).linkedinUrl ?? "",
+                ),
+                whatTheyDo: String(
+                  (item as LinkedInLeadResult).whatTheyDo ?? "",
+                ),
                 website: String((item as LinkedInLeadResult).website ?? ""),
               }));
           }

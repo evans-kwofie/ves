@@ -16,6 +16,7 @@ import { Route as KeywordsRouteImport } from './routes/keywords'
 import { Route as BlogRouteImport } from './routes/blog'
 import { Route as AgentRouteImport } from './routes/agent'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as SettingsProfileRouteImport } from './routes/settings/profile'
 import { Route as ApiSubredditsIndexRouteImport } from './routes/api/subreddits/index'
 import { Route as ApiPipelineIndexRouteImport } from './routes/api/pipeline/index'
 import { Route as ApiKeywordsIndexRouteImport } from './routes/api/keywords/index'
@@ -68,6 +69,11 @@ const AgentRoute = AgentRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsProfileRoute = SettingsProfileRouteImport.update({
+  id: '/settings/profile',
+  path: '/settings/profile',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiSubredditsIndexRoute = ApiSubredditsIndexRouteImport.update({
@@ -169,6 +175,7 @@ export interface FileRoutesByFullPath {
   '/linkedin': typeof LinkedinRoute
   '/pipeline': typeof PipelineRoute
   '/reddit': typeof RedditRoute
+  '/settings/profile': typeof SettingsProfileRoute
   '/api/agent/run': typeof ApiAgentRunRoute
   '/api/blog/$id': typeof ApiBlogIdRoute
   '/api/blog/generate': typeof ApiBlogGenerateRoute
@@ -196,6 +203,7 @@ export interface FileRoutesByTo {
   '/linkedin': typeof LinkedinRoute
   '/pipeline': typeof PipelineRoute
   '/reddit': typeof RedditRoute
+  '/settings/profile': typeof SettingsProfileRoute
   '/api/agent/run': typeof ApiAgentRunRoute
   '/api/blog/$id': typeof ApiBlogIdRoute
   '/api/blog/generate': typeof ApiBlogGenerateRoute
@@ -224,6 +232,7 @@ export interface FileRoutesById {
   '/linkedin': typeof LinkedinRoute
   '/pipeline': typeof PipelineRoute
   '/reddit': typeof RedditRoute
+  '/settings/profile': typeof SettingsProfileRoute
   '/api/agent/run': typeof ApiAgentRunRoute
   '/api/blog/$id': typeof ApiBlogIdRoute
   '/api/blog/generate': typeof ApiBlogGenerateRoute
@@ -253,6 +262,7 @@ export interface FileRouteTypes {
     | '/linkedin'
     | '/pipeline'
     | '/reddit'
+    | '/settings/profile'
     | '/api/agent/run'
     | '/api/blog/$id'
     | '/api/blog/generate'
@@ -280,6 +290,7 @@ export interface FileRouteTypes {
     | '/linkedin'
     | '/pipeline'
     | '/reddit'
+    | '/settings/profile'
     | '/api/agent/run'
     | '/api/blog/$id'
     | '/api/blog/generate'
@@ -307,6 +318,7 @@ export interface FileRouteTypes {
     | '/linkedin'
     | '/pipeline'
     | '/reddit'
+    | '/settings/profile'
     | '/api/agent/run'
     | '/api/blog/$id'
     | '/api/blog/generate'
@@ -335,6 +347,7 @@ export interface RootRouteChildren {
   LinkedinRoute: typeof LinkedinRoute
   PipelineRoute: typeof PipelineRoute
   RedditRoute: typeof RedditRoute
+  SettingsProfileRoute: typeof SettingsProfileRoute
   ApiAgentRunRoute: typeof ApiAgentRunRoute
   ApiBlogIdRoute: typeof ApiBlogIdRoute
   ApiBlogGenerateRoute: typeof ApiBlogGenerateRoute
@@ -403,6 +416,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings/profile': {
+      id: '/settings/profile'
+      path: '/settings/profile'
+      fullPath: '/settings/profile'
+      preLoaderRoute: typeof SettingsProfileRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/subreddits/': {
@@ -553,6 +573,7 @@ const rootRouteChildren: RootRouteChildren = {
   LinkedinRoute: LinkedinRoute,
   PipelineRoute: PipelineRoute,
   RedditRoute: RedditRoute,
+  SettingsProfileRoute: SettingsProfileRoute,
   ApiAgentRunRoute: ApiAgentRunRoute,
   ApiBlogIdRoute: ApiBlogIdRoute,
   ApiBlogGenerateRoute: ApiBlogGenerateRoute,
