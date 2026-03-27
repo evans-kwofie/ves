@@ -21,8 +21,11 @@ function rowToSubreddit(row: Record<string, unknown>): Subreddit {
   };
 }
 
-export async function listKeywords(): Promise<Keyword[]> {
-  const result = await db.execute("SELECT * FROM keywords ORDER BY created_at DESC");
+export async function listKeywords(orgId: string): Promise<Keyword[]> {
+  const result = await db.execute({
+    sql: "SELECT * FROM keywords WHERE organization_id = ? ORDER BY created_at DESC",
+    args: [orgId],
+  });
   const keywords = result.rows.map((r) => rowToKeyword(r as Record<string, unknown>));
 
   const subResult = await db.execute("SELECT * FROM subreddits ORDER BY created_at ASC");
@@ -47,6 +50,7 @@ export async function getKeyword(id: string): Promise<Keyword | null> {
 }
 
 export async function createKeyword(
+  orgId: string,
   keyword: string,
   subreddits: string[] = [],
 ): Promise<Keyword> {
@@ -54,8 +58,8 @@ export async function createKeyword(
   const now = new Date().toISOString();
 
   await db.execute({
-    sql: "INSERT INTO keywords (id, keyword, is_active, created_at, updated_at) VALUES (?, ?, 1, ?, ?)",
-    args: [id, keyword.trim().toLowerCase(), now, now],
+    sql: "INSERT INTO keywords (id, organization_id, keyword, is_active, created_at, updated_at) VALUES (?, ?, ?, 1, ?, ?)",
+    args: [id, orgId, keyword.trim().toLowerCase(), now, now],
   });
 
   const subredditRows: Subreddit[] = [];
@@ -116,10 +120,11 @@ export async function deleteSubreddit(id: string): Promise<void> {
   await db.execute({ sql: "DELETE FROM subreddits WHERE id = ?", args: [id] });
 }
 
-export async function listActiveKeywordsWithSubreddits(): Promise<Keyword[]> {
-  const result = await db.execute(
-    "SELECT * FROM keywords WHERE is_active = 1 ORDER BY created_at DESC",
-  );
+export async function listActiveKeywordsWithSubreddits(orgId: string): Promise<Keyword[]> {
+  const result = await db.execute({
+    sql: "SELECT * FROM keywords WHERE organization_id = ? AND is_active = 1 ORDER BY created_at DESC",
+    args: [orgId],
+  });
   const keywords = result.rows.map((r) => rowToKeyword(r as Record<string, unknown>));
 
   const subResult = await db.execute("SELECT * FROM subreddits ORDER BY created_at ASC");

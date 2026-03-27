@@ -1,5 +1,4 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { initDb } from "~/db/schema";
 import { addSubreddit } from "~/db/queries/keywords";
 import { z } from "zod";
 
@@ -12,7 +11,6 @@ export const Route = createFileRoute("/api/subreddits/")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        await initDb();
         let body: unknown;
         try {
           body = await request.json();

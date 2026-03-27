@@ -23,8 +23,11 @@ function rowToPost(row: Record<string, unknown>): BlogPost {
   };
 }
 
-export async function listBlogPosts(): Promise<BlogPost[]> {
-  const result = await db.execute("SELECT * FROM blog_posts ORDER BY created_at DESC");
+export async function listBlogPosts(orgId: string): Promise<BlogPost[]> {
+  const result = await db.execute({
+    sql: "SELECT * FROM blog_posts WHERE organization_id = ? ORDER BY created_at DESC",
+    args: [orgId],
+  });
   return result.rows.map((r) => rowToPost(r as Record<string, unknown>));
 }
 
@@ -34,7 +37,7 @@ export async function getBlogPost(id: string): Promise<BlogPost | null> {
   return rowToPost(result.rows[0] as Record<string, unknown>);
 }
 
-export async function createBlogPost(input: CreateBlogPostInput): Promise<BlogPost> {
+export async function createBlogPost(orgId: string, input: CreateBlogPostInput): Promise<BlogPost> {
   const id = uuidv4();
   const now = new Date().toISOString();
   const baseSlug = slugify(input.title);
@@ -52,9 +55,9 @@ export async function createBlogPost(input: CreateBlogPostInput): Promise<BlogPo
   }
 
   await db.execute({
-    sql: `INSERT INTO blog_posts (id, title, slug, content, keywords, created_at, updated_at)
-          VALUES (?, ?, ?, ?, ?, ?, ?)`,
-    args: [id, input.title, slug, input.content, JSON.stringify(input.keywords), now, now],
+    sql: `INSERT INTO blog_posts (id, organization_id, title, slug, content, keywords, created_at, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    args: [id, orgId, input.title, slug, input.content, JSON.stringify(input.keywords), now, now],
   });
 
   return (await getBlogPost(id))!;
@@ -88,7 +91,10 @@ export async function deleteBlogPost(id: string): Promise<void> {
   await db.execute({ sql: "DELETE FROM blog_posts WHERE id = ?", args: [id] });
 }
 
-export async function getBlogPostCount(): Promise<number> {
-  const result = await db.execute("SELECT COUNT(*) as count FROM blog_posts");
+export async function getBlogPostCount(orgId: string): Promise<number> {
+  const result = await db.execute({
+    sql: "SELECT COUNT(*) as count FROM blog_posts WHERE organization_id = ?",
+    args: [orgId],
+  });
   return (result.rows[0] as Record<string, unknown>).count as number;
 }

@@ -1,10 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { initDb } from "~/db/schema";
 import { createBlogPost } from "~/db/queries/blog";
 import Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
 
 const requestSchema = z.object({
+  organizationId: z.string().min(1),
   keywords: z.array(z.string()).min(1),
   angle: z.string().max(500).optional(),
   save: z.boolean().optional(),
@@ -16,7 +16,6 @@ export const Route = createFileRoute("/api/blog/generate")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        await initDb();
         let body: unknown;
         try {
           body = await request.json();
@@ -35,7 +34,7 @@ export const Route = createFileRoute("/api/blog/generate")({
           });
         }
 
-        const { keywords, angle, save: shouldSave } = parsed.data;
+        const { organizationId, keywords, angle, save: shouldSave } = parsed.data;
 
         const prompt = `Write a high-quality blog post targeting these keywords: ${keywords.join(", ")}.
 ${angle ? `Focus/angle: ${angle}` : ""}
@@ -67,7 +66,7 @@ Write the full blog post in Markdown. Nothing else.`;
         const title = titleMatch ? titleMatch[1].trim() : keywords[0];
 
         if (shouldSave && content) {
-          const post = await createBlogPost({ title, content, keywords });
+          const post = await createBlogPost(organizationId, { title, content, keywords });
           return Response.json({ content, post });
         }
 

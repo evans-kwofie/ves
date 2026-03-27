@@ -1,7 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { sendEmail } from "~/agent/tools/email";
 import { updateLead } from "~/db/queries/leads";
-import { initDb } from "~/db/schema";
 import { z } from "zod";
 
 const requestSchema = z.object({
@@ -15,7 +14,6 @@ export const Route = createFileRoute("/api/email/send")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        await initDb();
         let body: unknown;
         try {
           body = await request.json();

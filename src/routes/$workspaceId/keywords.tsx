@@ -1,27 +1,27 @@
 import * as React from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
+import * as z from "zod";
 import { Header } from "~/components/layout/Header";
 import { KeywordList } from "~/components/keywords/KeywordList";
 import { AddKeywordDialog } from "~/components/keywords/AddKeywordDialog";
 import { Button } from "~/components/ui/button";
 import { Plus } from "lucide-react";
-import { initDb } from "~/db/schema";
 import { listKeywords } from "~/db/queries/keywords";
 import type { Keyword } from "~/types/keyword";
 
-const getKeywords = createServerFn().handler(async () => {
-  await initDb();
-  return listKeywords();
-});
+const getKeywords = createServerFn({ method: "GET" })
+  .inputValidator(z.string())
+  .handler(async ({ data: orgId }) => listKeywords(orgId));
 
-export const Route = createFileRoute("/keywords")({
-  loader: () => getKeywords(),
+export const Route = createFileRoute("/$workspaceId/keywords")({
+  loader: ({ params }) => getKeywords({ data: params.workspaceId }),
   component: KeywordsPage,
 });
 
 function KeywordsPage() {
   const initial = Route.useLoaderData();
+  const { workspaceId } = Route.useParams();
   const [keywords, setKeywords] = React.useState<Keyword[]>(initial);
   const [dialogOpen, setDialogOpen] = React.useState(false);
 
@@ -44,6 +44,7 @@ function KeywordsPage() {
       <AddKeywordDialog
         open={dialogOpen}
         onOpenChange={setDialogOpen}
+        orgId={workspaceId}
         onSuccess={(kw) => setKeywords((prev) => [kw, ...prev])}
       />
     </>

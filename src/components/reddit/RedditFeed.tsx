@@ -7,6 +7,7 @@ import type { RedditPost } from "~/types/reddit";
 import type { Keyword } from "~/types/keyword";
 
 interface RedditFeedProps {
+  orgId: string;
   posts: RedditPost[];
   keywords: Keyword[];
   selectedKeywordId: string | null;
@@ -15,6 +16,7 @@ interface RedditFeedProps {
 }
 
 export function RedditFeed({
+  orgId,
   posts,
   keywords,
   selectedKeywordId,
@@ -26,7 +28,9 @@ export function RedditFeed({
   async function refreshFeed() {
     setRefreshing(true);
     try {
-      const body = selectedKeywordId ? { keywordId: selectedKeywordId } : {};
+      const body = selectedKeywordId
+        ? { organizationId: orgId, keywordId: selectedKeywordId }
+        : { organizationId: orgId };
       const res = await fetch("/api/reddit/search", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -39,8 +43,8 @@ export function RedditFeed({
 
       // Reload posts
       const postsUrl = selectedKeywordId
-        ? `/api/reddit/posts?keywordId=${selectedKeywordId}`
-        : "/api/reddit/posts";
+        ? `/api/reddit/posts?organizationId=${orgId}&keywordId=${selectedKeywordId}`
+        : `/api/reddit/posts?organizationId=${orgId}`;
       const postsRes = await fetch(postsUrl);
       const updated = (await postsRes.json()) as RedditPost[];
       onPostsUpdated(updated);

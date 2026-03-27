@@ -1,24 +1,24 @@
 import * as React from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
+import * as z from "zod";
 import { Header } from "~/components/layout/Header";
 import { LeadSearchPanel } from "~/components/linkedin/LeadSearchPanel";
 import { LinkedInPostGenerator } from "~/components/linkedin/LinkedInPostGenerator";
-import { initDb } from "~/db/schema";
 import { listKeywords } from "~/db/queries/keywords";
 
-const getLinkedInData = createServerFn().handler(async () => {
-  await initDb();
-  return listKeywords();
-});
+const getLinkedInData = createServerFn({ method: "GET" })
+  .inputValidator(z.string())
+  .handler(async ({ data: orgId }) => listKeywords(orgId));
 
-export const Route = createFileRoute("/linkedin")({
-  loader: () => getLinkedInData(),
+export const Route = createFileRoute("/$workspaceId/linkedin")({
+  loader: ({ params }) => getLinkedInData({ data: params.workspaceId }),
   component: LinkedInPage,
 });
 
 function LinkedInPage() {
   const keywords = Route.useLoaderData();
+  const { workspaceId } = Route.useParams();
   const [activeTab, setActiveTab] = React.useState<"search" | "posts">("search");
 
   return (
@@ -29,26 +29,18 @@ function LinkedInPage() {
       />
       <div className="page-content">
         <div className="tab-list">
-          <button
-            className="tab-trigger"
-            data-state={activeTab === "search" ? "active" : "inactive"}
-            onClick={() => setActiveTab("search")}
-          >
+          <button className="tab-trigger" data-state={activeTab === "search" ? "active" : "inactive"} onClick={() => setActiveTab("search")}>
             Lead Search
           </button>
-          <button
-            className="tab-trigger"
-            data-state={activeTab === "posts" ? "active" : "inactive"}
-            onClick={() => setActiveTab("posts")}
-          >
+          <button className="tab-trigger" data-state={activeTab === "posts" ? "active" : "inactive"} onClick={() => setActiveTab("posts")}>
             Post Generator
           </button>
         </div>
 
         {activeTab === "search" ? (
-          <LeadSearchPanel keywords={keywords} />
+          <LeadSearchPanel orgId={workspaceId} keywords={keywords} />
         ) : (
-          <LinkedInPostGenerator keywords={keywords} />
+          <LinkedInPostGenerator orgId={workspaceId} keywords={keywords} />
         )}
       </div>
     </>

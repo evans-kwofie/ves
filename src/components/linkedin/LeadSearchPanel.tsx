@@ -9,10 +9,11 @@ import type { Keyword } from "~/types/keyword";
 import type { Lead } from "~/types/lead";
 
 interface LeadSearchPanelProps {
+  orgId: string;
   keywords: Keyword[];
 }
 
-export function LeadSearchPanel({ keywords }: LeadSearchPanelProps) {
+export function LeadSearchPanel({ orgId, keywords }: LeadSearchPanelProps) {
   const [keyword, setKeyword] = React.useState(keywords[0]?.keyword ?? "");
   const [results, setResults] = React.useState<LinkedInLeadResult[]>([]);
   const [loading, setLoading] = React.useState(false);
@@ -48,6 +49,7 @@ export function LeadSearchPanel({ keywords }: LeadSearchPanelProps) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          organizationId: orgId,
           company: result.company,
           website: result.website,
           whatTheyDo: result.whatTheyDo,

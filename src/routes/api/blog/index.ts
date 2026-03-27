@@ -1,9 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { initDb } from "~/db/schema";
 import { listBlogPosts, createBlogPost } from "~/db/queries/blog";
 import { z } from "zod";
 
 const createSchema = z.object({
+  organizationId: z.string().min(1),
   title: z.string().min(1).max(200),
   content: z.string().min(1),
   keywords: z.array(z.string()),
@@ -12,13 +12,14 @@ const createSchema = z.object({
 export const Route = createFileRoute("/api/blog/")({
   server: {
     handlers: {
-      GET: async () => {
-        await initDb();
-        const posts = await listBlogPosts();
+      GET: async ({ request }) => {
+        const url = new URL(request.url);
+        const orgId = url.searchParams.get("organizationId");
+        if (!orgId) return new Response(JSON.stringify({ error: "organizationId required" }), { status: 400, headers: { "Content-Type": "application/json" } });
+        const posts = await listBlogPosts(orgId);
         return Response.json(posts);
       },
       POST: async ({ request }) => {
-        await initDb();
         let body: unknown;
         try {
           body = await request.json();
@@ -37,7 +38,8 @@ export const Route = createFileRoute("/api/blog/")({
           });
         }
 
-        const post = await createBlogPost(parsed.data);
+        const { organizationId, ...input } = parsed.data;
+        const post = await createBlogPost(organizationId, input);
         return Response.json(post, { status: 201 });
       },
     },

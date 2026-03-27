@@ -8,11 +8,12 @@ import type { BlogPost } from "~/types/blog";
 import type { Keyword } from "~/types/keyword";
 
 interface BlogGeneratorProps {
+  orgId: string;
   keywords: Keyword[];
   onGenerated: (post: BlogPost) => void;
 }
 
-export function BlogGenerator({ keywords, onGenerated }: BlogGeneratorProps) {
+export function BlogGenerator({ orgId, keywords, onGenerated }: BlogGeneratorProps) {
   const [selectedKeywordIds, setSelectedKeywordIds] = React.useState<string[]>([]);
   const [customKeyword, setCustomKeyword] = React.useState("");
   const [angle, setAngle] = React.useState("");
@@ -45,6 +46,7 @@ export function BlogGenerator({ keywords, onGenerated }: BlogGeneratorProps) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          organizationId: orgId,
           keywords: selectedKeywordTexts,
           angle: angle || undefined,
           save: true,

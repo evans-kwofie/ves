@@ -18,3 +18,7 @@ yarn.lock
 /blob-report/
 /playwright/.cache/
 .tanstack
+
+
+designs
+/designs

@@ -1,8 +1,9 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
 @import "tailwindcss";
 
 :root {
   color-scheme: dark;
-  font-family: "Space Grotesk", sans-serif;
+  font-family: "Inter", sans-serif;
 
   --background: #080808;
   --foreground: #f0f0f0;
@@ -167,7 +168,7 @@ body {
   background: none;
   border: none;
   cursor: pointer;
-  font-family: "Space Grotesk", sans-serif;
+  font-family: "Inter", sans-serif;
   transition: background 0.15s, color 0.15s;
   text-align: left;
 }
@@ -386,7 +387,7 @@ body {
   padding: 8px 12px;
   font-size: 13px;
   color: var(--foreground);
-  font-family: "Space Grotesk", sans-serif;
+  font-family: "Inter", sans-serif;
   outline: none;
   transition: border-color 0.15s;
 }
@@ -414,7 +415,7 @@ textarea.input {
   border-radius: var(--radius);
   font-size: 13px;
   font-weight: 600;
-  font-family: "Space Grotesk", sans-serif;
+  font-family: "Inter", sans-serif;
   cursor: pointer;
   border: none;
   transition: opacity 0.15s, background 0.15s;
@@ -696,7 +697,7 @@ textarea.input {
   margin-bottom: -1px;
   cursor: pointer;
   transition: color 0.15s, border-color 0.15s;
-  font-family: "Space Grotesk", sans-serif;
+  font-family: "Inter", sans-serif;
 }
 
 .tab-trigger:hover {

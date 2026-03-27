@@ -1,5 +1,4 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { initDb } from "~/db/schema";
 import { updateLead } from "~/db/queries/leads";
 import { z } from "zod";
 
@@ -25,7 +24,6 @@ export const Route = createFileRoute("/api/pipeline/leads/$id")({
   server: {
     handlers: {
       PUT: async ({ request, params }) => {
-        await initDb();
         let body: unknown;
         try {
           body = await request.json();

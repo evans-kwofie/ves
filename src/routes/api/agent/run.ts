@@ -1,6 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { runAgent, DAILY_PROMPT } from "~/agent";
-import { initDb } from "~/db/schema";
 
 let isRunning = false;
 
@@ -15,7 +14,6 @@ export const Route = createFileRoute("/api/agent/run")({
           });
         }
 
-        await initDb();
 
         let body: unknown = {};
         try {

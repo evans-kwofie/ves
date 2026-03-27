@@ -13,12 +13,13 @@ import { Label } from "~/components/ui/label";
 import type { Keyword } from "~/types/keyword";
 
 interface AddKeywordDialogProps {
+  orgId: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: (keyword: Keyword) => void;
 }
 
-export function AddKeywordDialog({ open, onOpenChange, onSuccess }: AddKeywordDialogProps) {
+export function AddKeywordDialog({ orgId, open, onOpenChange, onSuccess }: AddKeywordDialogProps) {
   const [keyword, setKeyword] = React.useState("");
   const [subredditsRaw, setSubredditsRaw] = React.useState("");
   const [loading, setLoading] = React.useState(false);
@@ -47,7 +48,7 @@ export function AddKeywordDialog({ open, onOpenChange, onSuccess }: AddKeywordDi
       const res = await fetch("/api/keywords/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ keyword: keyword.trim(), subreddits }),
+        body: JSON.stringify({ organizationId: orgId, keyword: keyword.trim(), subreddits }),
       });
 
       if (!res.ok) {

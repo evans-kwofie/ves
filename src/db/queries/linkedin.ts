@@ -11,14 +11,16 @@ function rowToPost(row: Record<string, unknown>): LinkedInPost {
   };
 }
 
-export async function listLinkedInPosts(): Promise<LinkedInPost[]> {
-  const result = await db.execute(
-    "SELECT * FROM linkedin_posts ORDER BY created_at DESC LIMIT 50",
-  );
+export async function listLinkedInPosts(orgId: string): Promise<LinkedInPost[]> {
+  const result = await db.execute({
+    sql: "SELECT * FROM linkedin_posts WHERE organization_id = ? ORDER BY created_at DESC LIMIT 50",
+    args: [orgId],
+  });
   return result.rows.map((r) => rowToPost(r as Record<string, unknown>));
 }
 
 export async function createLinkedInPost(
+  orgId: string,
   content: string,
   keywordId: string | null,
 ): Promise<LinkedInPost> {
@@ -26,8 +28,8 @@ export async function createLinkedInPost(
   const now = new Date().toISOString();
 
   await db.execute({
-    sql: "INSERT INTO linkedin_posts (id, content, keyword_id, created_at) VALUES (?, ?, ?, ?)",
-    args: [id, content, keywordId, now],
+    sql: "INSERT INTO linkedin_posts (id, organization_id, content, keyword_id, created_at) VALUES (?, ?, ?, ?, ?)",
+    args: [id, orgId, content, keywordId, now],
   });
 
   return { id, content, keywordId, createdAt: now };

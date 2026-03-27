@@ -21,17 +21,11 @@ function rowToLead(row: Record<string, unknown>): Lead {
   };
 }
 
-function rowToMeta(row: Record<string, unknown>): PipelineMeta {
-  return {
-    weeklyTarget: row.weekly_target as number,
-    totalEmailsSent: row.total_emails_sent as number,
-    totalReplies: row.total_replies as number,
-    lastRun: (row.last_run as string | null) ?? null,
-  };
-}
-
-export async function listLeads(): Promise<Lead[]> {
-  const result = await db.execute("SELECT * FROM leads ORDER BY added_at DESC");
+export async function listLeads(orgId: string): Promise<Lead[]> {
+  const result = await db.execute({
+    sql: "SELECT * FROM leads WHERE organization_id = ? ORDER BY added_at DESC",
+    args: [orgId],
+  });
   return result.rows.map((r) => rowToLead(r as Record<string, unknown>));
 }
 
@@ -46,18 +40,31 @@ export async function getPipelineMeta(): Promise<PipelineMeta> {
   if (result.rows.length === 0) {
     return { weeklyTarget: 5, totalEmailsSent: 0, totalReplies: 0, lastRun: null };
   }
-  return rowToMeta(result.rows[0] as Record<string, unknown>);
+  const row = result.rows[0] as Record<string, unknown>;
+  return {
+    weeklyTarget: row.weekly_target as number,
+    totalEmailsSent: row.total_emails_sent as number,
+    totalReplies: row.total_replies as number,
+    lastRun: (row.last_run as string | null) ?? null,
+  };
 }
 
-export async function getPipeline(): Promise<Pipeline> {
-  const [leads, meta] = await Promise.all([listLeads(), getPipelineMeta()]);
+export async function getPipeline(orgId: string): Promise<Pipeline> {
+  const leads = await listLeads(orgId);
+  // Derive counters from org-scoped leads rather than the global pipeline_meta row
+  const meta: PipelineMeta = {
+    weeklyTarget: 5,
+    totalEmailsSent: leads.filter((l) => l.emailSentAt).length,
+    totalReplies: leads.filter((l) => l.repliedAt).length,
+    lastRun: null,
+  };
   return { leads, meta };
 }
 
-export async function createLead(input: CreateLeadInput): Promise<Lead> {
+export async function createLead(orgId: string, input: CreateLeadInput): Promise<Lead> {
   const existing = await db.execute({
-    sql: "SELECT id FROM leads WHERE LOWER(email) = LOWER(?)",
-    args: [input.email],
+    sql: "SELECT id FROM leads WHERE LOWER(email) = LOWER(?) AND organization_id = ?",
+    args: [input.email, orgId],
   });
   if (existing.rows.length > 0) {
     throw new Error(`Lead with email ${input.email} already exists`);
@@ -67,10 +74,11 @@ export async function createLead(input: CreateLeadInput): Promise<Lead> {
   const now = new Date().toISOString();
 
   await db.execute({
-    sql: `INSERT INTO leads (id, company, website, what_they_do, ceo, email, linkedin, fit, status, notes, added_at)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'not_contacted', ?, ?)`,
+    sql: `INSERT INTO leads (id, organization_id, company, website, what_they_do, ceo, email, linkedin, fit, status, notes, added_at, discovered_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'not_contacted', ?, ?, ?)`,
     args: [
       id,
+      orgId,
       input.company,
       input.website ?? "",
       input.whatTheyDo ?? "",
@@ -79,6 +87,7 @@ export async function createLead(input: CreateLeadInput): Promise<Lead> {
       input.linkedin ?? "",
       input.fit,
       input.notes ?? "",
+      now,
       now,
     ],
   });
@@ -121,48 +130,10 @@ export async function updateLead(id: string, updates: UpdateLeadInput): Promise<
     });
   }
 
-  // Update counters
-  if (updates.status === "email_sent" && !lead.emailSentAt) {
-    const now = new Date().toISOString();
-    await db.execute({
-      sql: "UPDATE leads SET email_sent_at = ? WHERE id = ? AND email_sent_at IS NULL",
-      args: [now, id],
-    });
-    await db.execute({
-      sql: "UPDATE pipeline_meta SET total_emails_sent = total_emails_sent + 1, last_run = ? WHERE id = 1",
-      args: [now],
-    });
-  }
-  if (updates.status === "replied" && !lead.repliedAt) {
-    const now = new Date().toISOString();
-    await db.execute({
-      sql: "UPDATE leads SET replied_at = ? WHERE id = ? AND replied_at IS NULL",
-      args: [now, id],
-    });
-    await db.execute({
-      sql: "UPDATE pipeline_meta SET total_replies = total_replies + 1, last_run = ? WHERE id = 1",
-      args: [now],
-    });
-  }
-
   return (await getLead(id))!;
 }
 
-export async function getPipelineSummary(): Promise<string> {
-  const { leads, meta } = await getPipeline();
-  const lines = leads.map((l) => {
-    const daysSinceEmail = l.emailSentAt
-      ? Math.floor((Date.now() - new Date(l.emailSentAt).getTime()) / 86400000)
-      : null;
-    return `id:${l.id} | ${l.company} (${l.ceo}) | ${l.email} | fit:${l.fit} | status:${l.status}${daysSinceEmail !== null ? ` | email_sent_${daysSinceEmail}d_ago` : ""}${l.notes ? ` | notes:${l.notes.slice(0, 60)}` : ""}`;
-  });
-  return [
-    `Total leads: ${leads.length} | Emails sent: ${meta.totalEmailsSent} | Replies: ${meta.totalReplies} | Target: ${meta.weeklyTarget}`,
-    ...lines,
-  ].join("\n");
-}
-
-export async function getDashboardStats(): Promise<{
+export async function getDashboardStats(orgId: string): Promise<{
   totalLeads: number;
   notContacted: number;
   emailed: number;
@@ -170,13 +141,27 @@ export async function getDashboardStats(): Promise<{
   converted: number;
   totalEmailsSent: number;
 }> {
-  const [leads, meta] = await Promise.all([listLeads(), getPipelineMeta()]);
+  const leads = await listLeads(orgId);
   return {
     totalLeads: leads.length,
     notContacted: leads.filter((l) => l.status === "not_contacted").length,
     emailed: leads.filter((l) => l.status === "email_sent").length,
     replied: leads.filter((l) => l.status === "replied").length,
     converted: leads.filter((l) => l.status === "converted").length,
-    totalEmailsSent: meta.totalEmailsSent,
+    totalEmailsSent: leads.filter((l) => l.emailSentAt).length,
   };
+}
+
+export async function getPipelineSummary(orgId: string): Promise<string> {
+  const { leads } = await getPipeline(orgId);
+  const lines = leads.map((l) => {
+    const daysSinceEmail = l.emailSentAt
+      ? Math.floor((Date.now() - new Date(l.emailSentAt).getTime()) / 86400000)
+      : null;
+    return `id:${l.id} | ${l.company} (${l.ceo}) | ${l.email} | fit:${l.fit} | status:${l.status}${daysSinceEmail !== null ? ` | email_sent_${daysSinceEmail}d_ago` : ""}${l.notes ? ` | notes:${l.notes.slice(0, 60)}` : ""}`;
+  });
+  return [
+    `Total leads: ${leads.length} | Target: 5`,
+    ...lines,
+  ].join("\n");
 }

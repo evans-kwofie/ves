@@ -1,9 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { initDb } from "~/db/schema";
 import { createLead } from "~/db/queries/leads";
 import { z } from "zod";
 
 const createSchema = z.object({
+  organizationId: z.string().min(1),
   company: z.string().min(1),
   website: z.string().optional(),
   whatTheyDo: z.string().optional(),
@@ -18,34 +18,25 @@ export const Route = createFileRoute("/api/pipeline/leads")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        await initDb();
         let body: unknown;
         try {
           body = await request.json();
         } catch {
-          return new Response(JSON.stringify({ error: "invalid_json" }), {
-            status: 400,
-            headers: { "Content-Type": "application/json" },
-          });
+          return new Response(JSON.stringify({ error: "invalid_json" }), { status: 400, headers: { "Content-Type": "application/json" } });
         }
 
         const parsed = createSchema.safeParse(body);
         if (!parsed.success) {
-          return new Response(JSON.stringify({ error: parsed.error.flatten() }), {
-            status: 422,
-            headers: { "Content-Type": "application/json" },
-          });
+          return new Response(JSON.stringify({ error: parsed.error.flatten() }), { status: 422, headers: { "Content-Type": "application/json" } });
         }
 
+        const { organizationId, ...input } = parsed.data;
         try {
-          const lead = await createLead(parsed.data);
+          const lead = await createLead(organizationId, input);
           return Response.json(lead, { status: 201 });
         } catch (err) {
           const message = err instanceof Error ? err.message : "unknown_error";
-          return new Response(JSON.stringify({ error: message }), {
-            status: 409,
-            headers: { "Content-Type": "application/json" },
-          });
+          return new Response(JSON.stringify({ error: message }), { status: 409, headers: { "Content-Type": "application/json" } });
         }
       },
     },

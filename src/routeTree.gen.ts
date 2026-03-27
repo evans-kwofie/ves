@@ -11,18 +11,22 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SignUpRouteImport } from './routes/sign-up'
 import { Route as SignInRouteImport } from './routes/sign-in'
-import { Route as RedditRouteImport } from './routes/reddit'
-import { Route as PipelineRouteImport } from './routes/pipeline'
-import { Route as LinkedinRouteImport } from './routes/linkedin'
-import { Route as KeywordsRouteImport } from './routes/keywords'
-import { Route as BlogRouteImport } from './routes/blog'
-import { Route as AgentRouteImport } from './routes/agent'
+import { Route as OnboardingRouteImport } from './routes/onboarding'
+import { Route as WorkspaceIdRouteRouteImport } from './routes/$workspaceId/route'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as SettingsProfileRouteImport } from './routes/settings/profile'
+import { Route as WorkspaceIdIndexRouteImport } from './routes/$workspaceId/index'
+import { Route as WorkspaceIdRedditRouteImport } from './routes/$workspaceId/reddit'
+import { Route as WorkspaceIdPipelineRouteImport } from './routes/$workspaceId/pipeline'
+import { Route as WorkspaceIdLinkedinRouteImport } from './routes/$workspaceId/linkedin'
+import { Route as WorkspaceIdKeywordsRouteImport } from './routes/$workspaceId/keywords'
+import { Route as WorkspaceIdBlogRouteImport } from './routes/$workspaceId/blog'
+import { Route as WorkspaceIdAgentRouteImport } from './routes/$workspaceId/agent'
+import { Route as WorkspaceIdSettingsRouteRouteImport } from './routes/$workspaceId/settings/route'
 import { Route as ApiSubredditsIndexRouteImport } from './routes/api/subreddits/index'
 import { Route as ApiPipelineIndexRouteImport } from './routes/api/pipeline/index'
 import { Route as ApiKeywordsIndexRouteImport } from './routes/api/keywords/index'
 import { Route as ApiBlogIndexRouteImport } from './routes/api/blog/index'
+import { Route as WorkspaceIdSettingsIndexRouteImport } from './routes/$workspaceId/settings/index'
 import { Route as ApiSubredditsIdRouteImport } from './routes/api/subreddits/$id'
 import { Route as ApiRedditSuggestRouteImport } from './routes/api/reddit/suggest'
 import { Route as ApiRedditSearchRouteImport } from './routes/api/reddit/search'
@@ -37,6 +41,10 @@ import { Route as ApiBlogGenerateRouteImport } from './routes/api/blog/generate'
 import { Route as ApiBlogIdRouteImport } from './routes/api/blog/$id'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as ApiAgentRunRouteImport } from './routes/api/agent/run'
+import { Route as WorkspaceIdSettingsWorkspaceRouteImport } from './routes/$workspaceId/settings/workspace'
+import { Route as WorkspaceIdSettingsProfileRouteImport } from './routes/$workspaceId/settings/profile'
+import { Route as WorkspaceIdSettingsDangerRouteImport } from './routes/$workspaceId/settings/danger'
+import { Route as WorkspaceIdSettingsBillingRouteImport } from './routes/$workspaceId/settings/billing'
 import { Route as ApiPipelineLeadsIdRouteImport } from './routes/api/pipeline/leads.$id'
 
 const SignUpRoute = SignUpRouteImport.update({
@@ -49,34 +57,14 @@ const SignInRoute = SignInRouteImport.update({
   path: '/sign-in',
   getParentRoute: () => rootRouteImport,
 } as any)
-const RedditRoute = RedditRouteImport.update({
-  id: '/reddit',
-  path: '/reddit',
+const OnboardingRoute = OnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
   getParentRoute: () => rootRouteImport,
 } as any)
-const PipelineRoute = PipelineRouteImport.update({
-  id: '/pipeline',
-  path: '/pipeline',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LinkedinRoute = LinkedinRouteImport.update({
-  id: '/linkedin',
-  path: '/linkedin',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const KeywordsRoute = KeywordsRouteImport.update({
-  id: '/keywords',
-  path: '/keywords',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const BlogRoute = BlogRouteImport.update({
-  id: '/blog',
-  path: '/blog',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AgentRoute = AgentRouteImport.update({
-  id: '/agent',
-  path: '/agent',
+const WorkspaceIdRouteRoute = WorkspaceIdRouteRouteImport.update({
+  id: '/$workspaceId',
+  path: '/$workspaceId',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -84,11 +72,47 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const SettingsProfileRoute = SettingsProfileRouteImport.update({
-  id: '/settings/profile',
-  path: '/settings/profile',
-  getParentRoute: () => rootRouteImport,
+const WorkspaceIdIndexRoute = WorkspaceIdIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => WorkspaceIdRouteRoute,
 } as any)
+const WorkspaceIdRedditRoute = WorkspaceIdRedditRouteImport.update({
+  id: '/reddit',
+  path: '/reddit',
+  getParentRoute: () => WorkspaceIdRouteRoute,
+} as any)
+const WorkspaceIdPipelineRoute = WorkspaceIdPipelineRouteImport.update({
+  id: '/pipeline',
+  path: '/pipeline',
+  getParentRoute: () => WorkspaceIdRouteRoute,
+} as any)
+const WorkspaceIdLinkedinRoute = WorkspaceIdLinkedinRouteImport.update({
+  id: '/linkedin',
+  path: '/linkedin',
+  getParentRoute: () => WorkspaceIdRouteRoute,
+} as any)
+const WorkspaceIdKeywordsRoute = WorkspaceIdKeywordsRouteImport.update({
+  id: '/keywords',
+  path: '/keywords',
+  getParentRoute: () => WorkspaceIdRouteRoute,
+} as any)
+const WorkspaceIdBlogRoute = WorkspaceIdBlogRouteImport.update({
+  id: '/blog',
+  path: '/blog',
+  getParentRoute: () => WorkspaceIdRouteRoute,
+} as any)
+const WorkspaceIdAgentRoute = WorkspaceIdAgentRouteImport.update({
+  id: '/agent',
+  path: '/agent',
+  getParentRoute: () => WorkspaceIdRouteRoute,
+} as any)
+const WorkspaceIdSettingsRouteRoute =
+  WorkspaceIdSettingsRouteRouteImport.update({
+    id: '/settings',
+    path: '/settings',
+    getParentRoute: () => WorkspaceIdRouteRoute,
+  } as any)
 const ApiSubredditsIndexRoute = ApiSubredditsIndexRouteImport.update({
   id: '/api/subreddits/',
   path: '/api/subreddits/',
@@ -109,6 +133,12 @@ const ApiBlogIndexRoute = ApiBlogIndexRouteImport.update({
   path: '/api/blog/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const WorkspaceIdSettingsIndexRoute =
+  WorkspaceIdSettingsIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => WorkspaceIdSettingsRouteRoute,
+  } as any)
 const ApiSubredditsIdRoute = ApiSubredditsIdRouteImport.update({
   id: '/api/subreddits/$id',
   path: '/api/subreddits/$id',
@@ -179,6 +209,30 @@ const ApiAgentRunRoute = ApiAgentRunRouteImport.update({
   path: '/api/agent/run',
   getParentRoute: () => rootRouteImport,
 } as any)
+const WorkspaceIdSettingsWorkspaceRoute =
+  WorkspaceIdSettingsWorkspaceRouteImport.update({
+    id: '/workspace',
+    path: '/workspace',
+    getParentRoute: () => WorkspaceIdSettingsRouteRoute,
+  } as any)
+const WorkspaceIdSettingsProfileRoute =
+  WorkspaceIdSettingsProfileRouteImport.update({
+    id: '/profile',
+    path: '/profile',
+    getParentRoute: () => WorkspaceIdSettingsRouteRoute,
+  } as any)
+const WorkspaceIdSettingsDangerRoute =
+  WorkspaceIdSettingsDangerRouteImport.update({
+    id: '/danger',
+    path: '/danger',
+    getParentRoute: () => WorkspaceIdSettingsRouteRoute,
+  } as any)
+const WorkspaceIdSettingsBillingRoute =
+  WorkspaceIdSettingsBillingRouteImport.update({
+    id: '/billing',
+    path: '/billing',
+    getParentRoute: () => WorkspaceIdSettingsRouteRoute,
+  } as any)
 const ApiPipelineLeadsIdRoute = ApiPipelineLeadsIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -187,15 +241,22 @@ const ApiPipelineLeadsIdRoute = ApiPipelineLeadsIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/agent': typeof AgentRoute
-  '/blog': typeof BlogRoute
-  '/keywords': typeof KeywordsRoute
-  '/linkedin': typeof LinkedinRoute
-  '/pipeline': typeof PipelineRoute
-  '/reddit': typeof RedditRoute
+  '/$workspaceId': typeof WorkspaceIdRouteRouteWithChildren
+  '/onboarding': typeof OnboardingRoute
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
-  '/settings/profile': typeof SettingsProfileRoute
+  '/$workspaceId/settings': typeof WorkspaceIdSettingsRouteRouteWithChildren
+  '/$workspaceId/agent': typeof WorkspaceIdAgentRoute
+  '/$workspaceId/blog': typeof WorkspaceIdBlogRoute
+  '/$workspaceId/keywords': typeof WorkspaceIdKeywordsRoute
+  '/$workspaceId/linkedin': typeof WorkspaceIdLinkedinRoute
+  '/$workspaceId/pipeline': typeof WorkspaceIdPipelineRoute
+  '/$workspaceId/reddit': typeof WorkspaceIdRedditRoute
+  '/$workspaceId/': typeof WorkspaceIdIndexRoute
+  '/$workspaceId/settings/billing': typeof WorkspaceIdSettingsBillingRoute
+  '/$workspaceId/settings/danger': typeof WorkspaceIdSettingsDangerRoute
+  '/$workspaceId/settings/profile': typeof WorkspaceIdSettingsProfileRoute
+  '/$workspaceId/settings/workspace': typeof WorkspaceIdSettingsWorkspaceRoute
   '/api/agent/run': typeof ApiAgentRunRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/blog/$id': typeof ApiBlogIdRoute
@@ -210,6 +271,7 @@ export interface FileRoutesByFullPath {
   '/api/reddit/search': typeof ApiRedditSearchRoute
   '/api/reddit/suggest': typeof ApiRedditSuggestRoute
   '/api/subreddits/$id': typeof ApiSubredditsIdRoute
+  '/$workspaceId/settings/': typeof WorkspaceIdSettingsIndexRoute
   '/api/blog/': typeof ApiBlogIndexRoute
   '/api/keywords/': typeof ApiKeywordsIndexRoute
   '/api/pipeline/': typeof ApiPipelineIndexRoute
@@ -218,15 +280,20 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/agent': typeof AgentRoute
-  '/blog': typeof BlogRoute
-  '/keywords': typeof KeywordsRoute
-  '/linkedin': typeof LinkedinRoute
-  '/pipeline': typeof PipelineRoute
-  '/reddit': typeof RedditRoute
+  '/onboarding': typeof OnboardingRoute
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
-  '/settings/profile': typeof SettingsProfileRoute
+  '/$workspaceId/agent': typeof WorkspaceIdAgentRoute
+  '/$workspaceId/blog': typeof WorkspaceIdBlogRoute
+  '/$workspaceId/keywords': typeof WorkspaceIdKeywordsRoute
+  '/$workspaceId/linkedin': typeof WorkspaceIdLinkedinRoute
+  '/$workspaceId/pipeline': typeof WorkspaceIdPipelineRoute
+  '/$workspaceId/reddit': typeof WorkspaceIdRedditRoute
+  '/$workspaceId': typeof WorkspaceIdIndexRoute
+  '/$workspaceId/settings/billing': typeof WorkspaceIdSettingsBillingRoute
+  '/$workspaceId/settings/danger': typeof WorkspaceIdSettingsDangerRoute
+  '/$workspaceId/settings/profile': typeof WorkspaceIdSettingsProfileRoute
+  '/$workspaceId/settings/workspace': typeof WorkspaceIdSettingsWorkspaceRoute
   '/api/agent/run': typeof ApiAgentRunRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/blog/$id': typeof ApiBlogIdRoute
@@ -241,6 +308,7 @@ export interface FileRoutesByTo {
   '/api/reddit/search': typeof ApiRedditSearchRoute
   '/api/reddit/suggest': typeof ApiRedditSuggestRoute
   '/api/subreddits/$id': typeof ApiSubredditsIdRoute
+  '/$workspaceId/settings': typeof WorkspaceIdSettingsIndexRoute
   '/api/blog': typeof ApiBlogIndexRoute
   '/api/keywords': typeof ApiKeywordsIndexRoute
   '/api/pipeline': typeof ApiPipelineIndexRoute
@@ -250,15 +318,22 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/agent': typeof AgentRoute
-  '/blog': typeof BlogRoute
-  '/keywords': typeof KeywordsRoute
-  '/linkedin': typeof LinkedinRoute
-  '/pipeline': typeof PipelineRoute
-  '/reddit': typeof RedditRoute
+  '/$workspaceId': typeof WorkspaceIdRouteRouteWithChildren
+  '/onboarding': typeof OnboardingRoute
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
-  '/settings/profile': typeof SettingsProfileRoute
+  '/$workspaceId/settings': typeof WorkspaceIdSettingsRouteRouteWithChildren
+  '/$workspaceId/agent': typeof WorkspaceIdAgentRoute
+  '/$workspaceId/blog': typeof WorkspaceIdBlogRoute
+  '/$workspaceId/keywords': typeof WorkspaceIdKeywordsRoute
+  '/$workspaceId/linkedin': typeof WorkspaceIdLinkedinRoute
+  '/$workspaceId/pipeline': typeof WorkspaceIdPipelineRoute
+  '/$workspaceId/reddit': typeof WorkspaceIdRedditRoute
+  '/$workspaceId/': typeof WorkspaceIdIndexRoute
+  '/$workspaceId/settings/billing': typeof WorkspaceIdSettingsBillingRoute
+  '/$workspaceId/settings/danger': typeof WorkspaceIdSettingsDangerRoute
+  '/$workspaceId/settings/profile': typeof WorkspaceIdSettingsProfileRoute
+  '/$workspaceId/settings/workspace': typeof WorkspaceIdSettingsWorkspaceRoute
   '/api/agent/run': typeof ApiAgentRunRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/blog/$id': typeof ApiBlogIdRoute
@@ -273,6 +348,7 @@ export interface FileRoutesById {
   '/api/reddit/search': typeof ApiRedditSearchRoute
   '/api/reddit/suggest': typeof ApiRedditSuggestRoute
   '/api/subreddits/$id': typeof ApiSubredditsIdRoute
+  '/$workspaceId/settings/': typeof WorkspaceIdSettingsIndexRoute
   '/api/blog/': typeof ApiBlogIndexRoute
   '/api/keywords/': typeof ApiKeywordsIndexRoute
   '/api/pipeline/': typeof ApiPipelineIndexRoute
@@ -283,15 +359,22 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/agent'
-    | '/blog'
-    | '/keywords'
-    | '/linkedin'
-    | '/pipeline'
-    | '/reddit'
+    | '/$workspaceId'
+    | '/onboarding'
     | '/sign-in'
     | '/sign-up'
-    | '/settings/profile'
+    | '/$workspaceId/settings'
+    | '/$workspaceId/agent'
+    | '/$workspaceId/blog'
+    | '/$workspaceId/keywords'
+    | '/$workspaceId/linkedin'
+    | '/$workspaceId/pipeline'
+    | '/$workspaceId/reddit'
+    | '/$workspaceId/'
+    | '/$workspaceId/settings/billing'
+    | '/$workspaceId/settings/danger'
+    | '/$workspaceId/settings/profile'
+    | '/$workspaceId/settings/workspace'
     | '/api/agent/run'
     | '/api/auth/$'
     | '/api/blog/$id'
@@ -306,6 +389,7 @@ export interface FileRouteTypes {
     | '/api/reddit/search'
     | '/api/reddit/suggest'
     | '/api/subreddits/$id'
+    | '/$workspaceId/settings/'
     | '/api/blog/'
     | '/api/keywords/'
     | '/api/pipeline/'
@@ -314,15 +398,20 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/agent'
-    | '/blog'
-    | '/keywords'
-    | '/linkedin'
-    | '/pipeline'
-    | '/reddit'
+    | '/onboarding'
     | '/sign-in'
     | '/sign-up'
-    | '/settings/profile'
+    | '/$workspaceId/agent'
+    | '/$workspaceId/blog'
+    | '/$workspaceId/keywords'
+    | '/$workspaceId/linkedin'
+    | '/$workspaceId/pipeline'
+    | '/$workspaceId/reddit'
+    | '/$workspaceId'
+    | '/$workspaceId/settings/billing'
+    | '/$workspaceId/settings/danger'
+    | '/$workspaceId/settings/profile'
+    | '/$workspaceId/settings/workspace'
     | '/api/agent/run'
     | '/api/auth/$'
     | '/api/blog/$id'
@@ -337,6 +426,7 @@ export interface FileRouteTypes {
     | '/api/reddit/search'
     | '/api/reddit/suggest'
     | '/api/subreddits/$id'
+    | '/$workspaceId/settings'
     | '/api/blog'
     | '/api/keywords'
     | '/api/pipeline'
@@ -345,15 +435,22 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
-    | '/agent'
-    | '/blog'
-    | '/keywords'
-    | '/linkedin'
-    | '/pipeline'
-    | '/reddit'
+    | '/$workspaceId'
+    | '/onboarding'
     | '/sign-in'
     | '/sign-up'
-    | '/settings/profile'
+    | '/$workspaceId/settings'
+    | '/$workspaceId/agent'
+    | '/$workspaceId/blog'
+    | '/$workspaceId/keywords'
+    | '/$workspaceId/linkedin'
+    | '/$workspaceId/pipeline'
+    | '/$workspaceId/reddit'
+    | '/$workspaceId/'
+    | '/$workspaceId/settings/billing'
+    | '/$workspaceId/settings/danger'
+    | '/$workspaceId/settings/profile'
+    | '/$workspaceId/settings/workspace'
     | '/api/agent/run'
     | '/api/auth/$'
     | '/api/blog/$id'
@@ -368,6 +465,7 @@ export interface FileRouteTypes {
     | '/api/reddit/search'
     | '/api/reddit/suggest'
     | '/api/subreddits/$id'
+    | '/$workspaceId/settings/'
     | '/api/blog/'
     | '/api/keywords/'
     | '/api/pipeline/'
@@ -377,15 +475,10 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AgentRoute: typeof AgentRoute
-  BlogRoute: typeof BlogRoute
-  KeywordsRoute: typeof KeywordsRoute
-  LinkedinRoute: typeof LinkedinRoute
-  PipelineRoute: typeof PipelineRoute
-  RedditRoute: typeof RedditRoute
+  WorkspaceIdRouteRoute: typeof WorkspaceIdRouteRouteWithChildren
+  OnboardingRoute: typeof OnboardingRoute
   SignInRoute: typeof SignInRoute
   SignUpRoute: typeof SignUpRoute
-  SettingsProfileRoute: typeof SettingsProfileRoute
   ApiAgentRunRoute: typeof ApiAgentRunRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiBlogIdRoute: typeof ApiBlogIdRoute
@@ -422,46 +515,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SignInRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/reddit': {
-      id: '/reddit'
-      path: '/reddit'
-      fullPath: '/reddit'
-      preLoaderRoute: typeof RedditRouteImport
+    '/onboarding': {
+      id: '/onboarding'
+      path: '/onboarding'
+      fullPath: '/onboarding'
+      preLoaderRoute: typeof OnboardingRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/pipeline': {
-      id: '/pipeline'
-      path: '/pipeline'
-      fullPath: '/pipeline'
-      preLoaderRoute: typeof PipelineRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/linkedin': {
-      id: '/linkedin'
-      path: '/linkedin'
-      fullPath: '/linkedin'
-      preLoaderRoute: typeof LinkedinRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/keywords': {
-      id: '/keywords'
-      path: '/keywords'
-      fullPath: '/keywords'
-      preLoaderRoute: typeof KeywordsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/blog': {
-      id: '/blog'
-      path: '/blog'
-      fullPath: '/blog'
-      preLoaderRoute: typeof BlogRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/agent': {
-      id: '/agent'
-      path: '/agent'
-      fullPath: '/agent'
-      preLoaderRoute: typeof AgentRouteImport
+    '/$workspaceId': {
+      id: '/$workspaceId'
+      path: '/$workspaceId'
+      fullPath: '/$workspaceId'
+      preLoaderRoute: typeof WorkspaceIdRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -471,12 +536,61 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/settings/profile': {
-      id: '/settings/profile'
-      path: '/settings/profile'
-      fullPath: '/settings/profile'
-      preLoaderRoute: typeof SettingsProfileRouteImport
-      parentRoute: typeof rootRouteImport
+    '/$workspaceId/': {
+      id: '/$workspaceId/'
+      path: '/'
+      fullPath: '/$workspaceId/'
+      preLoaderRoute: typeof WorkspaceIdIndexRouteImport
+      parentRoute: typeof WorkspaceIdRouteRoute
+    }
+    '/$workspaceId/reddit': {
+      id: '/$workspaceId/reddit'
+      path: '/reddit'
+      fullPath: '/$workspaceId/reddit'
+      preLoaderRoute: typeof WorkspaceIdRedditRouteImport
+      parentRoute: typeof WorkspaceIdRouteRoute
+    }
+    '/$workspaceId/pipeline': {
+      id: '/$workspaceId/pipeline'
+      path: '/pipeline'
+      fullPath: '/$workspaceId/pipeline'
+      preLoaderRoute: typeof WorkspaceIdPipelineRouteImport
+      parentRoute: typeof WorkspaceIdRouteRoute
+    }
+    '/$workspaceId/linkedin': {
+      id: '/$workspaceId/linkedin'
+      path: '/linkedin'
+      fullPath: '/$workspaceId/linkedin'
+      preLoaderRoute: typeof WorkspaceIdLinkedinRouteImport
+      parentRoute: typeof WorkspaceIdRouteRoute
+    }
+    '/$workspaceId/keywords': {
+      id: '/$workspaceId/keywords'
+      path: '/keywords'
+      fullPath: '/$workspaceId/keywords'
+      preLoaderRoute: typeof WorkspaceIdKeywordsRouteImport
+      parentRoute: typeof WorkspaceIdRouteRoute
+    }
+    '/$workspaceId/blog': {
+      id: '/$workspaceId/blog'
+      path: '/blog'
+      fullPath: '/$workspaceId/blog'
+      preLoaderRoute: typeof WorkspaceIdBlogRouteImport
+      parentRoute: typeof WorkspaceIdRouteRoute
+    }
+    '/$workspaceId/agent': {
+      id: '/$workspaceId/agent'
+      path: '/agent'
+      fullPath: '/$workspaceId/agent'
+      preLoaderRoute: typeof WorkspaceIdAgentRouteImport
+      parentRoute: typeof WorkspaceIdRouteRoute
+    }
+    '/$workspaceId/settings': {
+      id: '/$workspaceId/settings'
+      path: '/settings'
+      fullPath: '/$workspaceId/settings'
+      preLoaderRoute: typeof WorkspaceIdSettingsRouteRouteImport
+      parentRoute: typeof WorkspaceIdRouteRoute
     }
     '/api/subreddits/': {
       id: '/api/subreddits/'
@@ -505,6 +619,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/blog/'
       preLoaderRoute: typeof ApiBlogIndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/$workspaceId/settings/': {
+      id: '/$workspaceId/settings/'
+      path: '/'
+      fullPath: '/$workspaceId/settings/'
+      preLoaderRoute: typeof WorkspaceIdSettingsIndexRouteImport
+      parentRoute: typeof WorkspaceIdSettingsRouteRoute
     }
     '/api/subreddits/$id': {
       id: '/api/subreddits/$id'
@@ -604,6 +725,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAgentRunRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/$workspaceId/settings/workspace': {
+      id: '/$workspaceId/settings/workspace'
+      path: '/workspace'
+      fullPath: '/$workspaceId/settings/workspace'
+      preLoaderRoute: typeof WorkspaceIdSettingsWorkspaceRouteImport
+      parentRoute: typeof WorkspaceIdSettingsRouteRoute
+    }
+    '/$workspaceId/settings/profile': {
+      id: '/$workspaceId/settings/profile'
+      path: '/profile'
+      fullPath: '/$workspaceId/settings/profile'
+      preLoaderRoute: typeof WorkspaceIdSettingsProfileRouteImport
+      parentRoute: typeof WorkspaceIdSettingsRouteRoute
+    }
+    '/$workspaceId/settings/danger': {
+      id: '/$workspaceId/settings/danger'
+      path: '/danger'
+      fullPath: '/$workspaceId/settings/danger'
+      preLoaderRoute: typeof WorkspaceIdSettingsDangerRouteImport
+      parentRoute: typeof WorkspaceIdSettingsRouteRoute
+    }
+    '/$workspaceId/settings/billing': {
+      id: '/$workspaceId/settings/billing'
+      path: '/billing'
+      fullPath: '/$workspaceId/settings/billing'
+      preLoaderRoute: typeof WorkspaceIdSettingsBillingRouteImport
+      parentRoute: typeof WorkspaceIdSettingsRouteRoute
+    }
     '/api/pipeline/leads/$id': {
       id: '/api/pipeline/leads/$id'
       path: '/$id'
@@ -613,6 +762,53 @@ declare module '@tanstack/react-router' {
     }
   }
 }
+
+interface WorkspaceIdSettingsRouteRouteChildren {
+  WorkspaceIdSettingsBillingRoute: typeof WorkspaceIdSettingsBillingRoute
+  WorkspaceIdSettingsDangerRoute: typeof WorkspaceIdSettingsDangerRoute
+  WorkspaceIdSettingsProfileRoute: typeof WorkspaceIdSettingsProfileRoute
+  WorkspaceIdSettingsWorkspaceRoute: typeof WorkspaceIdSettingsWorkspaceRoute
+  WorkspaceIdSettingsIndexRoute: typeof WorkspaceIdSettingsIndexRoute
+}
+
+const WorkspaceIdSettingsRouteRouteChildren: WorkspaceIdSettingsRouteRouteChildren =
+  {
+    WorkspaceIdSettingsBillingRoute: WorkspaceIdSettingsBillingRoute,
+    WorkspaceIdSettingsDangerRoute: WorkspaceIdSettingsDangerRoute,
+    WorkspaceIdSettingsProfileRoute: WorkspaceIdSettingsProfileRoute,
+    WorkspaceIdSettingsWorkspaceRoute: WorkspaceIdSettingsWorkspaceRoute,
+    WorkspaceIdSettingsIndexRoute: WorkspaceIdSettingsIndexRoute,
+  }
+
+const WorkspaceIdSettingsRouteRouteWithChildren =
+  WorkspaceIdSettingsRouteRoute._addFileChildren(
+    WorkspaceIdSettingsRouteRouteChildren,
+  )
+
+interface WorkspaceIdRouteRouteChildren {
+  WorkspaceIdSettingsRouteRoute: typeof WorkspaceIdSettingsRouteRouteWithChildren
+  WorkspaceIdAgentRoute: typeof WorkspaceIdAgentRoute
+  WorkspaceIdBlogRoute: typeof WorkspaceIdBlogRoute
+  WorkspaceIdKeywordsRoute: typeof WorkspaceIdKeywordsRoute
+  WorkspaceIdLinkedinRoute: typeof WorkspaceIdLinkedinRoute
+  WorkspaceIdPipelineRoute: typeof WorkspaceIdPipelineRoute
+  WorkspaceIdRedditRoute: typeof WorkspaceIdRedditRoute
+  WorkspaceIdIndexRoute: typeof WorkspaceIdIndexRoute
+}
+
+const WorkspaceIdRouteRouteChildren: WorkspaceIdRouteRouteChildren = {
+  WorkspaceIdSettingsRouteRoute: WorkspaceIdSettingsRouteRouteWithChildren,
+  WorkspaceIdAgentRoute: WorkspaceIdAgentRoute,
+  WorkspaceIdBlogRoute: WorkspaceIdBlogRoute,
+  WorkspaceIdKeywordsRoute: WorkspaceIdKeywordsRoute,
+  WorkspaceIdLinkedinRoute: WorkspaceIdLinkedinRoute,
+  WorkspaceIdPipelineRoute: WorkspaceIdPipelineRoute,
+  WorkspaceIdRedditRoute: WorkspaceIdRedditRoute,
+  WorkspaceIdIndexRoute: WorkspaceIdIndexRoute,
+}
+
+const WorkspaceIdRouteRouteWithChildren =
+  WorkspaceIdRouteRoute._addFileChildren(WorkspaceIdRouteRouteChildren)
 
 interface ApiPipelineLeadsRouteChildren {
   ApiPipelineLeadsIdRoute: typeof ApiPipelineLeadsIdRoute
@@ -627,15 +823,10 @@ const ApiPipelineLeadsRouteWithChildren =
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AgentRoute: AgentRoute,
-  BlogRoute: BlogRoute,
-  KeywordsRoute: KeywordsRoute,
-  LinkedinRoute: LinkedinRoute,
-  PipelineRoute: PipelineRoute,
-  RedditRoute: RedditRoute,
+  WorkspaceIdRouteRoute: WorkspaceIdRouteRouteWithChildren,
+  OnboardingRoute: OnboardingRoute,
   SignInRoute: SignInRoute,
   SignUpRoute: SignUpRoute,
-  SettingsProfileRoute: SettingsProfileRoute,
   ApiAgentRunRoute: ApiAgentRunRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiBlogIdRoute: ApiBlogIdRoute,
@@ -660,10 +851,11 @@ export const routeTree = rootRouteImport
   ._addFileTypes<FileRouteTypes>()
 
 import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
+import type { startInstance } from './start.ts'
 declare module '@tanstack/react-start' {
   interface Register {
     ssr: true
     router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
   }
 }

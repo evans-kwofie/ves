@@ -1,10 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { initDb } from "~/db/schema";
 import { createLinkedInPost } from "~/db/queries/linkedin";
 import Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
 
 const requestSchema = z.object({
+  organizationId: z.string().min(1),
   keyword: z.string().min(1).max(200),
   angle: z.string().max(500).optional(),
   keywordId: z.string().optional(),
@@ -17,7 +17,6 @@ export const Route = createFileRoute("/api/linkedin/generate-post")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        await initDb();
         let body: unknown;
         try {
           body = await request.json();
@@ -36,7 +35,7 @@ export const Route = createFileRoute("/api/linkedin/generate-post")({
           });
         }
 
-        const { keyword, angle, keywordId, save: shouldSave } = parsed.data;
+        const { organizationId, keyword, angle, keywordId, save: shouldSave } = parsed.data;
 
         const prompt = `Write a LinkedIn post about "${keyword}"${angle ? `. Angle/focus: ${angle}` : ""}.
 
@@ -61,7 +60,7 @@ Write only the post text, ready to copy-paste.`;
           response.content[0]?.type === "text" ? response.content[0].text.trim() : "";
 
         if (shouldSave && content) {
-          const post = await createLinkedInPost(content, keywordId ?? null);
+          const post = await createLinkedInPost(organizationId, content, keywordId ?? null);
           return Response.json({ content, post });
         }
 

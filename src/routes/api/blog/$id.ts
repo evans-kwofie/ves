@@ -1,5 +1,4 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { initDb } from "~/db/schema";
 import { getBlogPost, updateBlogPost, deleteBlogPost } from "~/db/queries/blog";
 import { z } from "zod";
 
@@ -13,7 +12,6 @@ export const Route = createFileRoute("/api/blog/$id")({
   server: {
     handlers: {
       GET: async ({ params }) => {
-        await initDb();
         const post = await getBlogPost(params.id);
         if (!post) {
           return new Response(JSON.stringify({ error: "not_found" }), {
@@ -24,7 +22,6 @@ export const Route = createFileRoute("/api/blog/$id")({
         return Response.json(post);
       },
       PUT: async ({ request, params }) => {
-        await initDb();
         let body: unknown;
         try {
           body = await request.json();
@@ -47,7 +44,6 @@ export const Route = createFileRoute("/api/blog/$id")({
         return Response.json(post);
       },
       DELETE: async ({ params }) => {
-        await initDb();
         await deleteBlogPost(params.id);
         return Response.json({ ok: true });
       },

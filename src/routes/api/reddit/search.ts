@@ -1,11 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { initDb } from "~/db/schema";
 import { listActiveKeywordsWithSubreddits } from "~/db/queries/keywords";
 import { upsertRedditPost } from "~/db/queries/reddit";
 import type { RedditApiResponse } from "~/types/reddit";
 import { z } from "zod";
 
 const requestSchema = z.object({
+  organizationId: z.string().min(1),
   keywordId: z.string().optional(),
 });
 
@@ -13,7 +13,6 @@ export const Route = createFileRoute("/api/reddit/search")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        await initDb();
         let body: unknown = {};
         try {
           body = await request.json();
@@ -22,9 +21,12 @@ export const Route = createFileRoute("/api/reddit/search")({
         }
 
         const parsed = requestSchema.safeParse(body);
-        const filterKeywordId = parsed.success ? parsed.data.keywordId : undefined;
+        if (!parsed.success) {
+          return new Response(JSON.stringify({ error: "organizationId required" }), { status: 400, headers: { "Content-Type": "application/json" } });
+        }
+        const { organizationId, keywordId: filterKeywordId } = parsed.data;
 
-        const keywords = await listActiveKeywordsWithSubreddits();
+        const keywords = await listActiveKeywordsWithSubreddits(organizationId);
         const filtered = filterKeywordId
           ? keywords.filter((k) => k.id === filterKeywordId)
           : keywords;
@@ -50,6 +52,7 @@ export const Route = createFileRoute("/api/reddit/search")({
               for (const child of children) {
                 const post = child.data;
                 await upsertRedditPost({
+                  orgId: organizationId,
                   redditId: post.id,
                   subreddit: post.subreddit,
                   title: post.title,

@@ -8,10 +8,11 @@ import { toast } from "sonner";
 import type { Keyword } from "~/types/keyword";
 
 interface LinkedInPostGeneratorProps {
+  orgId: string;
   keywords: Keyword[];
 }
 
-export function LinkedInPostGenerator({ keywords }: LinkedInPostGeneratorProps) {
+export function LinkedInPostGenerator({ orgId, keywords }: LinkedInPostGeneratorProps) {
   const [selectedKeyword, setSelectedKeyword] = React.useState(keywords[0]?.keyword ?? "");
   const [selectedKeywordId, setSelectedKeywordId] = React.useState(keywords[0]?.id ?? "");
   const [angle, setAngle] = React.useState("");
@@ -36,6 +37,7 @@ export function LinkedInPostGenerator({ keywords }: LinkedInPostGeneratorProps) 
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          organizationId: orgId,
           keyword: selectedKeyword,
           angle: angle || undefined,
           keywordId: selectedKeywordId || undefined,
@@ -62,6 +64,7 @@ export function LinkedInPostGenerator({ keywords }: LinkedInPostGeneratorProps) 
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          organizationId: orgId,
           keyword: selectedKeyword,
           keywordId: selectedKeywordId || undefined,
           save: true,

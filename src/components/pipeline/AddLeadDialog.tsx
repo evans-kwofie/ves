@@ -15,12 +15,13 @@ import { toast } from "sonner";
 import type { Lead, FitRating } from "~/types/lead";
 
 interface AddLeadDialogProps {
+  orgId: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: (lead: Lead) => void;
 }
 
-export function AddLeadDialog({ open, onOpenChange, onSuccess }: AddLeadDialogProps) {
+export function AddLeadDialog({ orgId, open, onOpenChange, onSuccess }: AddLeadDialogProps) {
   const [form, setForm] = React.useState({
     company: "",
     website: "",
@@ -59,7 +60,7 @@ export function AddLeadDialog({ open, onOpenChange, onSuccess }: AddLeadDialogPr
       const res = await fetch("/api/pipeline/leads", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, organizationId: orgId }),
       });
       if (!res.ok) {
         const data = (await res.json()) as { error?: string };
