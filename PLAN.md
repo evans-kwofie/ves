@@ -26,34 +26,25 @@ All tables exist and initialise correctly on boot:
 
 ---
 
-## Priority 1 — Multi-tenancy (BLOCKER)
+## Priority 1 — Multi-tenancy ✅ DONE
 
-**Every single DB query ignores `organization_id`.** All workspaces share the same data right now.
-
-Files to fix: `db/queries/keywords.ts`, `db/queries/leads.ts`, `db/queries/reddit.ts`,
-`db/queries/blog.ts`, `db/queries/linkedin.ts`.
-
-Tasks:
-- [ ] Add `orgId: string` param to all list/create/count functions
-- [ ] Add `WHERE organization_id = ?` to all SELECT queries
-- [ ] Set `organization_id` on all INSERT statements
-- [ ] Update every route loader to extract `workspaceId` from params and pass it down via `createServerFn` (use `.inputValidator(z.string())`)
-- [ ] Fix `pipeline_meta` — currently a single global row; needs to be per-org or derived live from leads
+- [x] Add `orgId: string` param to all list/create/count functions
+- [x] Add `WHERE organization_id = ?` to all SELECT queries
+- [x] Set `organization_id` on all INSERT statements
+- [x] Route loaders extract `workspaceId` from params and pass it down via `createServerFn`
+- [x] `pipeline_meta` — `getPipeline` now derives counters live from org-scoped leads; global row is unused
 
 ---
 
-## Priority 2 — Reddit Agent
+## Priority 2 — Reddit Agent ✅ DONE
 
-The UI shell (feed, subreddit panel, reply cards) exists. The actual agent logic does not.
-
-Tasks:
-- [ ] Server fn: fetch posts from Reddit API for each subreddit tied to a keyword
-- [ ] AI step: classify each post intent → `buying | pain | discussion | noise`
-- [ ] AI step: score engagement and extract signals (company name, role, product mentions)
-- [ ] AI step: generate reply suggestion per post (`engagement_type`: helpful / pitch / authority / question)
-- [ ] Auto-create a lead when `intent_type = buying` or `intent_score >= threshold`
-- [ ] Wire "Fetch" button in `SubredditPanel` / `RedditFeed` to the above
-- [ ] Store `intent_type`, `intent_score`, `engagement_type`, `engagement_score`, `reply_suggestion` on `reddit_posts`
+- [x] Server fn: fetch posts from Reddit API for each subreddit tied to a keyword
+- [x] AI step: classify each post intent → `buying | pain | discussion | noise`
+- [x] AI step: score engagement → `engagement_type` + `engagement_score`
+- [x] AI step: generate reply suggestion per post
+- [x] Auto-create a lead when `intent_type = buying` or `intent_score >= 70`
+- [x] Wire "Fetch" button in `RedditFeed` to the above
+- [x] Store `intent_type`, `intent_score`, `engagement_type`, `engagement_score`, `reply_suggestion` on `reddit_posts`
 
 ---
 

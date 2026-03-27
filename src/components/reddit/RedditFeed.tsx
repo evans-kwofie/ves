@@ -36,9 +36,10 @@ export function RedditFeed({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
-      const data = (await res.json()) as { totalSaved?: number; error?: string };
+      const data = (await res.json()) as { totalSaved?: number; leadsCreated?: number; error?: string };
       if (data.totalSaved !== undefined) {
-        toast.success(`Fetched ${data.totalSaved} posts`);
+        const leadMsg = data.leadsCreated ? ` · ${data.leadsCreated} lead${data.leadsCreated !== 1 ? "s" : ""} created` : "";
+        toast.success(`Fetched ${data.totalSaved} posts${leadMsg}`);
       }
 
       // Reload posts

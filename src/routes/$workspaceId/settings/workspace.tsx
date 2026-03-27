@@ -9,6 +9,7 @@ import { auth } from "~/lib/auth";
 import { authClient } from "~/lib/auth-client";
 import { getSessionFn } from "~/lib/session";
 import { toast } from "sonner";
+import { AiGenerativeIcon } from "hugeicons-react";
 
 // ─── Server ──────────────────────────────────────────────────────────────────
 
@@ -25,16 +26,24 @@ const getWorkspaceDetails = createServerFn({ method: "GET" }).handler(async () =
     metadata = org.metadata ? JSON.parse(org.metadata as string) : {};
   } catch {}
 
+  let useCases: string[] = [];
+  try {
+    useCases = metadata.useCases ? JSON.parse(metadata.useCases as string) : [];
+  } catch {
+    useCases = Array.isArray(metadata.useCases) ? (metadata.useCases as string[]) : [];
+  }
+
   return {
     id: org.id,
     name: org.name,
     slug: org.slug ?? "",
     logo: org.logo ?? "",
-    metadata, // full object — used to merge on save so no keys are lost
+    metadata,
     website: metadata.website ?? "",
     industry: metadata.industry ?? "",
     companySize: metadata.companySize ?? "",
     description: metadata.description ?? "",
+    useCases,
   };
 });
 
@@ -142,19 +151,65 @@ const INDUSTRIES = [
   "Healthcare", "Finance", "Education", "Other",
 ];
 const COMPANY_SIZES = ["Solo", "2–10", "11–50", "51–200", "200+"];
+const USE_CASES = [
+  "Lead generation",
+  "Content marketing",
+  "Brand awareness",
+  "Community building",
+  "Outreach automation",
+  "Competitive research",
+];
 
 function BusinessContextForm({ workspace }: { workspace: NonNullable<Awaited<ReturnType<typeof getWorkspaceDetails>>> }) {
   const [website, setWebsite] = React.useState(workspace.website);
   const [industry, setIndustry] = React.useState(workspace.industry);
   const [companySize, setCompanySize] = React.useState(workspace.companySize);
   const [description, setDescription] = React.useState(workspace.description);
+  const [useCases, setUseCases] = React.useState<string[]>(workspace.useCases);
   const [loading, setLoading] = React.useState(false);
+  const [generating, setGenerating] = React.useState(false);
+
+  function toggleUseCase(uc: string) {
+    setUseCases((prev) => {
+      if (prev.includes(uc)) return prev.filter((u) => u !== uc);
+      if (prev.length >= 3) return prev;
+      return [...prev, uc];
+    });
+  }
+
+  async function generateDescription() {
+    setGenerating(true);
+    try {
+      const res = await fetch("/api/workspace/generate-description", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          organizationId: workspace.id,
+          website,
+          name: workspace.name,
+          industry,
+        }),
+      });
+      const data = (await res.json()) as { description?: string; error?: string };
+      if (data.description) {
+        setDescription(data.description);
+        toast.success("Description generated");
+      } else {
+        toast.error(data.error ?? "Failed to generate description");
+      }
+    } catch {
+      toast.error("Failed to generate description");
+    } finally {
+      setGenerating(false);
+    }
+  }
 
   const dirty =
     website !== workspace.website ||
     industry !== workspace.industry ||
     companySize !== workspace.companySize ||
-    description !== workspace.description;
+    description !== workspace.description ||
+    JSON.stringify(useCases) !== JSON.stringify(workspace.useCases);
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
@@ -163,7 +218,7 @@ function BusinessContextForm({ workspace }: { workspace: NonNullable<Awaited<Ret
       organizationId: workspace.id,
       data: {
         // Spread existing metadata so unrelated keys (e.g. plan) are preserved
-        metadata: { ...workspace.metadata, website, industry, companySize, description },
+        metadata: { ...workspace.metadata, website, industry, companySize, description, useCases: JSON.stringify(useCases) },
       },
     });
     setLoading(false);
@@ -176,14 +231,49 @@ function BusinessContextForm({ workspace }: { workspace: NonNullable<Awaited<Ret
 
   return (
     <form onSubmit={handleSave} className="flex flex-col gap-5 max-w-sm">
-      <FieldGroup label="Description">
+      <div className="flex flex-col gap-1.5">
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <label className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--muted-foreground)]">
+            Description
+          </label>
+          <button
+            type="button"
+            onClick={generateDescription}
+            disabled={generating}
+            title="Generate with AI"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 4,
+              background: "none",
+              border: "none",
+              cursor: generating ? "not-allowed" : "pointer",
+              padding: "2px 4px",
+              borderRadius: 4,
+              opacity: generating ? 0.5 : 1,
+              color: "var(--muted-foreground)",
+              fontSize: 11,
+              transition: "color 0.15s",
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.color = "var(--accent)")}
+            onMouseLeave={(e) => (e.currentTarget.style.color = "var(--muted-foreground)")}
+          >
+            <AiGenerativeIcon
+              size={14}
+              primaryColor="currentColor"
+              secondaryColor="var(--accent)"
+            />
+            {generating ? "Generating…" : "Generate"}
+          </button>
+        </div>
         <Textarea
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           placeholder="What does your company do, and who do you sell to?"
           rows={3}
+          disabled={generating}
         />
-      </FieldGroup>
+      </div>
 
       <FieldGroup label="Website">
         <Input
@@ -218,6 +308,32 @@ function BusinessContextForm({ workspace }: { workspace: NonNullable<Awaited<Ret
             />
           ))}
         </div>
+      </FieldGroup>
+
+      <FieldGroup label="Focus areas">
+        <p className="text-[11px] text-[var(--muted-foreground)] mb-2 -mt-0.5">
+          Pick up to 3. Helps the AI prioritise what matters most.
+        </p>
+        <div className="flex flex-wrap gap-1.5">
+          {USE_CASES.map((opt) => {
+            const selected = useCases.includes(opt);
+            const disabled = !selected && useCases.length >= 3;
+            return (
+              <OptionChip
+                key={opt}
+                label={opt}
+                selected={selected}
+                onSelect={() => !disabled && toggleUseCase(opt)}
+                dimmed={disabled}
+              />
+            );
+          })}
+        </div>
+        {useCases.length > 0 && (
+          <p className="text-[11px] text-[var(--muted-foreground)] mt-1.5">
+            {useCases.length}/3 selected
+          </p>
+        )}
       </FieldGroup>
 
       <div>
@@ -266,20 +382,24 @@ function OptionChip({
   label,
   selected,
   onSelect,
+  dimmed,
 }: {
   label: string;
   selected: boolean;
   onSelect: () => void;
+  dimmed?: boolean;
 }) {
   return (
     <button
       type="button"
       onClick={onSelect}
+      disabled={dimmed}
       className={[
         "px-3 py-1.5 rounded-[var(--radius)] border text-[12px] font-medium transition-all cursor-pointer",
         selected
           ? "border-[var(--accent)] bg-[var(--accent-subtle)] text-[var(--accent)]"
           : "border-[var(--border)] text-[var(--muted-foreground)] hover:border-[var(--accent)] hover:text-[var(--foreground)]",
+        dimmed ? "opacity-35 cursor-not-allowed pointer-events-none" : "",
       ].join(" ")}
     >
       {label}

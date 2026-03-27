@@ -563,6 +563,8 @@ textarea.input {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .reddit-card-title {
@@ -570,6 +572,8 @@ textarea.input {
   font-weight: 600;
   line-height: 1.4;
   color: var(--foreground);
+  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 .reddit-card-meta {
@@ -578,6 +582,7 @@ textarea.input {
   display: flex;
   align-items: center;
   gap: 10px;
+  flex-wrap: wrap;
 }
 
 .reddit-card-body {

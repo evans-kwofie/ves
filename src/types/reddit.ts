@@ -1,3 +1,6 @@
+export type IntentType = "buying" | "pain" | "discussion" | "noise";
+export type EngagementType = "helpful" | "pitch" | "authority" | "question";
+
 export interface RedditPost {
   id: string;
   redditId: string;
@@ -9,6 +12,10 @@ export interface RedditPost {
   body: string;
   keywordId: string | null;
   replySuggestion: string | null;
+  intentType: IntentType | null;
+  intentScore: number | null;
+  engagementType: EngagementType | null;
+  engagementScore: number | null;
   fetchedAt: string;
 }
 

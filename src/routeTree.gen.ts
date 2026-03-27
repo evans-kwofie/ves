@@ -27,6 +27,7 @@ import { Route as ApiPipelineIndexRouteImport } from './routes/api/pipeline/inde
 import { Route as ApiKeywordsIndexRouteImport } from './routes/api/keywords/index'
 import { Route as ApiBlogIndexRouteImport } from './routes/api/blog/index'
 import { Route as WorkspaceIdSettingsIndexRouteImport } from './routes/$workspaceId/settings/index'
+import { Route as ApiWorkspaceGenerateDescriptionRouteImport } from './routes/api/workspace/generate-description'
 import { Route as ApiSubredditsIdRouteImport } from './routes/api/subreddits/$id'
 import { Route as ApiRedditSuggestRouteImport } from './routes/api/reddit/suggest'
 import { Route as ApiRedditSearchRouteImport } from './routes/api/reddit/search'
@@ -34,6 +35,7 @@ import { Route as ApiRedditPostsRouteImport } from './routes/api/reddit/posts'
 import { Route as ApiPipelineLeadsRouteImport } from './routes/api/pipeline/leads'
 import { Route as ApiLinkedinSearchRouteImport } from './routes/api/linkedin/search'
 import { Route as ApiLinkedinGeneratePostRouteImport } from './routes/api/linkedin/generate-post'
+import { Route as ApiKeywordsGenerateRouteImport } from './routes/api/keywords/generate'
 import { Route as ApiKeywordsIdRouteImport } from './routes/api/keywords/$id'
 import { Route as ApiEmailSendRouteImport } from './routes/api/email/send'
 import { Route as ApiDashboardStatsRouteImport } from './routes/api/dashboard/stats'
@@ -139,6 +141,12 @@ const WorkspaceIdSettingsIndexRoute =
     path: '/',
     getParentRoute: () => WorkspaceIdSettingsRouteRoute,
   } as any)
+const ApiWorkspaceGenerateDescriptionRoute =
+  ApiWorkspaceGenerateDescriptionRouteImport.update({
+    id: '/api/workspace/generate-description',
+    path: '/api/workspace/generate-description',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiSubredditsIdRoute = ApiSubredditsIdRouteImport.update({
   id: '/api/subreddits/$id',
   path: '/api/subreddits/$id',
@@ -172,6 +180,11 @@ const ApiLinkedinSearchRoute = ApiLinkedinSearchRouteImport.update({
 const ApiLinkedinGeneratePostRoute = ApiLinkedinGeneratePostRouteImport.update({
   id: '/api/linkedin/generate-post',
   path: '/api/linkedin/generate-post',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiKeywordsGenerateRoute = ApiKeywordsGenerateRouteImport.update({
+  id: '/api/keywords/generate',
+  path: '/api/keywords/generate',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiKeywordsIdRoute = ApiKeywordsIdRouteImport.update({
@@ -264,6 +277,7 @@ export interface FileRoutesByFullPath {
   '/api/dashboard/stats': typeof ApiDashboardStatsRoute
   '/api/email/send': typeof ApiEmailSendRoute
   '/api/keywords/$id': typeof ApiKeywordsIdRoute
+  '/api/keywords/generate': typeof ApiKeywordsGenerateRoute
   '/api/linkedin/generate-post': typeof ApiLinkedinGeneratePostRoute
   '/api/linkedin/search': typeof ApiLinkedinSearchRoute
   '/api/pipeline/leads': typeof ApiPipelineLeadsRouteWithChildren
@@ -271,6 +285,7 @@ export interface FileRoutesByFullPath {
   '/api/reddit/search': typeof ApiRedditSearchRoute
   '/api/reddit/suggest': typeof ApiRedditSuggestRoute
   '/api/subreddits/$id': typeof ApiSubredditsIdRoute
+  '/api/workspace/generate-description': typeof ApiWorkspaceGenerateDescriptionRoute
   '/$workspaceId/settings/': typeof WorkspaceIdSettingsIndexRoute
   '/api/blog/': typeof ApiBlogIndexRoute
   '/api/keywords/': typeof ApiKeywordsIndexRoute
@@ -301,6 +316,7 @@ export interface FileRoutesByTo {
   '/api/dashboard/stats': typeof ApiDashboardStatsRoute
   '/api/email/send': typeof ApiEmailSendRoute
   '/api/keywords/$id': typeof ApiKeywordsIdRoute
+  '/api/keywords/generate': typeof ApiKeywordsGenerateRoute
   '/api/linkedin/generate-post': typeof ApiLinkedinGeneratePostRoute
   '/api/linkedin/search': typeof ApiLinkedinSearchRoute
   '/api/pipeline/leads': typeof ApiPipelineLeadsRouteWithChildren
@@ -308,6 +324,7 @@ export interface FileRoutesByTo {
   '/api/reddit/search': typeof ApiRedditSearchRoute
   '/api/reddit/suggest': typeof ApiRedditSuggestRoute
   '/api/subreddits/$id': typeof ApiSubredditsIdRoute
+  '/api/workspace/generate-description': typeof ApiWorkspaceGenerateDescriptionRoute
   '/$workspaceId/settings': typeof WorkspaceIdSettingsIndexRoute
   '/api/blog': typeof ApiBlogIndexRoute
   '/api/keywords': typeof ApiKeywordsIndexRoute
@@ -341,6 +358,7 @@ export interface FileRoutesById {
   '/api/dashboard/stats': typeof ApiDashboardStatsRoute
   '/api/email/send': typeof ApiEmailSendRoute
   '/api/keywords/$id': typeof ApiKeywordsIdRoute
+  '/api/keywords/generate': typeof ApiKeywordsGenerateRoute
   '/api/linkedin/generate-post': typeof ApiLinkedinGeneratePostRoute
   '/api/linkedin/search': typeof ApiLinkedinSearchRoute
   '/api/pipeline/leads': typeof ApiPipelineLeadsRouteWithChildren
@@ -348,6 +366,7 @@ export interface FileRoutesById {
   '/api/reddit/search': typeof ApiRedditSearchRoute
   '/api/reddit/suggest': typeof ApiRedditSuggestRoute
   '/api/subreddits/$id': typeof ApiSubredditsIdRoute
+  '/api/workspace/generate-description': typeof ApiWorkspaceGenerateDescriptionRoute
   '/$workspaceId/settings/': typeof WorkspaceIdSettingsIndexRoute
   '/api/blog/': typeof ApiBlogIndexRoute
   '/api/keywords/': typeof ApiKeywordsIndexRoute
@@ -382,6 +401,7 @@ export interface FileRouteTypes {
     | '/api/dashboard/stats'
     | '/api/email/send'
     | '/api/keywords/$id'
+    | '/api/keywords/generate'
     | '/api/linkedin/generate-post'
     | '/api/linkedin/search'
     | '/api/pipeline/leads'
@@ -389,6 +409,7 @@ export interface FileRouteTypes {
     | '/api/reddit/search'
     | '/api/reddit/suggest'
     | '/api/subreddits/$id'
+    | '/api/workspace/generate-description'
     | '/$workspaceId/settings/'
     | '/api/blog/'
     | '/api/keywords/'
@@ -419,6 +440,7 @@ export interface FileRouteTypes {
     | '/api/dashboard/stats'
     | '/api/email/send'
     | '/api/keywords/$id'
+    | '/api/keywords/generate'
     | '/api/linkedin/generate-post'
     | '/api/linkedin/search'
     | '/api/pipeline/leads'
@@ -426,6 +448,7 @@ export interface FileRouteTypes {
     | '/api/reddit/search'
     | '/api/reddit/suggest'
     | '/api/subreddits/$id'
+    | '/api/workspace/generate-description'
     | '/$workspaceId/settings'
     | '/api/blog'
     | '/api/keywords'
@@ -458,6 +481,7 @@ export interface FileRouteTypes {
     | '/api/dashboard/stats'
     | '/api/email/send'
     | '/api/keywords/$id'
+    | '/api/keywords/generate'
     | '/api/linkedin/generate-post'
     | '/api/linkedin/search'
     | '/api/pipeline/leads'
@@ -465,6 +489,7 @@ export interface FileRouteTypes {
     | '/api/reddit/search'
     | '/api/reddit/suggest'
     | '/api/subreddits/$id'
+    | '/api/workspace/generate-description'
     | '/$workspaceId/settings/'
     | '/api/blog/'
     | '/api/keywords/'
@@ -486,6 +511,7 @@ export interface RootRouteChildren {
   ApiDashboardStatsRoute: typeof ApiDashboardStatsRoute
   ApiEmailSendRoute: typeof ApiEmailSendRoute
   ApiKeywordsIdRoute: typeof ApiKeywordsIdRoute
+  ApiKeywordsGenerateRoute: typeof ApiKeywordsGenerateRoute
   ApiLinkedinGeneratePostRoute: typeof ApiLinkedinGeneratePostRoute
   ApiLinkedinSearchRoute: typeof ApiLinkedinSearchRoute
   ApiPipelineLeadsRoute: typeof ApiPipelineLeadsRouteWithChildren
@@ -493,6 +519,7 @@ export interface RootRouteChildren {
   ApiRedditSearchRoute: typeof ApiRedditSearchRoute
   ApiRedditSuggestRoute: typeof ApiRedditSuggestRoute
   ApiSubredditsIdRoute: typeof ApiSubredditsIdRoute
+  ApiWorkspaceGenerateDescriptionRoute: typeof ApiWorkspaceGenerateDescriptionRoute
   ApiBlogIndexRoute: typeof ApiBlogIndexRoute
   ApiKeywordsIndexRoute: typeof ApiKeywordsIndexRoute
   ApiPipelineIndexRoute: typeof ApiPipelineIndexRoute
@@ -627,6 +654,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkspaceIdSettingsIndexRouteImport
       parentRoute: typeof WorkspaceIdSettingsRouteRoute
     }
+    '/api/workspace/generate-description': {
+      id: '/api/workspace/generate-description'
+      path: '/api/workspace/generate-description'
+      fullPath: '/api/workspace/generate-description'
+      preLoaderRoute: typeof ApiWorkspaceGenerateDescriptionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/subreddits/$id': {
       id: '/api/subreddits/$id'
       path: '/api/subreddits/$id'
@@ -674,6 +708,13 @@ declare module '@tanstack/react-router' {
       path: '/api/linkedin/generate-post'
       fullPath: '/api/linkedin/generate-post'
       preLoaderRoute: typeof ApiLinkedinGeneratePostRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/keywords/generate': {
+      id: '/api/keywords/generate'
+      path: '/api/keywords/generate'
+      fullPath: '/api/keywords/generate'
+      preLoaderRoute: typeof ApiKeywordsGenerateRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/keywords/$id': {
@@ -834,6 +875,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiDashboardStatsRoute: ApiDashboardStatsRoute,
   ApiEmailSendRoute: ApiEmailSendRoute,
   ApiKeywordsIdRoute: ApiKeywordsIdRoute,
+  ApiKeywordsGenerateRoute: ApiKeywordsGenerateRoute,
   ApiLinkedinGeneratePostRoute: ApiLinkedinGeneratePostRoute,
   ApiLinkedinSearchRoute: ApiLinkedinSearchRoute,
   ApiPipelineLeadsRoute: ApiPipelineLeadsRouteWithChildren,
@@ -841,6 +883,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiRedditSearchRoute: ApiRedditSearchRoute,
   ApiRedditSuggestRoute: ApiRedditSuggestRoute,
   ApiSubredditsIdRoute: ApiSubredditsIdRoute,
+  ApiWorkspaceGenerateDescriptionRoute: ApiWorkspaceGenerateDescriptionRoute,
   ApiBlogIndexRoute: ApiBlogIndexRoute,
   ApiKeywordsIndexRoute: ApiKeywordsIndexRoute,
   ApiPipelineIndexRoute: ApiPipelineIndexRoute,

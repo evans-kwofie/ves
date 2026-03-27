@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from "uuid";
 import { db } from "../client";
-import type { RedditPost } from "~/types/reddit";
+import type { RedditPost, IntentType, EngagementType } from "~/types/reddit";
 
 function rowToPost(row: Record<string, unknown>): RedditPost {
   return {
@@ -14,6 +14,10 @@ function rowToPost(row: Record<string, unknown>): RedditPost {
     body: row.body as string,
     keywordId: (row.keyword_id as string | null) ?? null,
     replySuggestion: (row.reply_suggestion as string | null) ?? null,
+    intentType: (row.intent_type as IntentType | null) ?? null,
+    intentScore: (row.intent_score as number | null) ?? null,
+    engagementType: (row.engagement_type as EngagementType | null) ?? null,
+    engagementScore: (row.engagement_score as number | null) ?? null,
     fetchedAt: row.fetched_at as string,
   };
 }
@@ -43,7 +47,7 @@ export async function upsertRedditPost(post: {
   score: number;
   body: string;
   keywordId: string | null;
-}): Promise<void> {
+}): Promise<{ id: string; isNew: boolean }> {
   const now = new Date().toISOString();
   const existing = await db.execute({
     sql: "SELECT id FROM reddit_posts WHERE reddit_id = ?",
@@ -51,10 +55,12 @@ export async function upsertRedditPost(post: {
   });
 
   if (existing.rows.length > 0) {
+    const id = (existing.rows[0] as Record<string, unknown>).id as string;
     await db.execute({
       sql: "UPDATE reddit_posts SET score = ?, fetched_at = ? WHERE reddit_id = ?",
       args: [post.score, now, post.redditId],
     });
+    return { id, isNew: false };
   } else {
     const id = uuidv4();
     await db.execute({
@@ -62,7 +68,23 @@ export async function upsertRedditPost(post: {
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       args: [id, post.orgId, post.redditId, post.subreddit, post.title, post.url, post.author, post.score, post.body, post.keywordId, now],
     });
+    return { id, isNew: true };
   }
+}
+
+export async function saveClassification(
+  id: string,
+  classification: {
+    intentType: IntentType;
+    intentScore: number;
+    engagementType: EngagementType;
+    engagementScore: number;
+  },
+): Promise<void> {
+  await db.execute({
+    sql: "UPDATE reddit_posts SET intent_type = ?, intent_score = ?, engagement_type = ?, engagement_score = ? WHERE id = ?",
+    args: [classification.intentType, classification.intentScore, classification.engagementType, classification.engagementScore, id],
+  });
 }
 
 export async function saveReplySuggestion(id: string, suggestion: string): Promise<void> {

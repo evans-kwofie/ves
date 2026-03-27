@@ -6,8 +6,9 @@ import { Header } from "~/components/layout/Header";
 import { KeywordList } from "~/components/keywords/KeywordList";
 import { AddKeywordDialog } from "~/components/keywords/AddKeywordDialog";
 import { Button } from "~/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, Sparkles } from "lucide-react";
 import { listKeywords } from "~/db/queries/keywords";
+import { GenerateKeywordsDialog } from "~/components/keywords/GenerateKeywordsDialog";
 import type { Keyword } from "~/types/keyword";
 
 const getKeywords = createServerFn({ method: "GET" })
@@ -24,6 +25,7 @@ function KeywordsPage() {
   const { workspaceId } = Route.useParams();
   const [keywords, setKeywords] = React.useState<Keyword[]>(initial);
   const [dialogOpen, setDialogOpen] = React.useState(false);
+  const [generateOpen, setGenerateOpen] = React.useState(false);
 
   return (
     <>
@@ -31,10 +33,16 @@ function KeywordsPage() {
         title="Keywords"
         subtitle="Manage the keywords that drive your Reddit monitoring, LinkedIn search, and blog generation."
         actions={
-          <Button onClick={() => setDialogOpen(true)}>
-            <Plus size={14} />
-            Add Keyword
-          </Button>
+          <div style={{ display: "flex", gap: 8 }}>
+            <Button variant="ghost" onClick={() => setGenerateOpen(true)}>
+              <Sparkles size={14} />
+              Generate
+            </Button>
+            <Button onClick={() => setDialogOpen(true)}>
+              <Plus size={14} />
+              Add Keyword
+            </Button>
+          </div>
         }
       />
       <div className="page-content">
@@ -46,6 +54,13 @@ function KeywordsPage() {
         onOpenChange={setDialogOpen}
         orgId={workspaceId}
         onSuccess={(kw) => setKeywords((prev) => [kw, ...prev])}
+      />
+
+      <GenerateKeywordsDialog
+        open={generateOpen}
+        onOpenChange={setGenerateOpen}
+        orgId={workspaceId}
+        onSuccess={(newKws) => setKeywords((prev) => [...newKws, ...prev])}
       />
     </>
   );

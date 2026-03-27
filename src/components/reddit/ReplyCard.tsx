@@ -2,7 +2,21 @@ import * as React from "react";
 import { ExternalLink, Copy, Sparkles, ArrowUp } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { toast } from "sonner";
-import type { RedditPost } from "~/types/reddit";
+import type { RedditPost, IntentType } from "~/types/reddit";
+
+const INTENT_LABEL: Record<IntentType, string> = {
+  buying: "Buying",
+  pain: "Pain point",
+  discussion: "Discussion",
+  noise: "Noise",
+};
+
+const INTENT_COLOR: Record<IntentType, string> = {
+  buying: "var(--accent)",
+  pain: "#f59e0b",
+  discussion: "var(--muted-foreground)",
+  noise: "var(--muted-foreground)",
+};
 
 interface ReplyCardProps {
   post: RedditPost;
@@ -75,6 +89,21 @@ export function ReplyCard({ post, onSuggestionSaved }: ReplyCardProps) {
           {post.score}
         </span>
         <span>{new Date(post.fetchedAt).toLocaleDateString()}</span>
+        {post.intentType && (
+          <span
+            style={{
+              color: INTENT_COLOR[post.intentType],
+              fontWeight: 600,
+              fontSize: 10,
+              textTransform: "uppercase",
+              letterSpacing: "0.06em",
+              marginLeft: "auto",
+            }}
+          >
+            {INTENT_LABEL[post.intentType]}
+            {post.intentScore !== null ? ` · ${post.intentScore}` : ""}
+          </span>
+        )}
       </div>
 
       {post.body && <p className="reddit-card-body">{post.body}</p>}
