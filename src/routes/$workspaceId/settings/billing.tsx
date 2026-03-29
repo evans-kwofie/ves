@@ -2,7 +2,7 @@ import * as React from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { getRequestHeaders } from "@tanstack/react-start/server";
-import { CreditCard, Zap, Check } from "lucide-react";
+import { CreditCardIcon, FlashIcon, Tick01Icon } from "hugeicons-react";
 import { Button } from "~/components/ui/button";
 import { auth } from "~/lib/auth";
 import { getSessionFn } from "~/lib/session";
@@ -104,7 +104,7 @@ function BillingPage() {
         </p>
         <div className="flex items-center gap-3 p-3 rounded-[var(--radius)] border border-[var(--card-border)] bg-[var(--card)] w-fit">
           <div className="w-8 h-8 rounded-[var(--radius)] bg-[var(--accent-subtle)] flex items-center justify-center">
-            <CreditCard size={14} style={{ color: "var(--accent)" }} />
+            <CreditCardIcon size={14} style={{ color: "var(--accent)" }} />
           </div>
           <div>
             <div className="text-[13px] font-semibold capitalize text-[var(--foreground)]">
@@ -162,7 +162,7 @@ function PlanCard({
       <div className="w-8 h-8 rounded-[var(--radius)] flex items-center justify-center shrink-0"
         style={{ background: plan.highlight ? "var(--accent-subtle)" : "var(--muted)" }}
       >
-        <Zap size={13} style={{ color: plan.highlight ? "var(--accent)" : "var(--muted-foreground)" }} />
+        <FlashIcon size={13} style={{ color: plan.highlight ? "var(--accent)" : "var(--muted-foreground)" }} />
       </div>
 
       {/* Details */}
@@ -181,7 +181,7 @@ function PlanCard({
         <ul className="flex flex-col gap-0.5">
           {plan.features.map((f) => (
             <li key={f} className="flex items-center gap-1.5 text-[11px] text-[var(--muted-foreground)]">
-              <Check size={10} style={{ color: "var(--accent)", flexShrink: 0 }} />
+              <Tick01Icon size={10} style={{ color: "var(--accent)", flexShrink: 0 }} />
               {f}
             </li>
           ))}

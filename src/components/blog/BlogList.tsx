@@ -1,5 +1,5 @@
 import * as React from "react";
-import { FileText, Trash2 } from "lucide-react";
+import { File01Icon, Delete01Icon } from "hugeicons-react";
 import { Button } from "~/components/ui/button";
 import { toast } from "sonner";
 import type { BlogPost } from "~/types/blog";
@@ -21,74 +21,43 @@ export function BlogList({ posts, selectedId, onSelect, onDelete }: BlogListProp
       await fetch(`/api/blog/${post.id}`, { method: "DELETE" });
       onDelete(post.id);
       toast.success("Post deleted");
-    } catch {
-      toast.error("Failed to delete");
-    } finally {
-      setDeletingId(null);
-    }
+    } catch { toast.error("Failed to delete"); }
+    finally { setDeletingId(null); }
   }
 
   if (posts.length === 0) {
-    return (
-      <div style={{ color: "var(--muted-foreground)", fontSize: 12, padding: "12px 0" }}>
-        No posts yet. Generate your first blog post.
-      </div>
-    );
+    return <p className="text-[12px] text-[var(--muted-foreground)] py-3">No posts yet. Generate your first one.</p>;
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+    <div className="flex flex-col gap-1">
       {posts.map((post) => (
         <div
           key={post.id}
           onClick={() => onSelect(post)}
-          style={{
-            padding: "10px 12px",
-            borderRadius: "var(--radius)",
-            cursor: "pointer",
-            background: selectedId === post.id ? "var(--accent-subtle)" : "transparent",
-            border: selectedId === post.id
-              ? "1px solid rgba(34, 197, 94, 0.2)"
-              : "1px solid transparent",
-            transition: "all 0.15s",
-            display: "flex",
-            alignItems: "flex-start",
-            gap: 8,
-          }}
+          className={`flex items-start gap-2 px-3 py-2.5 rounded-[var(--radius)] cursor-pointer transition-all ${
+            selectedId === post.id
+              ? "bg-[var(--accent-subtle)] border border-[var(--accent)]/20"
+              : "border border-transparent hover:bg-[var(--muted)]"
+          }`}
         >
-          <FileText
-            size={13}
-            style={{
-              color: selectedId === post.id ? "var(--accent)" : "var(--muted-foreground)",
-              flexShrink: 0,
-              marginTop: 2,
-            }}
-          />
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div
-              style={{
-                fontSize: 12,
-                fontWeight: 600,
-                color: selectedId === post.id ? "var(--accent)" : "var(--foreground)",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-              }}
-            >
+          <File01Icon size={13} className={`shrink-0 mt-0.5 ${selectedId === post.id ? "text-[var(--accent)]" : "text-[var(--muted-foreground)]"}`} />
+          <div className="flex-1 min-w-0">
+            <p className={`text-[12px] font-semibold truncate ${selectedId === post.id ? "text-[var(--accent)]" : "text-[var(--foreground)]"}`}>
               {post.title}
-            </div>
-            <div style={{ fontSize: 10, color: "var(--muted-foreground)", marginTop: 2 }}>
+            </p>
+            <p className="text-[10px] text-[var(--muted-foreground)] mt-0.5">
               {new Date(post.createdAt).toLocaleDateString()}
-            </div>
+            </p>
           </div>
           <Button
             variant="ghost"
             size="sm"
             onClick={(e) => handleDelete(e, post)}
             disabled={deletingId === post.id}
-            style={{ padding: "2px 4px", color: "var(--muted-foreground)", flexShrink: 0 }}
+            className="p-1 text-[var(--muted-foreground)] shrink-0"
           >
-            <Trash2 size={11} />
+            <Delete01Icon size={11} />
           </Button>
         </div>
       ))}

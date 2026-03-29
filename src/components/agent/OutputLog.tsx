@@ -13,10 +13,7 @@ export function OutputLog({ logs }: OutputLogProps) {
 
   if (logs.length === 0) {
     return (
-      <div
-        className="log-output"
-        style={{ color: "var(--muted-foreground)", fontStyle: "normal" }}
-      >
+      <div className="log-output text-[var(--muted-foreground)]">
         No output yet. Run the agent to see logs here.
       </div>
     );

@@ -19,6 +19,7 @@ import { Route as WorkspaceIdRedditRouteImport } from './routes/$workspaceId/red
 import { Route as WorkspaceIdPipelineRouteImport } from './routes/$workspaceId/pipeline'
 import { Route as WorkspaceIdLinkedinRouteImport } from './routes/$workspaceId/linkedin'
 import { Route as WorkspaceIdKeywordsRouteImport } from './routes/$workspaceId/keywords'
+import { Route as WorkspaceIdCampaignsRouteImport } from './routes/$workspaceId/campaigns'
 import { Route as WorkspaceIdBlogRouteImport } from './routes/$workspaceId/blog'
 import { Route as WorkspaceIdAgentRouteImport } from './routes/$workspaceId/agent'
 import { Route as WorkspaceIdSettingsRouteRouteImport } from './routes/$workspaceId/settings/route'
@@ -33,6 +34,7 @@ import { Route as ApiRedditSuggestRouteImport } from './routes/api/reddit/sugges
 import { Route as ApiRedditSearchRouteImport } from './routes/api/reddit/search'
 import { Route as ApiRedditPostsRouteImport } from './routes/api/reddit/posts'
 import { Route as ApiPipelineLeadsRouteImport } from './routes/api/pipeline/leads'
+import { Route as ApiPipelineEnrichRouteImport } from './routes/api/pipeline/enrich'
 import { Route as ApiLinkedinSearchRouteImport } from './routes/api/linkedin/search'
 import { Route as ApiLinkedinGeneratePostRouteImport } from './routes/api/linkedin/generate-post'
 import { Route as ApiKeywordsGenerateRouteImport } from './routes/api/keywords/generate'
@@ -47,6 +49,7 @@ import { Route as WorkspaceIdSettingsWorkspaceRouteImport } from './routes/$work
 import { Route as WorkspaceIdSettingsProfileRouteImport } from './routes/$workspaceId/settings/profile'
 import { Route as WorkspaceIdSettingsDangerRouteImport } from './routes/$workspaceId/settings/danger'
 import { Route as WorkspaceIdSettingsBillingRouteImport } from './routes/$workspaceId/settings/billing'
+import { Route as WorkspaceIdSettingsAgentRouteImport } from './routes/$workspaceId/settings/agent'
 import { Route as ApiPipelineLeadsIdRouteImport } from './routes/api/pipeline/leads.$id'
 
 const SignUpRoute = SignUpRouteImport.update({
@@ -97,6 +100,11 @@ const WorkspaceIdLinkedinRoute = WorkspaceIdLinkedinRouteImport.update({
 const WorkspaceIdKeywordsRoute = WorkspaceIdKeywordsRouteImport.update({
   id: '/keywords',
   path: '/keywords',
+  getParentRoute: () => WorkspaceIdRouteRoute,
+} as any)
+const WorkspaceIdCampaignsRoute = WorkspaceIdCampaignsRouteImport.update({
+  id: '/campaigns',
+  path: '/campaigns',
   getParentRoute: () => WorkspaceIdRouteRoute,
 } as any)
 const WorkspaceIdBlogRoute = WorkspaceIdBlogRouteImport.update({
@@ -170,6 +178,11 @@ const ApiRedditPostsRoute = ApiRedditPostsRouteImport.update({
 const ApiPipelineLeadsRoute = ApiPipelineLeadsRouteImport.update({
   id: '/api/pipeline/leads',
   path: '/api/pipeline/leads',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPipelineEnrichRoute = ApiPipelineEnrichRouteImport.update({
+  id: '/api/pipeline/enrich',
+  path: '/api/pipeline/enrich',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiLinkedinSearchRoute = ApiLinkedinSearchRouteImport.update({
@@ -246,6 +259,12 @@ const WorkspaceIdSettingsBillingRoute =
     path: '/billing',
     getParentRoute: () => WorkspaceIdSettingsRouteRoute,
   } as any)
+const WorkspaceIdSettingsAgentRoute =
+  WorkspaceIdSettingsAgentRouteImport.update({
+    id: '/agent',
+    path: '/agent',
+    getParentRoute: () => WorkspaceIdSettingsRouteRoute,
+  } as any)
 const ApiPipelineLeadsIdRoute = ApiPipelineLeadsIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -261,11 +280,13 @@ export interface FileRoutesByFullPath {
   '/$workspaceId/settings': typeof WorkspaceIdSettingsRouteRouteWithChildren
   '/$workspaceId/agent': typeof WorkspaceIdAgentRoute
   '/$workspaceId/blog': typeof WorkspaceIdBlogRoute
+  '/$workspaceId/campaigns': typeof WorkspaceIdCampaignsRoute
   '/$workspaceId/keywords': typeof WorkspaceIdKeywordsRoute
   '/$workspaceId/linkedin': typeof WorkspaceIdLinkedinRoute
   '/$workspaceId/pipeline': typeof WorkspaceIdPipelineRoute
   '/$workspaceId/reddit': typeof WorkspaceIdRedditRoute
   '/$workspaceId/': typeof WorkspaceIdIndexRoute
+  '/$workspaceId/settings/agent': typeof WorkspaceIdSettingsAgentRoute
   '/$workspaceId/settings/billing': typeof WorkspaceIdSettingsBillingRoute
   '/$workspaceId/settings/danger': typeof WorkspaceIdSettingsDangerRoute
   '/$workspaceId/settings/profile': typeof WorkspaceIdSettingsProfileRoute
@@ -280,6 +301,7 @@ export interface FileRoutesByFullPath {
   '/api/keywords/generate': typeof ApiKeywordsGenerateRoute
   '/api/linkedin/generate-post': typeof ApiLinkedinGeneratePostRoute
   '/api/linkedin/search': typeof ApiLinkedinSearchRoute
+  '/api/pipeline/enrich': typeof ApiPipelineEnrichRoute
   '/api/pipeline/leads': typeof ApiPipelineLeadsRouteWithChildren
   '/api/reddit/posts': typeof ApiRedditPostsRoute
   '/api/reddit/search': typeof ApiRedditSearchRoute
@@ -300,11 +322,13 @@ export interface FileRoutesByTo {
   '/sign-up': typeof SignUpRoute
   '/$workspaceId/agent': typeof WorkspaceIdAgentRoute
   '/$workspaceId/blog': typeof WorkspaceIdBlogRoute
+  '/$workspaceId/campaigns': typeof WorkspaceIdCampaignsRoute
   '/$workspaceId/keywords': typeof WorkspaceIdKeywordsRoute
   '/$workspaceId/linkedin': typeof WorkspaceIdLinkedinRoute
   '/$workspaceId/pipeline': typeof WorkspaceIdPipelineRoute
   '/$workspaceId/reddit': typeof WorkspaceIdRedditRoute
   '/$workspaceId': typeof WorkspaceIdIndexRoute
+  '/$workspaceId/settings/agent': typeof WorkspaceIdSettingsAgentRoute
   '/$workspaceId/settings/billing': typeof WorkspaceIdSettingsBillingRoute
   '/$workspaceId/settings/danger': typeof WorkspaceIdSettingsDangerRoute
   '/$workspaceId/settings/profile': typeof WorkspaceIdSettingsProfileRoute
@@ -319,6 +343,7 @@ export interface FileRoutesByTo {
   '/api/keywords/generate': typeof ApiKeywordsGenerateRoute
   '/api/linkedin/generate-post': typeof ApiLinkedinGeneratePostRoute
   '/api/linkedin/search': typeof ApiLinkedinSearchRoute
+  '/api/pipeline/enrich': typeof ApiPipelineEnrichRoute
   '/api/pipeline/leads': typeof ApiPipelineLeadsRouteWithChildren
   '/api/reddit/posts': typeof ApiRedditPostsRoute
   '/api/reddit/search': typeof ApiRedditSearchRoute
@@ -342,11 +367,13 @@ export interface FileRoutesById {
   '/$workspaceId/settings': typeof WorkspaceIdSettingsRouteRouteWithChildren
   '/$workspaceId/agent': typeof WorkspaceIdAgentRoute
   '/$workspaceId/blog': typeof WorkspaceIdBlogRoute
+  '/$workspaceId/campaigns': typeof WorkspaceIdCampaignsRoute
   '/$workspaceId/keywords': typeof WorkspaceIdKeywordsRoute
   '/$workspaceId/linkedin': typeof WorkspaceIdLinkedinRoute
   '/$workspaceId/pipeline': typeof WorkspaceIdPipelineRoute
   '/$workspaceId/reddit': typeof WorkspaceIdRedditRoute
   '/$workspaceId/': typeof WorkspaceIdIndexRoute
+  '/$workspaceId/settings/agent': typeof WorkspaceIdSettingsAgentRoute
   '/$workspaceId/settings/billing': typeof WorkspaceIdSettingsBillingRoute
   '/$workspaceId/settings/danger': typeof WorkspaceIdSettingsDangerRoute
   '/$workspaceId/settings/profile': typeof WorkspaceIdSettingsProfileRoute
@@ -361,6 +388,7 @@ export interface FileRoutesById {
   '/api/keywords/generate': typeof ApiKeywordsGenerateRoute
   '/api/linkedin/generate-post': typeof ApiLinkedinGeneratePostRoute
   '/api/linkedin/search': typeof ApiLinkedinSearchRoute
+  '/api/pipeline/enrich': typeof ApiPipelineEnrichRoute
   '/api/pipeline/leads': typeof ApiPipelineLeadsRouteWithChildren
   '/api/reddit/posts': typeof ApiRedditPostsRoute
   '/api/reddit/search': typeof ApiRedditSearchRoute
@@ -385,11 +413,13 @@ export interface FileRouteTypes {
     | '/$workspaceId/settings'
     | '/$workspaceId/agent'
     | '/$workspaceId/blog'
+    | '/$workspaceId/campaigns'
     | '/$workspaceId/keywords'
     | '/$workspaceId/linkedin'
     | '/$workspaceId/pipeline'
     | '/$workspaceId/reddit'
     | '/$workspaceId/'
+    | '/$workspaceId/settings/agent'
     | '/$workspaceId/settings/billing'
     | '/$workspaceId/settings/danger'
     | '/$workspaceId/settings/profile'
@@ -404,6 +434,7 @@ export interface FileRouteTypes {
     | '/api/keywords/generate'
     | '/api/linkedin/generate-post'
     | '/api/linkedin/search'
+    | '/api/pipeline/enrich'
     | '/api/pipeline/leads'
     | '/api/reddit/posts'
     | '/api/reddit/search'
@@ -424,11 +455,13 @@ export interface FileRouteTypes {
     | '/sign-up'
     | '/$workspaceId/agent'
     | '/$workspaceId/blog'
+    | '/$workspaceId/campaigns'
     | '/$workspaceId/keywords'
     | '/$workspaceId/linkedin'
     | '/$workspaceId/pipeline'
     | '/$workspaceId/reddit'
     | '/$workspaceId'
+    | '/$workspaceId/settings/agent'
     | '/$workspaceId/settings/billing'
     | '/$workspaceId/settings/danger'
     | '/$workspaceId/settings/profile'
@@ -443,6 +476,7 @@ export interface FileRouteTypes {
     | '/api/keywords/generate'
     | '/api/linkedin/generate-post'
     | '/api/linkedin/search'
+    | '/api/pipeline/enrich'
     | '/api/pipeline/leads'
     | '/api/reddit/posts'
     | '/api/reddit/search'
@@ -465,11 +499,13 @@ export interface FileRouteTypes {
     | '/$workspaceId/settings'
     | '/$workspaceId/agent'
     | '/$workspaceId/blog'
+    | '/$workspaceId/campaigns'
     | '/$workspaceId/keywords'
     | '/$workspaceId/linkedin'
     | '/$workspaceId/pipeline'
     | '/$workspaceId/reddit'
     | '/$workspaceId/'
+    | '/$workspaceId/settings/agent'
     | '/$workspaceId/settings/billing'
     | '/$workspaceId/settings/danger'
     | '/$workspaceId/settings/profile'
@@ -484,6 +520,7 @@ export interface FileRouteTypes {
     | '/api/keywords/generate'
     | '/api/linkedin/generate-post'
     | '/api/linkedin/search'
+    | '/api/pipeline/enrich'
     | '/api/pipeline/leads'
     | '/api/reddit/posts'
     | '/api/reddit/search'
@@ -514,6 +551,7 @@ export interface RootRouteChildren {
   ApiKeywordsGenerateRoute: typeof ApiKeywordsGenerateRoute
   ApiLinkedinGeneratePostRoute: typeof ApiLinkedinGeneratePostRoute
   ApiLinkedinSearchRoute: typeof ApiLinkedinSearchRoute
+  ApiPipelineEnrichRoute: typeof ApiPipelineEnrichRoute
   ApiPipelineLeadsRoute: typeof ApiPipelineLeadsRouteWithChildren
   ApiRedditPostsRoute: typeof ApiRedditPostsRoute
   ApiRedditSearchRoute: typeof ApiRedditSearchRoute
@@ -596,6 +634,13 @@ declare module '@tanstack/react-router' {
       path: '/keywords'
       fullPath: '/$workspaceId/keywords'
       preLoaderRoute: typeof WorkspaceIdKeywordsRouteImport
+      parentRoute: typeof WorkspaceIdRouteRoute
+    }
+    '/$workspaceId/campaigns': {
+      id: '/$workspaceId/campaigns'
+      path: '/campaigns'
+      fullPath: '/$workspaceId/campaigns'
+      preLoaderRoute: typeof WorkspaceIdCampaignsRouteImport
       parentRoute: typeof WorkspaceIdRouteRoute
     }
     '/$workspaceId/blog': {
@@ -696,6 +741,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPipelineLeadsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/pipeline/enrich': {
+      id: '/api/pipeline/enrich'
+      path: '/api/pipeline/enrich'
+      fullPath: '/api/pipeline/enrich'
+      preLoaderRoute: typeof ApiPipelineEnrichRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/linkedin/search': {
       id: '/api/linkedin/search'
       path: '/api/linkedin/search'
@@ -794,6 +846,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkspaceIdSettingsBillingRouteImport
       parentRoute: typeof WorkspaceIdSettingsRouteRoute
     }
+    '/$workspaceId/settings/agent': {
+      id: '/$workspaceId/settings/agent'
+      path: '/agent'
+      fullPath: '/$workspaceId/settings/agent'
+      preLoaderRoute: typeof WorkspaceIdSettingsAgentRouteImport
+      parentRoute: typeof WorkspaceIdSettingsRouteRoute
+    }
     '/api/pipeline/leads/$id': {
       id: '/api/pipeline/leads/$id'
       path: '/$id'
@@ -805,6 +864,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface WorkspaceIdSettingsRouteRouteChildren {
+  WorkspaceIdSettingsAgentRoute: typeof WorkspaceIdSettingsAgentRoute
   WorkspaceIdSettingsBillingRoute: typeof WorkspaceIdSettingsBillingRoute
   WorkspaceIdSettingsDangerRoute: typeof WorkspaceIdSettingsDangerRoute
   WorkspaceIdSettingsProfileRoute: typeof WorkspaceIdSettingsProfileRoute
@@ -814,6 +874,7 @@ interface WorkspaceIdSettingsRouteRouteChildren {
 
 const WorkspaceIdSettingsRouteRouteChildren: WorkspaceIdSettingsRouteRouteChildren =
   {
+    WorkspaceIdSettingsAgentRoute: WorkspaceIdSettingsAgentRoute,
     WorkspaceIdSettingsBillingRoute: WorkspaceIdSettingsBillingRoute,
     WorkspaceIdSettingsDangerRoute: WorkspaceIdSettingsDangerRoute,
     WorkspaceIdSettingsProfileRoute: WorkspaceIdSettingsProfileRoute,
@@ -830,6 +891,7 @@ interface WorkspaceIdRouteRouteChildren {
   WorkspaceIdSettingsRouteRoute: typeof WorkspaceIdSettingsRouteRouteWithChildren
   WorkspaceIdAgentRoute: typeof WorkspaceIdAgentRoute
   WorkspaceIdBlogRoute: typeof WorkspaceIdBlogRoute
+  WorkspaceIdCampaignsRoute: typeof WorkspaceIdCampaignsRoute
   WorkspaceIdKeywordsRoute: typeof WorkspaceIdKeywordsRoute
   WorkspaceIdLinkedinRoute: typeof WorkspaceIdLinkedinRoute
   WorkspaceIdPipelineRoute: typeof WorkspaceIdPipelineRoute
@@ -841,6 +903,7 @@ const WorkspaceIdRouteRouteChildren: WorkspaceIdRouteRouteChildren = {
   WorkspaceIdSettingsRouteRoute: WorkspaceIdSettingsRouteRouteWithChildren,
   WorkspaceIdAgentRoute: WorkspaceIdAgentRoute,
   WorkspaceIdBlogRoute: WorkspaceIdBlogRoute,
+  WorkspaceIdCampaignsRoute: WorkspaceIdCampaignsRoute,
   WorkspaceIdKeywordsRoute: WorkspaceIdKeywordsRoute,
   WorkspaceIdLinkedinRoute: WorkspaceIdLinkedinRoute,
   WorkspaceIdPipelineRoute: WorkspaceIdPipelineRoute,
@@ -878,6 +941,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiKeywordsGenerateRoute: ApiKeywordsGenerateRoute,
   ApiLinkedinGeneratePostRoute: ApiLinkedinGeneratePostRoute,
   ApiLinkedinSearchRoute: ApiLinkedinSearchRoute,
+  ApiPipelineEnrichRoute: ApiPipelineEnrichRoute,
   ApiPipelineLeadsRoute: ApiPipelineLeadsRouteWithChildren,
   ApiRedditPostsRoute: ApiRedditPostsRoute,
   ApiRedditSearchRoute: ApiRedditSearchRoute,

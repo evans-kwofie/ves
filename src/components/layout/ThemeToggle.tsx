@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Sun, Moon } from "lucide-react";
+import { Sun01Icon, Moon01Icon } from "hugeicons-react";
 
 const STORAGE_KEY = "vesper-theme";
 
@@ -34,7 +34,7 @@ export function ThemeToggle() {
 
   return (
     <button className="theme-toggle" onClick={toggle}>
-      {theme === "dark" ? <Sun size={15} /> : <Moon size={15} />}
+      {theme === "dark" ? <Sun01Icon size={15} /> : <Moon01Icon size={15} />}
       {theme === "dark" ? "Light mode" : "Dark mode"}
     </button>
   );

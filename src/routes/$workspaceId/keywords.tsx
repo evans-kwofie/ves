@@ -6,7 +6,7 @@ import { Header } from "~/components/layout/Header";
 import { KeywordList } from "~/components/keywords/KeywordList";
 import { AddKeywordDialog } from "~/components/keywords/AddKeywordDialog";
 import { Button } from "~/components/ui/button";
-import { Plus, Sparkles } from "lucide-react";
+import { Add01Icon, AiMagicIcon } from "hugeicons-react";
 import { listKeywords } from "~/db/queries/keywords";
 import { GenerateKeywordsDialog } from "~/components/keywords/GenerateKeywordsDialog";
 import type { Keyword } from "~/types/keyword";
@@ -35,11 +35,11 @@ function KeywordsPage() {
         actions={
           <div style={{ display: "flex", gap: 8 }}>
             <Button variant="ghost" onClick={() => setGenerateOpen(true)}>
-              <Sparkles size={14} />
+              <AiMagicIcon size={14} />
               Generate
             </Button>
             <Button onClick={() => setDialogOpen(true)}>
-              <Plus size={14} />
+              <Add01Icon size={14} />
               Add Keyword
             </Button>
           </div>

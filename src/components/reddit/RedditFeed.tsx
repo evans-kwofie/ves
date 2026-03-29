@@ -1,5 +1,5 @@
 import * as React from "react";
-import { RefreshCw, MessageSquare } from "lucide-react";
+import { ArrowReloadHorizontalIcon, MessageSearch01Icon } from "hugeicons-react";
 import { Button } from "~/components/ui/button";
 import { ReplyCard } from "./ReplyCard";
 import { toast } from "sonner";
@@ -85,7 +85,7 @@ export function RedditFeed({
           ))}
         </div>
         <Button variant="ghost" size="sm" onClick={refreshFeed} disabled={refreshing}>
-          <RefreshCw size={13} className={refreshing ? "spinning" : ""} />
+          <ArrowReloadHorizontalIcon size={13} className={refreshing ? "spinning" : ""} />
           {refreshing ? "Refreshing..." : "Refresh Feed"}
         </Button>
       </div>
@@ -93,7 +93,7 @@ export function RedditFeed({
       {posts.length === 0 ? (
         <div className="empty-state">
           <div className="empty-state-icon">
-            <MessageSquare size={32} />
+            <MessageSearch01Icon size={32} />
           </div>
           <div>No posts yet. Add subreddits to your keywords and click Refresh.</div>
         </div>

@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Trash2, Hash } from "lucide-react";
+import { Delete01Icon, HashtagIcon } from "hugeicons-react";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { toast } from "sonner";
@@ -45,7 +45,7 @@ export function KeywordList({ keywords, onChange }: KeywordListProps) {
     return (
       <div className="empty-state">
         <div className="empty-state-icon">
-          <Hash size={32} />
+          <HashtagIcon size={32} />
         </div>
         <div>No keywords yet. Add your first keyword to get started.</div>
       </div>
@@ -115,7 +115,7 @@ export function KeywordList({ keywords, onChange }: KeywordListProps) {
                   disabled={deletingId === keyword.id}
                   style={{ color: "var(--destructive)" }}
                 >
-                  <Trash2 size={13} />
+                  <Delete01Icon size={13} />
                 </Button>
               </td>
             </tr>

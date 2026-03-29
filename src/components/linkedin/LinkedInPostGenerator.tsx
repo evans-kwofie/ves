@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Copy, Save, Sparkles } from "lucide-react";
+import { Copy01Icon, FloppyDiskIcon, AiMagicIcon } from "hugeicons-react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
@@ -13,8 +13,8 @@ interface LinkedInPostGeneratorProps {
 }
 
 export function LinkedInPostGenerator({ orgId, keywords }: LinkedInPostGeneratorProps) {
-  const [selectedKeyword, setSelectedKeyword] = React.useState(keywords[0]?.keyword ?? "");
   const [selectedKeywordId, setSelectedKeywordId] = React.useState(keywords[0]?.id ?? "");
+  const [selectedKeyword, setSelectedKeyword] = React.useState(keywords[0]?.keyword ?? "");
   const [angle, setAngle] = React.useState("");
   const [content, setContent] = React.useState("");
   const [generating, setGenerating] = React.useState(false);
@@ -22,10 +22,7 @@ export function LinkedInPostGenerator({ orgId, keywords }: LinkedInPostGenerator
 
   function handleKeywordChange(e: React.ChangeEvent<HTMLSelectElement>) {
     const k = keywords.find((kw) => kw.id === e.target.value);
-    if (k) {
-      setSelectedKeyword(k.keyword);
-      setSelectedKeywordId(k.id);
-    }
+    if (k) { setSelectedKeyword(k.keyword); setSelectedKeywordId(k.id); }
   }
 
   async function generate() {
@@ -36,24 +33,13 @@ export function LinkedInPostGenerator({ orgId, keywords }: LinkedInPostGenerator
       const res = await fetch("/api/linkedin/generate-post", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          organizationId: orgId,
-          keyword: selectedKeyword,
-          angle: angle || undefined,
-          keywordId: selectedKeywordId || undefined,
-        }),
+        body: JSON.stringify({ organizationId: orgId, keyword: selectedKeyword, angle: angle || undefined, keywordId: selectedKeywordId || undefined }),
       });
       const data = (await res.json()) as { content?: string; error?: string };
-      if (data.content) {
-        setContent(data.content);
-      } else {
-        toast.error("Failed to generate post");
-      }
-    } catch {
-      toast.error("Network error");
-    } finally {
-      setGenerating(false);
-    }
+      if (data.content) { setContent(data.content); }
+      else { toast.error("Failed to generate post"); }
+    } catch { toast.error("Network error"); }
+    finally { setGenerating(false); }
   }
 
   async function save() {
@@ -63,99 +49,45 @@ export function LinkedInPostGenerator({ orgId, keywords }: LinkedInPostGenerator
       await fetch("/api/linkedin/generate-post", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          organizationId: orgId,
-          keyword: selectedKeyword,
-          keywordId: selectedKeywordId || undefined,
-          save: true,
-          angle: angle || undefined,
-        }),
+        body: JSON.stringify({ organizationId: orgId, keyword: selectedKeyword, keywordId: selectedKeywordId || undefined, save: true, angle: angle || undefined }),
       });
       toast.success("Post saved");
-    } catch {
-      toast.error("Failed to save");
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  function copy() {
-    navigator.clipboard.writeText(content).then(() => toast.success("Copied!"));
+    } catch { toast.error("Failed to save"); }
+    finally { setSaving(false); }
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      <div>
-        <div className="form-group">
-          <Label>Keyword</Label>
-          {keywords.length > 0 ? (
-            <select className="input" value={selectedKeywordId} onChange={handleKeywordChange}>
-              {keywords.map((k) => (
-                <option key={k.id} value={k.id}>
-                  {k.keyword}
-                </option>
-              ))}
-            </select>
-          ) : (
-            <Input
-              value={selectedKeyword}
-              onChange={(e) => setSelectedKeyword(e.target.value)}
-              placeholder="Topic or keyword..."
-            />
-          )}
-        </div>
-
-        <div className="form-group">
-          <Label>Angle / Context (optional)</Label>
-          <Input
-            value={angle}
-            onChange={(e) => setAngle(e.target.value)}
-            placeholder="e.g. founder lessons, contrarian take, behind the scenes"
-          />
-        </div>
-
-        <Button onClick={generate} disabled={generating || !selectedKeyword}>
-          {generating ? (
-            <>
-              <span className="spinner" />
-              Generating...
-            </>
-          ) : (
-            <>
-              <Sparkles size={14} />
-              Generate Post
-            </>
-          )}
-        </Button>
+    <div className="flex flex-col gap-5 max-w-xl">
+      <div className="form-group">
+        <Label>Keyword</Label>
+        {keywords.length > 0 ? (
+          <select className="input" value={selectedKeywordId} onChange={handleKeywordChange}>
+            {keywords.map((k) => <option key={k.id} value={k.id}>{k.keyword}</option>)}
+          </select>
+        ) : (
+          <Input value={selectedKeyword} onChange={(e) => setSelectedKeyword(e.target.value)} placeholder="Topic or keyword..." />
+        )}
       </div>
 
+      <div className="form-group">
+        <Label>Angle / Context <span className="font-normal text-[var(--muted-foreground)]">— optional</span></Label>
+        <Input value={angle} onChange={(e) => setAngle(e.target.value)} placeholder="e.g. founder lessons, contrarian take, behind the scenes" />
+      </div>
+
+      <Button onClick={generate} disabled={generating || !selectedKeyword} className="self-start">
+        {generating ? <><span className="spinner" />Generating...</> : <><AiMagicIcon size={13} />Generate post</>}
+      </Button>
+
       {content && (
-        <div>
-          <div
-            style={{
-              fontSize: 10,
-              fontWeight: 600,
-              textTransform: "uppercase",
-              letterSpacing: "0.1em",
-              color: "var(--muted-foreground)",
-              marginBottom: 8,
-            }}
-          >
-            Generated Post
-          </div>
-          <Textarea
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            style={{ minHeight: 280, fontFamily: "inherit", lineHeight: 1.7 }}
-          />
-          <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-            <Button variant="ghost" size="sm" onClick={copy}>
-              <Copy size={13} />
-              Copy
+        <div className="flex flex-col gap-3">
+          <p className="text-[11px] font-bold uppercase tracking-widest text-[var(--muted-foreground)]">Generated post</p>
+          <Textarea value={content} onChange={(e) => setContent(e.target.value)} className="min-h-[260px] leading-relaxed" />
+          <div className="flex gap-2">
+            <Button variant="ghost" size="sm" onClick={() => navigator.clipboard.writeText(content).then(() => toast.success("Copied!"))}>
+              <Copy01Icon size={13} />Copy
             </Button>
             <Button variant="ghost" size="sm" onClick={save} disabled={saving}>
-              <Save size={13} />
-              {saving ? "Saving..." : "Save"}
+              <FloppyDiskIcon size={13} />{saving ? "Saving..." : "Save"}
             </Button>
           </div>
         </div>

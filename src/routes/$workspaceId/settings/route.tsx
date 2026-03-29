@@ -1,6 +1,6 @@
 import * as React from "react";
 import { createFileRoute, Outlet, Link } from "@tanstack/react-router";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft01Icon } from "hugeicons-react";
 import { SettingsNav } from "~/components/settings/SettingsNav";
 
 export const Route = createFileRoute("/$workspaceId/settings")({
@@ -20,7 +20,7 @@ function SettingsLayout() {
           className="flex items-center gap-1.5 text-[12px] text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors"
           style={{ textDecoration: "none" }}
         >
-          <ArrowLeft size={13} />
+          <ArrowLeft01Icon size={13} />
           Back
         </Link>
         <div className="w-px h-4 bg-[var(--border)]" />

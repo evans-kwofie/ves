@@ -8,6 +8,7 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/sign-in")({
   beforeLoad: ({ context }) => {
+    console.log(' context', context)
     if (context.session) throw redirect({ to: "/" });
   },
   component: SignInPage,

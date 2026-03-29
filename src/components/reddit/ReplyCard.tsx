@@ -1,5 +1,5 @@
 import * as React from "react";
-import { ExternalLink, Copy, Sparkles, ArrowUp } from "lucide-react";
+import { ArrowDiagonalIcon, Copy01Icon, AiMagicIcon, ArrowUp01Icon } from "hugeicons-react";
 import { Button } from "~/components/ui/button";
 import { toast } from "sonner";
 import type { RedditPost, IntentType } from "~/types/reddit";
@@ -77,7 +77,7 @@ export function ReplyCard({ post, onSuggestionSaved }: ReplyCardProps) {
           rel="noopener noreferrer"
           style={{ color: "var(--muted-foreground)", flexShrink: 0 }}
         >
-          <ExternalLink size={13} />
+          <ArrowDiagonalIcon size={13} />
         </a>
       </div>
 
@@ -85,7 +85,7 @@ export function ReplyCard({ post, onSuggestionSaved }: ReplyCardProps) {
         <span style={{ color: "var(--accent)" }}>r/{post.subreddit}</span>
         <span>u/{post.author}</span>
         <span style={{ display: "flex", alignItems: "center", gap: 3 }}>
-          <ArrowUp size={11} />
+          <ArrowUp01Icon size={11} />
           {post.score}
         </span>
         <span>{new Date(post.fetchedAt).toLocaleDateString()}</span>
@@ -125,11 +125,11 @@ export function ReplyCard({ post, onSuggestionSaved }: ReplyCardProps) {
           <div className="reddit-card-reply">{suggestion}</div>
           <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
             <Button variant="ghost" size="sm" onClick={copyReply}>
-              <Copy size={12} />
+              <Copy01Icon size={12} />
               Copy
             </Button>
             <Button variant="ghost" size="sm" onClick={generateReply} disabled={generating}>
-              <Sparkles size={12} />
+              <AiMagicIcon size={12} />
               Regenerate
             </Button>
           </div>
@@ -143,7 +143,7 @@ export function ReplyCard({ post, onSuggestionSaved }: ReplyCardProps) {
             </>
           ) : (
             <>
-              <Sparkles size={12} />
+              <AiMagicIcon size={12} />
               Generate Reply
             </>
           )}

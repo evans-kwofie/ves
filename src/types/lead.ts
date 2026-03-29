@@ -9,6 +9,13 @@ export type LeadStatus =
 
 export type FitRating = "HIGH" | "MEDIUM" | "LOW";
 
+export type PipelineStage =
+  | "discovered"
+  | "enriching"
+  | "enriched"
+  | "validated"
+  | "failed";
+
 export interface Lead {
   id: string;
   company: string;
@@ -18,7 +25,12 @@ export interface Lead {
   email: string;
   linkedin: string;
   fit: FitRating;
+  fitReason: string | null;
+  score: number | null;
   status: LeadStatus;
+  pipelineStage: PipelineStage;
+  enrichmentAttempts: number;
+  source: string | null;
   emailSentAt: string | null;
   linkedinSentAt: string | null;
   repliedAt: string | null;
@@ -55,4 +67,12 @@ export interface UpdateLeadInput {
   emailSentAt?: string | null;
   linkedinSentAt?: string | null;
   repliedAt?: string | null;
+  pipelineStage?: PipelineStage;
+  enrichmentAttempts?: number;
+  fit?: FitRating;
+  fitReason?: string;
+  score?: number;
+  website?: string;
+  whatTheyDo?: string;
+  linkedin?: string;
 }

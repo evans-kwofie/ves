@@ -2,7 +2,7 @@ import * as React from "react";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { getRequestHeaders } from "@tanstack/react-start/server";
-import { ArrowRight, ArrowLeft, Check } from "lucide-react";
+import { ArrowRight01Icon, ArrowLeft01Icon, Tick01Icon } from "hugeicons-react";
 import { auth } from "~/lib/auth";
 import { getSessionFn } from "~/lib/session";
 import { authClient } from "~/lib/auth-client";
@@ -225,7 +225,7 @@ function OnboardingPage() {
             onClick={() => advance((step - 1) as Step)}
             className="flex items-center gap-2 text-[13px] font-medium text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors bg-transparent border-0 cursor-pointer"
           >
-            <ArrowLeft size={14} />
+            <ArrowLeft01Icon size={14} />
             Back
           </button>
 
@@ -240,7 +240,7 @@ function OnboardingPage() {
               }}
             >
               Continue
-              <ArrowRight size={14} />
+              <ArrowRight01Icon size={14} />
             </button>
           ) : (
             <button
@@ -253,7 +253,7 @@ function OnboardingPage() {
               }}
             >
               {loading ? "Creating..." : "Create workspace"}
-              {!loading && <ArrowRight size={14} />}
+              {!loading && <ArrowRight01Icon size={14} />}
             </button>
           )}
         </footer>
@@ -296,7 +296,7 @@ function StepWelcome({ firstName, onNext }: { firstName: string; onNext: () => v
         style={{ background: "var(--accent)", color: "var(--accent-foreground)" }}
       >
         Get started
-        <ArrowRight size={15} />
+        <ArrowRight01Icon size={15} />
       </button>
     </div>
   );
@@ -489,7 +489,7 @@ function StepFocus({
                 "w-4 h-4 rounded-full border flex items-center justify-center shrink-0 transition-all",
                 selected ? "border-[var(--accent)] bg-[var(--accent)]" : "border-[var(--border)]",
               ].join(" ")}>
-                {selected && <Check size={9} strokeWidth={3} style={{ color: "var(--accent-foreground)" }} />}
+                {selected && <Tick01Icon size={9} style={{ color: "var(--accent-foreground)" }} />}
               </span>
               {uc}
             </button>
@@ -582,7 +582,7 @@ function StepDone({ orgName, orgId }: { orgName: string; orgId: string | null })
         style={{ background: "var(--accent)", color: "var(--accent-foreground)" }}
       >
         Enter workspace
-        <ArrowRight size={15} />
+        <ArrowRight01Icon size={15} />
       </button>
 
       <p className="text-[11px] text-[var(--muted-foreground)] mt-4">

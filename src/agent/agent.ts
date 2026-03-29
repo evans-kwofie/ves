@@ -4,6 +4,7 @@ import { readPipelineSummary, addLead, updateLead } from "./tools/pipeline";
 import { sendEmail } from "./tools/email";
 import { notifySlack } from "./tools/slack";
 import { buildSystemPrompt } from "./prompts";
+import type { AgentVoiceConfig } from "~/routes/$workspaceId/settings/agent";
 
 const client = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -85,14 +86,14 @@ const USER_TOOLS = [
   },
 ];
 
-async function executeTool(name: string, input: Record<string, unknown>): Promise<string> {
+async function executeTool(name: string, input: Record<string, unknown>, orgId: string): Promise<string> {
   try {
     switch (name) {
       case "read_pipeline": {
-        return await readPipelineSummary();
+        return await readPipelineSummary(orgId);
       }
       case "add_lead": {
-        const lead = await addLead(input as Parameters<typeof addLead>[0]);
+        const lead = await addLead(orgId, input as Parameters<typeof addLead>[1]);
         return JSON.stringify({ success: true, lead });
       }
       case "update_lead": {
@@ -132,7 +133,7 @@ async function executeTool(name: string, input: Record<string, unknown>): Promis
 
 export async function runAgent(
   prompt: string,
-  opts?: { maxIterations?: number },
+  opts?: { maxIterations?: number; orgId?: string; voice?: Partial<AgentVoiceConfig> },
 ): Promise<string[]> {
   const logs: string[] = [];
   const log = (line: string) => {
@@ -140,6 +141,7 @@ export async function runAgent(
     console.log(line);
   };
 
+  const orgId = opts?.orgId ?? "";
   log(`\n[Agent] Running: ${prompt}\n`);
 
   const messages: Anthropic.MessageParam[] = [{ role: "user", content: prompt }];
@@ -159,7 +161,7 @@ export async function runAgent(
     const requestParams: Record<string, unknown> = {
       model: "claude-sonnet-4-6",
       max_tokens: 8192,
-      system: buildSystemPrompt(),
+      system: buildSystemPrompt(opts?.voice),
       tools: allTools as Anthropic.Messages.ToolUnion[],
       messages,
     };
@@ -200,7 +202,7 @@ export async function runAgent(
       for (const block of response.content) {
         if (block.type === "tool_use") {
           log(`[Tool] ${block.name}`);
-          const result = await executeTool(block.name, block.input as Record<string, unknown>);
+          const result = await executeTool(block.name, block.input as Record<string, unknown>, orgId);
           log(`[Tool Result] ${result.slice(0, 300)}\n`);
           toolResults.push({
             type: "tool_result",

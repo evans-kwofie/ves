@@ -1,6 +1,49 @@
 import { v4 as uuidv4 } from "uuid";
 import { db } from "../client";
-import type { Lead, Pipeline, PipelineMeta, CreateLeadInput, UpdateLeadInput, FitRating, LeadStatus } from "~/types/lead";
+import type { Lead, Pipeline, PipelineMeta, CreateLeadInput, UpdateLeadInput, FitRating, LeadStatus, PipelineStage } from "~/types/lead";
+
+export interface OutreachEvent {
+  id: string;
+  leadId: string;
+  channel: string;
+  status: string;
+  sentAt: string | null;
+  repliedAt: string | null;
+}
+
+export async function createOutreachEvent(input: {
+  leadId: string;
+  channel: string;
+  status: string;
+  sentAt?: string | null;
+  repliedAt?: string | null;
+}): Promise<OutreachEvent> {
+  const id = uuidv4();
+  await db.execute({
+    sql: `INSERT INTO outreach_events (id, lead_id, channel, status, sent_at, replied_at)
+          VALUES (?, ?, ?, ?, ?, ?)`,
+    args: [id, input.leadId, input.channel, input.status, input.sentAt ?? null, input.repliedAt ?? null],
+  });
+  return { id, leadId: input.leadId, channel: input.channel, status: input.status, sentAt: input.sentAt ?? null, repliedAt: input.repliedAt ?? null };
+}
+
+export async function getOutreachEvents(leadId: string): Promise<OutreachEvent[]> {
+  const result = await db.execute({
+    sql: "SELECT * FROM outreach_events WHERE lead_id = ? ORDER BY COALESCE(sent_at, replied_at) ASC",
+    args: [leadId],
+  });
+  return result.rows.map((r) => {
+    const row = r as Record<string, unknown>;
+    return {
+      id: row.id as string,
+      leadId: row.lead_id as string,
+      channel: row.channel as string,
+      status: row.status as string,
+      sentAt: (row.sent_at as string | null) ?? null,
+      repliedAt: (row.replied_at as string | null) ?? null,
+    };
+  });
+}
 
 function rowToLead(row: Record<string, unknown>): Lead {
   return {
@@ -9,14 +52,19 @@ function rowToLead(row: Record<string, unknown>): Lead {
     website: row.website as string,
     whatTheyDo: row.what_they_do as string,
     ceo: row.ceo as string,
-    email: row.email as string,
-    linkedin: row.linkedin as string,
-    fit: row.fit as FitRating,
-    status: row.status as LeadStatus,
+    email: (row.email as string | null) ?? "",
+    linkedin: (row.linkedin_url as string | null) ?? "",
+    fit: (row.fit as FitRating) ?? "MEDIUM",
+    fitReason: (row.fit_reason as string | null) ?? null,
+    score: (row.score as number | null) ?? null,
+    status: (row.status as LeadStatus) ?? "not_contacted",
+    pipelineStage: (row.pipeline_stage as PipelineStage) ?? "discovered",
+    enrichmentAttempts: (row.enrichment_attempts as number) ?? 0,
+    source: (row.source as string | null) ?? null,
     emailSentAt: (row.email_sent_at as string | null) ?? null,
     linkedinSentAt: (row.linkedin_sent_at as string | null) ?? null,
     repliedAt: (row.replied_at as string | null) ?? null,
-    notes: row.notes as string,
+    notes: (row.notes as string) ?? "",
     addedAt: row.added_at as string,
   };
 }
@@ -102,26 +150,19 @@ export async function updateLead(id: string, updates: UpdateLeadInput): Promise<
   const fields: string[] = [];
   const args: (string | null)[] = [];
 
-  if (updates.status !== undefined) {
-    fields.push("status = ?");
-    args.push(updates.status);
-  }
-  if (updates.notes !== undefined) {
-    fields.push("notes = ?");
-    args.push(updates.notes);
-  }
-  if (updates.emailSentAt !== undefined) {
-    fields.push("email_sent_at = ?");
-    args.push(updates.emailSentAt);
-  }
-  if (updates.linkedinSentAt !== undefined) {
-    fields.push("linkedin_sent_at = ?");
-    args.push(updates.linkedinSentAt);
-  }
-  if (updates.repliedAt !== undefined) {
-    fields.push("replied_at = ?");
-    args.push(updates.repliedAt);
-  }
+  if (updates.status !== undefined) { fields.push("status = ?"); args.push(updates.status); }
+  if (updates.notes !== undefined) { fields.push("notes = ?"); args.push(updates.notes); }
+  if (updates.emailSentAt !== undefined) { fields.push("email_sent_at = ?"); args.push(updates.emailSentAt); }
+  if (updates.linkedinSentAt !== undefined) { fields.push("linkedin_sent_at = ?"); args.push(updates.linkedinSentAt); }
+  if (updates.repliedAt !== undefined) { fields.push("replied_at = ?"); args.push(updates.repliedAt); }
+  if (updates.pipelineStage !== undefined) { fields.push("pipeline_stage = ?"); args.push(updates.pipelineStage); }
+  if (updates.enrichmentAttempts !== undefined) { fields.push("enrichment_attempts = ?"); args.push(String(updates.enrichmentAttempts)); }
+  if (updates.fit !== undefined) { fields.push("fit = ?"); args.push(updates.fit); }
+  if (updates.fitReason !== undefined) { fields.push("fit_reason = ?"); args.push(updates.fitReason); }
+  if (updates.score !== undefined) { fields.push("score = ?"); args.push(String(updates.score)); }
+  if (updates.website !== undefined) { fields.push("website = ?"); args.push(updates.website); }
+  if (updates.whatTheyDo !== undefined) { fields.push("what_they_do = ?"); args.push(updates.whatTheyDo); }
+  if (updates.linkedin !== undefined) { fields.push("linkedin_url = ?"); args.push(updates.linkedin); }
 
   if (fields.length > 0) {
     await db.execute({
@@ -150,6 +191,43 @@ export async function getDashboardStats(orgId: string): Promise<{
     converted: leads.filter((l) => l.status === "converted").length,
     totalEmailsSent: leads.filter((l) => l.emailSentAt).length,
   };
+}
+
+export async function getRecentLeads(orgId: string, limit = 5): Promise<Lead[]> {
+  const result = await db.execute({
+    sql: "SELECT * FROM leads WHERE organization_id = ? ORDER BY added_at DESC LIMIT ?",
+    args: [orgId, limit],
+  });
+  return result.rows.map((r) => rowToLead(r as Record<string, unknown>));
+}
+
+export async function getLeadGrowth(orgId: string): Promise<{ date: string; count: number }[]> {
+  // Returns lead counts grouped by day for the last 7 days
+  const result = await db.execute({
+    sql: `
+      SELECT DATE(added_at) as date, COUNT(*) as count
+      FROM leads
+      WHERE organization_id = ?
+        AND added_at >= DATE('now', '-6 days')
+      GROUP BY DATE(added_at)
+      ORDER BY date ASC
+    `,
+    args: [orgId],
+  });
+  // Fill in missing days with 0
+  const map = new Map<string, number>();
+  for (const row of result.rows) {
+    const r = row as Record<string, unknown>;
+    map.set(r.date as string, Number(r.count));
+  }
+  const days: { date: string; count: number }[] = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const key = d.toISOString().split("T")[0];
+    days.push({ date: key, count: map.get(key) ?? 0 });
+  }
+  return days;
 }
 
 export async function getPipelineSummary(orgId: string): Promise<string> {

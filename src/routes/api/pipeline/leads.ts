@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { createLead } from "~/db/queries/leads";
+import { createLead, listLeads } from "~/db/queries/leads";
 import { z } from "zod";
 
 const createSchema = z.object({
@@ -17,6 +17,13 @@ const createSchema = z.object({
 export const Route = createFileRoute("/api/pipeline/leads")({
   server: {
     handlers: {
+      GET: async ({ request }) => {
+        const url = new URL(request.url);
+        const orgId = url.searchParams.get("orgId");
+        if (!orgId) return new Response(JSON.stringify({ error: "orgId required" }), { status: 400, headers: { "Content-Type": "application/json" } });
+        const leads = await listLeads(orgId);
+        return Response.json(leads);
+      },
       POST: async ({ request }) => {
         let body: unknown;
         try {

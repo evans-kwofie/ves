@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Sparkles } from "lucide-react";
+import { AiMagicIcon } from "hugeicons-react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -20,81 +20,48 @@ export function BlogGenerator({ orgId, keywords, onGenerated }: BlogGeneratorPro
   const [generating, setGenerating] = React.useState(false);
 
   function toggleKeyword(id: string) {
-    setSelectedKeywordIds((prev) =>
-      prev.includes(id) ? prev.filter((k) => k !== id) : [...prev, id],
-    );
+    setSelectedKeywordIds((prev) => prev.includes(id) ? prev.filter((k) => k !== id) : [...prev, id]);
   }
 
   const selectedKeywordTexts = [
     ...keywords.filter((k) => selectedKeywordIds.includes(k.id)).map((k) => k.keyword),
-    ...(customKeyword.trim()
-      ? customKeyword
-          .split(",")
-          .map((s) => s.trim())
-          .filter(Boolean)
-      : []),
+    ...(customKeyword.trim() ? customKeyword.split(",").map((s) => s.trim()).filter(Boolean) : []),
   ];
 
   async function generate() {
-    if (selectedKeywordTexts.length === 0) {
-      toast.error("Select at least one keyword");
-      return;
-    }
+    if (selectedKeywordTexts.length === 0) { toast.error("Select at least one keyword"); return; }
     setGenerating(true);
     try {
       const res = await fetch("/api/blog/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          organizationId: orgId,
-          keywords: selectedKeywordTexts,
-          angle: angle || undefined,
-          save: true,
-        }),
+        body: JSON.stringify({ organizationId: orgId, keywords: selectedKeywordTexts, angle: angle || undefined, save: true }),
       });
-      const data = (await res.json()) as { post?: BlogPost; content?: string; error?: string };
-      if (data.post) {
-        onGenerated(data.post);
-        toast.success("Blog post generated and saved");
-      } else {
-        toast.error(data.error ?? "Failed to generate post");
-      }
-    } catch {
-      toast.error("Network error");
-    } finally {
-      setGenerating(false);
-    }
+      const data = (await res.json()) as { post?: BlogPost; error?: string };
+      if (data.post) { onGenerated(data.post); toast.success("Post generated and saved"); }
+      else { toast.error(data.error ?? "Failed to generate post"); }
+    } catch { toast.error("Network error"); }
+    finally { setGenerating(false); }
   }
 
   return (
-    <div className="card" style={{ marginBottom: 20 }}>
-      <div className="card-title">Generate Blog Post</div>
+    <div className="card p-5 mb-5">
+      <p className="text-[12px] font-semibold uppercase tracking-widest text-[var(--muted-foreground)] mb-4">Generate Blog Post</p>
 
       {keywords.length > 0 && (
         <div className="form-group">
           <Label>Keywords</Label>
-          <div className="tag-list" style={{ marginTop: 6 }}>
+          <div className="flex flex-wrap gap-2 mt-1.5">
             {keywords.map((k) => (
               <button
                 key={k.id}
+                type="button"
                 onClick={() => toggleKeyword(k.id)}
-                style={{
-                  background: selectedKeywordIds.includes(k.id)
-                    ? "rgba(34, 197, 94, 0.15)"
-                    : "var(--muted)",
-                  border: selectedKeywordIds.includes(k.id)
-                    ? "1px solid rgba(34, 197, 94, 0.3)"
-                    : "1px solid transparent",
-                  borderRadius: "var(--radius)",
-                  padding: "4px 10px",
-                  fontSize: 12,
-                  color: selectedKeywordIds.includes(k.id)
-                    ? "var(--accent)"
-                    : "var(--muted-foreground)",
-                  cursor: "pointer",
-                  fontFamily: "inherit",
-                  transition: "all 0.15s",
-                }}
+                className={`px-3 py-1 rounded-[var(--radius)] text-[12px] cursor-pointer transition-all ${
+                  selectedKeywordIds.includes(k.id)
+                    ? "bg-[var(--accent-subtle)] border border-[var(--accent)] text-[var(--accent)]"
+                    : "bg-[var(--muted)] border border-transparent text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
+                }`}
               >
                 {k.keyword}
               </button>
@@ -104,35 +71,17 @@ export function BlogGenerator({ orgId, keywords, onGenerated }: BlogGeneratorPro
       )}
 
       <div className="form-group">
-        <Label>Additional keywords (comma-separated)</Label>
-        <Input
-          value={customKeyword}
-          onChange={(e) => setCustomKeyword(e.target.value)}
-          placeholder="e.g. email deliverability, B2B SaaS"
-        />
+        <Label>Additional keywords <span className="font-normal text-[var(--muted-foreground)]">— comma-separated</span></Label>
+        <Input value={customKeyword} onChange={(e) => setCustomKeyword(e.target.value)} placeholder="e.g. email deliverability, B2B SaaS" />
       </div>
 
       <div className="form-group">
-        <Label>Angle / Focus (optional)</Label>
-        <Input
-          value={angle}
-          onChange={(e) => setAngle(e.target.value)}
-          placeholder="e.g. common mistakes, how-to guide, case study"
-        />
+        <Label>Angle / Focus <span className="font-normal text-[var(--muted-foreground)]">— optional</span></Label>
+        <Input value={angle} onChange={(e) => setAngle(e.target.value)} placeholder="e.g. common mistakes, how-to guide, case study" />
       </div>
 
       <Button onClick={generate} disabled={generating || selectedKeywordTexts.length === 0}>
-        {generating ? (
-          <>
-            <span className="spinner" />
-            Generating...
-          </>
-        ) : (
-          <>
-            <Sparkles size={14} />
-            Generate & Save
-          </>
-        )}
+        {generating ? <><span className="spinner" />Generating...</> : <><AiMagicIcon size={13} />Generate & Save</>}
       </Button>
     </div>
   );

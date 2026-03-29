@@ -101,3 +101,27 @@ export async function getRedditPostCount(orgId: string): Promise<number> {
   });
   return (result.rows[0] as Record<string, unknown>).count as number;
 }
+
+export async function getRecentRedditActivity(
+  orgId: string,
+  limit = 4,
+): Promise<{ id: string; title: string; subreddit: string; author: string; intentType: string | null; fetchedAt: string }[]> {
+  const result = await db.execute({
+    sql: `SELECT id, title, subreddit, author, intent_type, fetched_at
+          FROM reddit_posts
+          WHERE organization_id = ? AND intent_type IS NOT NULL
+          ORDER BY fetched_at DESC LIMIT ?`,
+    args: [orgId, limit],
+  });
+  return result.rows.map((r) => {
+    const row = r as Record<string, unknown>;
+    return {
+      id: row.id as string,
+      title: row.title as string,
+      subreddit: row.subreddit as string,
+      author: row.author as string,
+      intentType: (row.intent_type as string | null) ?? null,
+      fetchedAt: row.fetched_at as string,
+    };
+  });
+}

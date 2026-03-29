@@ -1,6 +1,6 @@
 import * as React from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { ChevronsUpDown, Check, Plus, X } from "lucide-react";
+import { ArrowUpDownIcon, Tick01Icon, Add01Icon, Cancel01Icon } from "hugeicons-react";
 import { authClient } from "~/lib/auth-client";
 import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
@@ -144,7 +144,7 @@ function CreateWorkspaceDialog({
             onClick={onClose}
             className="w-6 h-6 flex items-center justify-center rounded text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-white/10 transition-colors"
           >
-            <X size={13} />
+            <Cancel01Icon size={13} />
           </button>
         </div>
 
@@ -263,7 +263,7 @@ export function SidebarHeader({ workspaceId, workspaceName, workspaceLogo }: Sid
           <span className="flex-1 min-w-0 text-[13px] font-semibold text-[var(--foreground)] truncate leading-none text-left">
             {workspaceName}
           </span>
-          <ChevronsUpDown
+          <ArrowUpDownIcon
             size={13}
             className="shrink-0 text-[var(--muted-foreground)] opacity-0 group-hover:opacity-100 transition-opacity"
           />
@@ -304,7 +304,7 @@ export function SidebarHeader({ workspaceId, workspaceName, workspaceLogo }: Sid
                   <span className="flex-1 min-w-0 text-[12px] font-medium truncate">
                     {ws.name}
                   </span>
-                  {active && <Check size={12} style={{ color: "var(--accent)", flexShrink: 0 }} />}
+                  {active && <Tick01Icon size={12} style={{ color: "var(--accent)", flexShrink: 0 }} />}
                 </button>
               );
             })}
@@ -328,7 +328,7 @@ export function SidebarHeader({ workspaceId, workspaceName, workspaceLogo }: Sid
                 className="w-[18px] h-[18px] rounded-[3px] flex items-center justify-center shrink-0"
                 style={{ background: "var(--muted)" }}
               >
-                <Plus size={10} style={{ color: "var(--muted-foreground)" }} />
+                <Add01Icon size={10} style={{ color: "var(--muted-foreground)" }} />
               </div>
               <span className="text-[12px] font-medium">New workspace</span>
             </button>

@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Plus, Trash2 } from "lucide-react";
+import { Add01Icon, Delete01Icon } from "hugeicons-react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { toast } from "sonner";
@@ -118,7 +118,7 @@ export function SubredditPanel({ keywords, onKeywordsChange }: SubredditPanelPro
                     disabled={deletingId === sub.id}
                     style={{ padding: "2px 4px", color: "var(--muted-foreground)" }}
                   >
-                    <Trash2 size={11} />
+                    <Delete01Icon size={11} />
                   </Button>
                 </div>
               ))}
@@ -139,7 +139,7 @@ export function SubredditPanel({ keywords, onKeywordsChange }: SubredditPanelPro
               }}
             />
             <Button size="sm" onClick={addSubreddit} disabled={adding || !newSubreddit.trim()}>
-              <Plus size={13} />
+              <Add01Icon size={13} />
             </Button>
           </div>
         </>

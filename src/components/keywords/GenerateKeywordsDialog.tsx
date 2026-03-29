@@ -8,7 +8,7 @@ import {
   DialogFooter,
 } from "~/components/ui/dialog";
 import { Button } from "~/components/ui/button";
-import { Sparkles } from "lucide-react";
+import { AiMagicIcon } from "hugeicons-react";
 import { AiBrain02Icon } from "hugeicons-react";
 import { toast } from "sonner";
 import type { Keyword } from "~/types/keyword";
@@ -120,7 +120,7 @@ export function GenerateKeywordsDialog({
       <DialogContent style={{ maxWidth: 560 }}>
         <DialogHeader>
           <DialogTitle style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <Sparkles size={15} style={{ color: "var(--accent)" }} />
+            <AiMagicIcon size={15} style={{ color: "var(--accent)" }} />
             Generate keywords
           </DialogTitle>
           <DialogDescription>

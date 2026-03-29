@@ -1,6 +1,6 @@
 import * as React from "react";
 import { marked } from "marked";
-import { Copy } from "lucide-react";
+import { Copy01Icon } from "hugeicons-react";
 import { Button } from "~/components/ui/button";
 import { toast } from "sonner";
 import type { BlogPost } from "~/types/blog";
@@ -21,12 +21,12 @@ export function BlogViewer({ post }: BlogViewerProps) {
 
   return (
     <div>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+      <div className="flex items-center justify-between mb-4">
         <div>
-          <div style={{ fontSize: 15, fontWeight: 700, letterSpacing: "-0.02em" }}>
+          <div className="text-[15px] font-bold tracking-tight text-[var(--foreground)]">
             {post.title}
           </div>
-          <div style={{ fontSize: 11, color: "var(--muted-foreground)", marginTop: 4 }}>
+          <div className="text-[11px] text-[var(--muted-foreground)] mt-1">
             {new Date(post.createdAt).toLocaleDateString("en-US", {
               year: "numeric",
               month: "long",
@@ -37,7 +37,7 @@ export function BlogViewer({ post }: BlogViewerProps) {
           </div>
         </div>
         <Button variant="ghost" size="sm" onClick={copyMarkdown}>
-          <Copy size={13} />
+          <Copy01Icon size={13} />
           Copy Markdown
         </Button>
       </div>

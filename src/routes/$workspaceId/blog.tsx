@@ -52,11 +52,11 @@ function BlogPage() {
       <div className="page-content">
         <BlogGenerator orgId={workspaceId} keywords={keywords} onGenerated={handleGenerated} />
 
-        <div style={{ display: "grid", gridTemplateColumns: "240px 1fr", gap: 20, minHeight: 400 }}>
-          <div style={{ borderRight: "1px solid var(--border)", paddingRight: 16 }}>
-            <div style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--muted-foreground)", marginBottom: 10 }}>
+        <div className="grid gap-5 min-h-[400px]" style={{ gridTemplateColumns: "240px 1fr" }}>
+          <div className="border-r border-[var(--border)] pr-4">
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-[var(--muted-foreground)] mb-2.5">
               Saved Posts ({posts.length})
-            </div>
+            </p>
             <BlogList
               posts={posts}
               selectedId={selectedPost?.id ?? null}

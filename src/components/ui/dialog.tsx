@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
-import { X } from "lucide-react";
+import { Cancel01Icon } from "hugeicons-react";
 import { twMerge } from "tailwind-merge";
 
 const Dialog = DialogPrimitive.Root;
@@ -52,7 +52,7 @@ const DialogContent = React.forwardRef<
               display: "flex",
             }}
           >
-            <X size={16} />
+            <Cancel01Icon size={16} />
           </DialogPrimitive.Close>
         )}
       </DialogPrimitive.Content>

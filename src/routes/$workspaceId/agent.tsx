@@ -8,6 +8,7 @@ export const Route = createFileRoute("/$workspaceId/agent")({
 });
 
 function AgentPage() {
+  const { workspaceId } = Route.useParams();
   return (
     <>
       <Header
@@ -15,7 +16,7 @@ function AgentPage() {
         subtitle="Run the marketing agent with a custom prompt or the daily automated sequence."
       />
       <div className="page-content">
-        <AgentConsole />
+        <AgentConsole orgId={workspaceId} />
       </div>
     </>
   );
