@@ -172,11 +172,11 @@ function DashboardPage() {
           </p>
         </div>
         <Link
-          to="/$workspaceId/pipeline"
+          to="/$workspaceId/campaigns/new"
           params={{ workspaceId }}
           className="inline-flex items-center gap-2 px-4 py-2 rounded-[var(--radius)] bg-[var(--accent)] text-[var(--accent-foreground)] text-[13px] font-semibold no-underline hover:opacity-90 transition-opacity"
         >
-          + New Outreach
+          + New Campaign
         </Link>
       </div>
 

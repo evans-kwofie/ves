@@ -20,10 +20,10 @@ export function Sidebar({ workspaceId, workspaceName, workspaceLogo }: SidebarPr
         workspaceLogo={workspaceLogo}
       />
 
-      {/* New Outreach button */}
+      {/* New Campaign button */}
       <div className="px-2 pb-2 pt-1">
         <Link
-          to="/$workspaceId/campaigns"
+          to="/$workspaceId/campaigns/new"
           params={{ workspaceId }}
           className="flex items-center gap-2 w-full px-3 py-2 rounded-[var(--radius)] text-[13px] font-semibold transition-all"
           style={{
@@ -33,7 +33,7 @@ export function Sidebar({ workspaceId, workspaceName, workspaceLogo }: SidebarPr
           }}
         >
           <Add01Icon size={14} />
-          New Outreach
+          New Campaign
         </Link>
       </div>
 
