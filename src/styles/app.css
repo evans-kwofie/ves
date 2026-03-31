@@ -544,8 +544,8 @@ textarea.input {
   padding: 48px 24px;
   color: var(--muted-foreground);
   font-size: 13px;
-  border: 1px dashed var(--border);
-  border-radius: var(--radius);
+  /* border: 1px dashed var(--border); */
+  /* border-radius: var(--radius); */
 }
 
 .empty-state-icon {

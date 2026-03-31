@@ -17,12 +17,13 @@ export async function createOutreachEvent(input: {
   status: string;
   sentAt?: string | null;
   repliedAt?: string | null;
+  campaignId?: string | null;
 }): Promise<OutreachEvent> {
   const id = uuidv4();
   await db.execute({
-    sql: `INSERT INTO outreach_events (id, lead_id, channel, status, sent_at, replied_at)
-          VALUES (?, ?, ?, ?, ?, ?)`,
-    args: [id, input.leadId, input.channel, input.status, input.sentAt ?? null, input.repliedAt ?? null],
+    sql: `INSERT INTO outreach_events (id, lead_id, channel, status, sent_at, replied_at, campaign_id)
+          VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    args: [id, input.leadId, input.channel, input.status, input.sentAt ?? null, input.repliedAt ?? null, input.campaignId ?? null],
   });
   return { id, leadId: input.leadId, channel: input.channel, status: input.status, sentAt: input.sentAt ?? null, repliedAt: input.repliedAt ?? null };
 }
@@ -122,7 +123,7 @@ export async function createLead(orgId: string, input: CreateLeadInput): Promise
   const now = new Date().toISOString();
 
   await db.execute({
-    sql: `INSERT INTO leads (id, organization_id, company, website, what_they_do, ceo, email, linkedin, fit, status, notes, added_at, discovered_at)
+    sql: `INSERT INTO leads (id, organization_id, company, website, what_they_do, ceo, email, linkedin_url, fit, status, notes, added_at, discovered_at)
           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'not_contacted', ?, ?, ?)`,
     args: [
       id,

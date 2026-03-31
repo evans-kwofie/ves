@@ -285,6 +285,37 @@ export async function initDb(): Promise<void> {
   await safeAlter(`ALTER TABLE reddit_posts ADD COLUMN has_replies INTEGER`);
   await safeAlter(`ALTER TABLE reddit_posts ADD COLUMN last_checked_at TEXT`);
 
+  // Campaigns tables
+  await db.executeMultiple(`
+    CREATE TABLE IF NOT EXISTS campaigns (
+      id TEXT PRIMARY KEY,
+      organization_id TEXT NOT NULL,
+      name TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'draft',
+      channel TEXT,
+      goal TEXT,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS campaign_leads (
+      id TEXT PRIMARY KEY,
+      campaign_id TEXT NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,
+      lead_id TEXT NOT NULL REFERENCES leads(id) ON DELETE CASCADE,
+      UNIQUE(campaign_id, lead_id)
+    );
+  `);
+
+  await safeAlter(`ALTER TABLE outreach_events ADD COLUMN campaign_id TEXT REFERENCES campaigns(id) ON DELETE SET NULL`);
+  await safeAlter(`ALTER TABLE campaigns ADD COLUMN run_frequency TEXT`);
+  await safeAlter(`ALTER TABLE campaigns ADD COLUMN last_run_at TEXT`);
+
+  await db.executeMultiple(`
+    CREATE INDEX IF NOT EXISTS idx_campaigns_org ON campaigns(organization_id);
+    CREATE INDEX IF NOT EXISTS idx_campaign_leads_campaign ON campaign_leads(campaign_id);
+    CREATE INDEX IF NOT EXISTS idx_campaign_leads_lead ON campaign_leads(lead_id);
+  `);
+
   await db.executeMultiple(`
     CREATE INDEX IF NOT EXISTS idx_leads_org ON leads(organization_id);
     CREATE INDEX IF NOT EXISTS idx_leads_pipeline_stage ON leads(pipeline_stage);

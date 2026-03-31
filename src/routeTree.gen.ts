@@ -19,12 +19,14 @@ import { Route as WorkspaceIdRedditRouteImport } from './routes/$workspaceId/red
 import { Route as WorkspaceIdPipelineRouteImport } from './routes/$workspaceId/pipeline'
 import { Route as WorkspaceIdLinkedinRouteImport } from './routes/$workspaceId/linkedin'
 import { Route as WorkspaceIdKeywordsRouteImport } from './routes/$workspaceId/keywords'
+import { Route as WorkspaceIdDirectoriesRouteImport } from './routes/$workspaceId/directories'
 import { Route as WorkspaceIdBlogRouteImport } from './routes/$workspaceId/blog'
 import { Route as WorkspaceIdAgentRouteImport } from './routes/$workspaceId/agent'
 import { Route as WorkspaceIdSettingsRouteRouteImport } from './routes/$workspaceId/settings/route'
 import { Route as ApiSubredditsIndexRouteImport } from './routes/api/subreddits/index'
 import { Route as ApiPipelineIndexRouteImport } from './routes/api/pipeline/index'
 import { Route as ApiKeywordsIndexRouteImport } from './routes/api/keywords/index'
+import { Route as ApiCampaignsIndexRouteImport } from './routes/api/campaigns/index'
 import { Route as ApiBlogIndexRouteImport } from './routes/api/blog/index'
 import { Route as WorkspaceIdSettingsIndexRouteImport } from './routes/$workspaceId/settings/index'
 import { Route as WorkspaceIdCampaignsIndexRouteImport } from './routes/$workspaceId/campaigns/index'
@@ -40,7 +42,11 @@ import { Route as ApiLinkedinGeneratePostRouteImport } from './routes/api/linked
 import { Route as ApiKeywordsGenerateRouteImport } from './routes/api/keywords/generate'
 import { Route as ApiKeywordsIdRouteImport } from './routes/api/keywords/$id'
 import { Route as ApiEmailSendRouteImport } from './routes/api/email/send'
+import { Route as ApiDirectoriesSearchRouteImport } from './routes/api/directories/search'
+import { Route as ApiDirectoriesAddRouteImport } from './routes/api/directories/add'
 import { Route as ApiDashboardStatsRouteImport } from './routes/api/dashboard/stats'
+import { Route as ApiCampaignsSchedulerRouteImport } from './routes/api/campaigns/scheduler'
+import { Route as ApiCampaignsIdRouteImport } from './routes/api/campaigns/$id'
 import { Route as ApiBlogGenerateRouteImport } from './routes/api/blog/generate'
 import { Route as ApiBlogIdRouteImport } from './routes/api/blog/$id'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
@@ -52,6 +58,8 @@ import { Route as WorkspaceIdSettingsBillingRouteImport } from './routes/$worksp
 import { Route as WorkspaceIdSettingsAgentRouteImport } from './routes/$workspaceId/settings/agent'
 import { Route as WorkspaceIdCampaignsNewRouteImport } from './routes/$workspaceId/campaigns/new'
 import { Route as ApiPipelineLeadsIdRouteImport } from './routes/api/pipeline/leads.$id'
+import { Route as ApiCampaignsIdRunRouteImport } from './routes/api/campaigns/$id/run'
+import { Route as ApiCampaignsIdLeadsRouteImport } from './routes/api/campaigns/$id/leads'
 
 const SignUpRoute = SignUpRouteImport.update({
   id: '/sign-up',
@@ -103,6 +111,11 @@ const WorkspaceIdKeywordsRoute = WorkspaceIdKeywordsRouteImport.update({
   path: '/keywords',
   getParentRoute: () => WorkspaceIdRouteRoute,
 } as any)
+const WorkspaceIdDirectoriesRoute = WorkspaceIdDirectoriesRouteImport.update({
+  id: '/directories',
+  path: '/directories',
+  getParentRoute: () => WorkspaceIdRouteRoute,
+} as any)
 const WorkspaceIdBlogRoute = WorkspaceIdBlogRouteImport.update({
   id: '/blog',
   path: '/blog',
@@ -132,6 +145,11 @@ const ApiPipelineIndexRoute = ApiPipelineIndexRouteImport.update({
 const ApiKeywordsIndexRoute = ApiKeywordsIndexRouteImport.update({
   id: '/api/keywords/',
   path: '/api/keywords/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiCampaignsIndexRoute = ApiCampaignsIndexRouteImport.update({
+  id: '/api/campaigns/',
+  path: '/api/campaigns/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiBlogIndexRoute = ApiBlogIndexRouteImport.update({
@@ -212,9 +230,29 @@ const ApiEmailSendRoute = ApiEmailSendRouteImport.update({
   path: '/api/email/send',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiDirectoriesSearchRoute = ApiDirectoriesSearchRouteImport.update({
+  id: '/api/directories/search',
+  path: '/api/directories/search',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiDirectoriesAddRoute = ApiDirectoriesAddRouteImport.update({
+  id: '/api/directories/add',
+  path: '/api/directories/add',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiDashboardStatsRoute = ApiDashboardStatsRouteImport.update({
   id: '/api/dashboard/stats',
   path: '/api/dashboard/stats',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiCampaignsSchedulerRoute = ApiCampaignsSchedulerRouteImport.update({
+  id: '/api/campaigns/scheduler',
+  path: '/api/campaigns/scheduler',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiCampaignsIdRoute = ApiCampaignsIdRouteImport.update({
+  id: '/api/campaigns/$id',
+  path: '/api/campaigns/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiBlogGenerateRoute = ApiBlogGenerateRouteImport.update({
@@ -277,6 +315,16 @@ const ApiPipelineLeadsIdRoute = ApiPipelineLeadsIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => ApiPipelineLeadsRoute,
 } as any)
+const ApiCampaignsIdRunRoute = ApiCampaignsIdRunRouteImport.update({
+  id: '/run',
+  path: '/run',
+  getParentRoute: () => ApiCampaignsIdRoute,
+} as any)
+const ApiCampaignsIdLeadsRoute = ApiCampaignsIdLeadsRouteImport.update({
+  id: '/leads',
+  path: '/leads',
+  getParentRoute: () => ApiCampaignsIdRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -287,6 +335,7 @@ export interface FileRoutesByFullPath {
   '/$workspaceId/settings': typeof WorkspaceIdSettingsRouteRouteWithChildren
   '/$workspaceId/agent': typeof WorkspaceIdAgentRoute
   '/$workspaceId/blog': typeof WorkspaceIdBlogRoute
+  '/$workspaceId/directories': typeof WorkspaceIdDirectoriesRoute
   '/$workspaceId/keywords': typeof WorkspaceIdKeywordsRoute
   '/$workspaceId/linkedin': typeof WorkspaceIdLinkedinRoute
   '/$workspaceId/pipeline': typeof WorkspaceIdPipelineRoute
@@ -302,7 +351,11 @@ export interface FileRoutesByFullPath {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/blog/$id': typeof ApiBlogIdRoute
   '/api/blog/generate': typeof ApiBlogGenerateRoute
+  '/api/campaigns/$id': typeof ApiCampaignsIdRouteWithChildren
+  '/api/campaigns/scheduler': typeof ApiCampaignsSchedulerRoute
   '/api/dashboard/stats': typeof ApiDashboardStatsRoute
+  '/api/directories/add': typeof ApiDirectoriesAddRoute
+  '/api/directories/search': typeof ApiDirectoriesSearchRoute
   '/api/email/send': typeof ApiEmailSendRoute
   '/api/keywords/$id': typeof ApiKeywordsIdRoute
   '/api/keywords/generate': typeof ApiKeywordsGenerateRoute
@@ -318,9 +371,12 @@ export interface FileRoutesByFullPath {
   '/$workspaceId/campaigns/': typeof WorkspaceIdCampaignsIndexRoute
   '/$workspaceId/settings/': typeof WorkspaceIdSettingsIndexRoute
   '/api/blog/': typeof ApiBlogIndexRoute
+  '/api/campaigns/': typeof ApiCampaignsIndexRoute
   '/api/keywords/': typeof ApiKeywordsIndexRoute
   '/api/pipeline/': typeof ApiPipelineIndexRoute
   '/api/subreddits/': typeof ApiSubredditsIndexRoute
+  '/api/campaigns/$id/leads': typeof ApiCampaignsIdLeadsRoute
+  '/api/campaigns/$id/run': typeof ApiCampaignsIdRunRoute
   '/api/pipeline/leads/$id': typeof ApiPipelineLeadsIdRoute
 }
 export interface FileRoutesByTo {
@@ -330,6 +386,7 @@ export interface FileRoutesByTo {
   '/sign-up': typeof SignUpRoute
   '/$workspaceId/agent': typeof WorkspaceIdAgentRoute
   '/$workspaceId/blog': typeof WorkspaceIdBlogRoute
+  '/$workspaceId/directories': typeof WorkspaceIdDirectoriesRoute
   '/$workspaceId/keywords': typeof WorkspaceIdKeywordsRoute
   '/$workspaceId/linkedin': typeof WorkspaceIdLinkedinRoute
   '/$workspaceId/pipeline': typeof WorkspaceIdPipelineRoute
@@ -345,7 +402,11 @@ export interface FileRoutesByTo {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/blog/$id': typeof ApiBlogIdRoute
   '/api/blog/generate': typeof ApiBlogGenerateRoute
+  '/api/campaigns/$id': typeof ApiCampaignsIdRouteWithChildren
+  '/api/campaigns/scheduler': typeof ApiCampaignsSchedulerRoute
   '/api/dashboard/stats': typeof ApiDashboardStatsRoute
+  '/api/directories/add': typeof ApiDirectoriesAddRoute
+  '/api/directories/search': typeof ApiDirectoriesSearchRoute
   '/api/email/send': typeof ApiEmailSendRoute
   '/api/keywords/$id': typeof ApiKeywordsIdRoute
   '/api/keywords/generate': typeof ApiKeywordsGenerateRoute
@@ -361,9 +422,12 @@ export interface FileRoutesByTo {
   '/$workspaceId/campaigns': typeof WorkspaceIdCampaignsIndexRoute
   '/$workspaceId/settings': typeof WorkspaceIdSettingsIndexRoute
   '/api/blog': typeof ApiBlogIndexRoute
+  '/api/campaigns': typeof ApiCampaignsIndexRoute
   '/api/keywords': typeof ApiKeywordsIndexRoute
   '/api/pipeline': typeof ApiPipelineIndexRoute
   '/api/subreddits': typeof ApiSubredditsIndexRoute
+  '/api/campaigns/$id/leads': typeof ApiCampaignsIdLeadsRoute
+  '/api/campaigns/$id/run': typeof ApiCampaignsIdRunRoute
   '/api/pipeline/leads/$id': typeof ApiPipelineLeadsIdRoute
 }
 export interface FileRoutesById {
@@ -376,6 +440,7 @@ export interface FileRoutesById {
   '/$workspaceId/settings': typeof WorkspaceIdSettingsRouteRouteWithChildren
   '/$workspaceId/agent': typeof WorkspaceIdAgentRoute
   '/$workspaceId/blog': typeof WorkspaceIdBlogRoute
+  '/$workspaceId/directories': typeof WorkspaceIdDirectoriesRoute
   '/$workspaceId/keywords': typeof WorkspaceIdKeywordsRoute
   '/$workspaceId/linkedin': typeof WorkspaceIdLinkedinRoute
   '/$workspaceId/pipeline': typeof WorkspaceIdPipelineRoute
@@ -391,7 +456,11 @@ export interface FileRoutesById {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/blog/$id': typeof ApiBlogIdRoute
   '/api/blog/generate': typeof ApiBlogGenerateRoute
+  '/api/campaigns/$id': typeof ApiCampaignsIdRouteWithChildren
+  '/api/campaigns/scheduler': typeof ApiCampaignsSchedulerRoute
   '/api/dashboard/stats': typeof ApiDashboardStatsRoute
+  '/api/directories/add': typeof ApiDirectoriesAddRoute
+  '/api/directories/search': typeof ApiDirectoriesSearchRoute
   '/api/email/send': typeof ApiEmailSendRoute
   '/api/keywords/$id': typeof ApiKeywordsIdRoute
   '/api/keywords/generate': typeof ApiKeywordsGenerateRoute
@@ -407,9 +476,12 @@ export interface FileRoutesById {
   '/$workspaceId/campaigns/': typeof WorkspaceIdCampaignsIndexRoute
   '/$workspaceId/settings/': typeof WorkspaceIdSettingsIndexRoute
   '/api/blog/': typeof ApiBlogIndexRoute
+  '/api/campaigns/': typeof ApiCampaignsIndexRoute
   '/api/keywords/': typeof ApiKeywordsIndexRoute
   '/api/pipeline/': typeof ApiPipelineIndexRoute
   '/api/subreddits/': typeof ApiSubredditsIndexRoute
+  '/api/campaigns/$id/leads': typeof ApiCampaignsIdLeadsRoute
+  '/api/campaigns/$id/run': typeof ApiCampaignsIdRunRoute
   '/api/pipeline/leads/$id': typeof ApiPipelineLeadsIdRoute
 }
 export interface FileRouteTypes {
@@ -423,6 +495,7 @@ export interface FileRouteTypes {
     | '/$workspaceId/settings'
     | '/$workspaceId/agent'
     | '/$workspaceId/blog'
+    | '/$workspaceId/directories'
     | '/$workspaceId/keywords'
     | '/$workspaceId/linkedin'
     | '/$workspaceId/pipeline'
@@ -438,7 +511,11 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/api/blog/$id'
     | '/api/blog/generate'
+    | '/api/campaigns/$id'
+    | '/api/campaigns/scheduler'
     | '/api/dashboard/stats'
+    | '/api/directories/add'
+    | '/api/directories/search'
     | '/api/email/send'
     | '/api/keywords/$id'
     | '/api/keywords/generate'
@@ -454,9 +531,12 @@ export interface FileRouteTypes {
     | '/$workspaceId/campaigns/'
     | '/$workspaceId/settings/'
     | '/api/blog/'
+    | '/api/campaigns/'
     | '/api/keywords/'
     | '/api/pipeline/'
     | '/api/subreddits/'
+    | '/api/campaigns/$id/leads'
+    | '/api/campaigns/$id/run'
     | '/api/pipeline/leads/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -466,6 +546,7 @@ export interface FileRouteTypes {
     | '/sign-up'
     | '/$workspaceId/agent'
     | '/$workspaceId/blog'
+    | '/$workspaceId/directories'
     | '/$workspaceId/keywords'
     | '/$workspaceId/linkedin'
     | '/$workspaceId/pipeline'
@@ -481,7 +562,11 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/api/blog/$id'
     | '/api/blog/generate'
+    | '/api/campaigns/$id'
+    | '/api/campaigns/scheduler'
     | '/api/dashboard/stats'
+    | '/api/directories/add'
+    | '/api/directories/search'
     | '/api/email/send'
     | '/api/keywords/$id'
     | '/api/keywords/generate'
@@ -497,9 +582,12 @@ export interface FileRouteTypes {
     | '/$workspaceId/campaigns'
     | '/$workspaceId/settings'
     | '/api/blog'
+    | '/api/campaigns'
     | '/api/keywords'
     | '/api/pipeline'
     | '/api/subreddits'
+    | '/api/campaigns/$id/leads'
+    | '/api/campaigns/$id/run'
     | '/api/pipeline/leads/$id'
   id:
     | '__root__'
@@ -511,6 +599,7 @@ export interface FileRouteTypes {
     | '/$workspaceId/settings'
     | '/$workspaceId/agent'
     | '/$workspaceId/blog'
+    | '/$workspaceId/directories'
     | '/$workspaceId/keywords'
     | '/$workspaceId/linkedin'
     | '/$workspaceId/pipeline'
@@ -526,7 +615,11 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/api/blog/$id'
     | '/api/blog/generate'
+    | '/api/campaigns/$id'
+    | '/api/campaigns/scheduler'
     | '/api/dashboard/stats'
+    | '/api/directories/add'
+    | '/api/directories/search'
     | '/api/email/send'
     | '/api/keywords/$id'
     | '/api/keywords/generate'
@@ -542,9 +635,12 @@ export interface FileRouteTypes {
     | '/$workspaceId/campaigns/'
     | '/$workspaceId/settings/'
     | '/api/blog/'
+    | '/api/campaigns/'
     | '/api/keywords/'
     | '/api/pipeline/'
     | '/api/subreddits/'
+    | '/api/campaigns/$id/leads'
+    | '/api/campaigns/$id/run'
     | '/api/pipeline/leads/$id'
   fileRoutesById: FileRoutesById
 }
@@ -558,7 +654,11 @@ export interface RootRouteChildren {
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiBlogIdRoute: typeof ApiBlogIdRoute
   ApiBlogGenerateRoute: typeof ApiBlogGenerateRoute
+  ApiCampaignsIdRoute: typeof ApiCampaignsIdRouteWithChildren
+  ApiCampaignsSchedulerRoute: typeof ApiCampaignsSchedulerRoute
   ApiDashboardStatsRoute: typeof ApiDashboardStatsRoute
+  ApiDirectoriesAddRoute: typeof ApiDirectoriesAddRoute
+  ApiDirectoriesSearchRoute: typeof ApiDirectoriesSearchRoute
   ApiEmailSendRoute: typeof ApiEmailSendRoute
   ApiKeywordsIdRoute: typeof ApiKeywordsIdRoute
   ApiKeywordsGenerateRoute: typeof ApiKeywordsGenerateRoute
@@ -572,6 +672,7 @@ export interface RootRouteChildren {
   ApiSubredditsIdRoute: typeof ApiSubredditsIdRoute
   ApiWorkspaceGenerateDescriptionRoute: typeof ApiWorkspaceGenerateDescriptionRoute
   ApiBlogIndexRoute: typeof ApiBlogIndexRoute
+  ApiCampaignsIndexRoute: typeof ApiCampaignsIndexRoute
   ApiKeywordsIndexRoute: typeof ApiKeywordsIndexRoute
   ApiPipelineIndexRoute: typeof ApiPipelineIndexRoute
   ApiSubredditsIndexRoute: typeof ApiSubredditsIndexRoute
@@ -649,6 +750,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkspaceIdKeywordsRouteImport
       parentRoute: typeof WorkspaceIdRouteRoute
     }
+    '/$workspaceId/directories': {
+      id: '/$workspaceId/directories'
+      path: '/directories'
+      fullPath: '/$workspaceId/directories'
+      preLoaderRoute: typeof WorkspaceIdDirectoriesRouteImport
+      parentRoute: typeof WorkspaceIdRouteRoute
+    }
     '/$workspaceId/blog': {
       id: '/$workspaceId/blog'
       path: '/blog'
@@ -689,6 +797,13 @@ declare module '@tanstack/react-router' {
       path: '/api/keywords'
       fullPath: '/api/keywords/'
       preLoaderRoute: typeof ApiKeywordsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/campaigns/': {
+      id: '/api/campaigns/'
+      path: '/api/campaigns'
+      fullPath: '/api/campaigns/'
+      preLoaderRoute: typeof ApiCampaignsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/blog/': {
@@ -796,11 +911,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiEmailSendRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/directories/search': {
+      id: '/api/directories/search'
+      path: '/api/directories/search'
+      fullPath: '/api/directories/search'
+      preLoaderRoute: typeof ApiDirectoriesSearchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/directories/add': {
+      id: '/api/directories/add'
+      path: '/api/directories/add'
+      fullPath: '/api/directories/add'
+      preLoaderRoute: typeof ApiDirectoriesAddRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/dashboard/stats': {
       id: '/api/dashboard/stats'
       path: '/api/dashboard/stats'
       fullPath: '/api/dashboard/stats'
       preLoaderRoute: typeof ApiDashboardStatsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/campaigns/scheduler': {
+      id: '/api/campaigns/scheduler'
+      path: '/api/campaigns/scheduler'
+      fullPath: '/api/campaigns/scheduler'
+      preLoaderRoute: typeof ApiCampaignsSchedulerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/campaigns/$id': {
+      id: '/api/campaigns/$id'
+      path: '/api/campaigns/$id'
+      fullPath: '/api/campaigns/$id'
+      preLoaderRoute: typeof ApiCampaignsIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/blog/generate': {
@@ -880,6 +1023,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPipelineLeadsIdRouteImport
       parentRoute: typeof ApiPipelineLeadsRoute
     }
+    '/api/campaigns/$id/run': {
+      id: '/api/campaigns/$id/run'
+      path: '/run'
+      fullPath: '/api/campaigns/$id/run'
+      preLoaderRoute: typeof ApiCampaignsIdRunRouteImport
+      parentRoute: typeof ApiCampaignsIdRoute
+    }
+    '/api/campaigns/$id/leads': {
+      id: '/api/campaigns/$id/leads'
+      path: '/leads'
+      fullPath: '/api/campaigns/$id/leads'
+      preLoaderRoute: typeof ApiCampaignsIdLeadsRouteImport
+      parentRoute: typeof ApiCampaignsIdRoute
+    }
   }
 }
 
@@ -911,6 +1068,7 @@ interface WorkspaceIdRouteRouteChildren {
   WorkspaceIdSettingsRouteRoute: typeof WorkspaceIdSettingsRouteRouteWithChildren
   WorkspaceIdAgentRoute: typeof WorkspaceIdAgentRoute
   WorkspaceIdBlogRoute: typeof WorkspaceIdBlogRoute
+  WorkspaceIdDirectoriesRoute: typeof WorkspaceIdDirectoriesRoute
   WorkspaceIdKeywordsRoute: typeof WorkspaceIdKeywordsRoute
   WorkspaceIdLinkedinRoute: typeof WorkspaceIdLinkedinRoute
   WorkspaceIdPipelineRoute: typeof WorkspaceIdPipelineRoute
@@ -924,6 +1082,7 @@ const WorkspaceIdRouteRouteChildren: WorkspaceIdRouteRouteChildren = {
   WorkspaceIdSettingsRouteRoute: WorkspaceIdSettingsRouteRouteWithChildren,
   WorkspaceIdAgentRoute: WorkspaceIdAgentRoute,
   WorkspaceIdBlogRoute: WorkspaceIdBlogRoute,
+  WorkspaceIdDirectoriesRoute: WorkspaceIdDirectoriesRoute,
   WorkspaceIdKeywordsRoute: WorkspaceIdKeywordsRoute,
   WorkspaceIdLinkedinRoute: WorkspaceIdLinkedinRoute,
   WorkspaceIdPipelineRoute: WorkspaceIdPipelineRoute,
@@ -935,6 +1094,20 @@ const WorkspaceIdRouteRouteChildren: WorkspaceIdRouteRouteChildren = {
 
 const WorkspaceIdRouteRouteWithChildren =
   WorkspaceIdRouteRoute._addFileChildren(WorkspaceIdRouteRouteChildren)
+
+interface ApiCampaignsIdRouteChildren {
+  ApiCampaignsIdLeadsRoute: typeof ApiCampaignsIdLeadsRoute
+  ApiCampaignsIdRunRoute: typeof ApiCampaignsIdRunRoute
+}
+
+const ApiCampaignsIdRouteChildren: ApiCampaignsIdRouteChildren = {
+  ApiCampaignsIdLeadsRoute: ApiCampaignsIdLeadsRoute,
+  ApiCampaignsIdRunRoute: ApiCampaignsIdRunRoute,
+}
+
+const ApiCampaignsIdRouteWithChildren = ApiCampaignsIdRoute._addFileChildren(
+  ApiCampaignsIdRouteChildren,
+)
 
 interface ApiPipelineLeadsRouteChildren {
   ApiPipelineLeadsIdRoute: typeof ApiPipelineLeadsIdRoute
@@ -957,7 +1130,11 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiBlogIdRoute: ApiBlogIdRoute,
   ApiBlogGenerateRoute: ApiBlogGenerateRoute,
+  ApiCampaignsIdRoute: ApiCampaignsIdRouteWithChildren,
+  ApiCampaignsSchedulerRoute: ApiCampaignsSchedulerRoute,
   ApiDashboardStatsRoute: ApiDashboardStatsRoute,
+  ApiDirectoriesAddRoute: ApiDirectoriesAddRoute,
+  ApiDirectoriesSearchRoute: ApiDirectoriesSearchRoute,
   ApiEmailSendRoute: ApiEmailSendRoute,
   ApiKeywordsIdRoute: ApiKeywordsIdRoute,
   ApiKeywordsGenerateRoute: ApiKeywordsGenerateRoute,
@@ -971,6 +1148,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiSubredditsIdRoute: ApiSubredditsIdRoute,
   ApiWorkspaceGenerateDescriptionRoute: ApiWorkspaceGenerateDescriptionRoute,
   ApiBlogIndexRoute: ApiBlogIndexRoute,
+  ApiCampaignsIndexRoute: ApiCampaignsIndexRoute,
   ApiKeywordsIndexRoute: ApiKeywordsIndexRoute,
   ApiPipelineIndexRoute: ApiPipelineIndexRoute,
   ApiSubredditsIndexRoute: ApiSubredditsIndexRoute,

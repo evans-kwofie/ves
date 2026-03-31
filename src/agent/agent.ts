@@ -4,6 +4,7 @@ import { readPipelineSummary, addLead, updateLead } from "./tools/pipeline";
 import { sendEmail } from "./tools/email";
 import { notifySlack } from "./tools/slack";
 import { buildSystemPrompt } from "./prompts";
+import { createOutreachEvent } from "~/db/queries/leads";
 import type { AgentVoiceConfig } from "~/routes/$workspaceId/settings/agent";
 
 const client = new Anthropic({
@@ -64,6 +65,7 @@ const USER_TOOLS = [
         subject: { type: "string", description: "Email subject line" },
         body: { type: "string", description: "Plain text email body. Follow the email format in your instructions." },
         leadId: { type: "string", description: "Lead ID to auto-update status to email_sent after sending" },
+        campaignId: { type: "string", description: "Campaign ID to tag this outreach event against. Always include when running a campaign." },
       },
       required: ["to", "subject", "body"],
     },
@@ -108,9 +110,17 @@ async function executeTool(name: string, input: Record<string, unknown>, orgId: 
           body: input.body as string,
         });
         if (result.success && input.leadId) {
+          const now = new Date().toISOString();
           await updateLead(input.leadId as string, {
             status: "email_sent",
-            emailSentAt: new Date().toISOString(),
+            emailSentAt: now,
+          });
+          await createOutreachEvent({
+            leadId: input.leadId as string,
+            channel: "email",
+            status: "email_sent",
+            sentAt: now,
+            campaignId: (input.campaignId as string | undefined) ?? null,
           });
         }
         return JSON.stringify(result);

@@ -95,39 +95,20 @@ Every piece of data belongs to a **workspace (organization)**. All queries are s
 
 ---
 
-## 🔲 Campaigns (next)
+## ✅ Campaigns
 
-Campaigns are named outreach sequences targeting a group of leads. They give pipeline directionality — instead of leads floating in stages, you assign them to a campaign with a message + goal, and track how it's performing.
+Named outreach sequences targeting a group of leads. DB tables (`campaigns`, `campaign_leads`) built. UI: list view with stats/tabs/cards, create flow (name → leads → review). `outreach_events` has `campaign_id` FK for stat rollup.
 
-**Planned data model:**
-```sql
-campaigns (
-  id TEXT PRIMARY KEY,
-  organization_id TEXT NOT NULL,
-  name TEXT NOT NULL,
-  status TEXT NOT NULL DEFAULT 'draft',  -- draft | active | scheduled | completed
-  channel TEXT,                           -- email | linkedin | both
-  goal TEXT,                              -- what success looks like for this campaign
-  created_at TEXT NOT NULL,
-  updated_at TEXT NOT NULL
-)
+### 🔲 Campaign Execution (deferred — full feature planned)
 
-campaign_leads (
-  id TEXT PRIMARY KEY,
-  campaign_id TEXT NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,
-  lead_id TEXT NOT NULL REFERENCES leads(id) ON DELETE CASCADE,
-  UNIQUE(campaign_id, lead_id)
-)
-```
+Campaigns are currently containers only — no outreach is fired yet. Full feature to build:
 
-**Planned UI (from design):**
-- Campaign cards: name, sent count, open rate, reply rate, last activity
-- Status tabs: All / Active / Scheduled / Drafts
-- Aggregate stats header: total sent, avg open rate, avg reply rate
-- AI insights panel: subject line performance, timing optimization, response patterns
-- Create campaign flow: name → select leads → write message → set schedule
+1. **"Run Campaign" button** — triggers AI agent with campaign context (leads, goal, channel, agent voice)
+2. **Campaign-aware agent prompt** — agent receives campaign name, goal, channel, lead list; sends outreach and logs `outreach_events` with `campaign_id`
+3. **Follow-up logic** — agent detects leads emailed 3+ days ago with no reply and follows up
+4. **Campaign scheduler** — `campaigns` gains `scheduled_at`; daily loop auto-runs all active campaigns
 
-**Outreach events** will gain an optional `campaign_id` FK so stats can be rolled up per campaign.
+Build order when returning: Run button → campaign prompt → event tagging → follow-up logic → scheduler.
 
 ---
 
