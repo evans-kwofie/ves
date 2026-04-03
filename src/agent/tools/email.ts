@@ -1,4 +1,5 @@
 import nodemailer from 'nodemailer';
+import type { SmtpConfig } from '~/types/smtp';
 
 interface SendEmailInput {
   to: string;
@@ -6,23 +7,34 @@ interface SendEmailInput {
   body: string;
 }
 
-function createTransport() {
+function createTransport(config?: Partial<SmtpConfig>) {
   return nodemailer.createTransport({
-    host: process.env.ZOHO_SMTP_HOST ?? 'smtp.zoho.com',
-    port: Number(process.env.ZOHO_SMTP_PORT ?? 587),
-    secure: false,
+    host: config?.host || process.env.ZOHO_SMTP_HOST || 'smtp.zoho.com',
+    port: config?.port || Number(process.env.ZOHO_SMTP_PORT ?? 587),
+    secure: config?.secure ?? false,
     auth: {
-      user: process.env.ZOHO_SMTP_USER,
-      pass: process.env.ZOHO_SMTP_PASS,
+      user: config?.user || process.env.ZOHO_SMTP_USER,
+      pass: config?.pass || process.env.ZOHO_SMTP_PASS,
     },
   });
 }
 
-export async function sendEmail(input: SendEmailInput): Promise<{ success: boolean; messageId?: string; error?: string }> {
+function getFromName(config?: Partial<SmtpConfig>) {
+  return config?.fromName || process.env.AGENT_FROM_NAME || 'Vesper Agent';
+}
+
+function getFromEmail(config?: Partial<SmtpConfig>) {
+  return config?.user || process.env.ZOHO_SMTP_USER || '';
+}
+
+export async function sendEmail(
+  input: SendEmailInput,
+  smtpConfig?: Partial<SmtpConfig>,
+): Promise<{ success: boolean; messageId?: string; error?: string }> {
   try {
-    const transport = createTransport();
+    const transport = createTransport(smtpConfig);
     const info = await transport.sendMail({
-      from: `"${process.env.AGENT_FROM_NAME ?? 'Evans Kwofie'}" <${process.env.ZOHO_SMTP_USER}>`,
+      from: `"${getFromName(smtpConfig)}" <${getFromEmail(smtpConfig)}>`,
       to: input.to,
       subject: input.subject,
       text: input.body,

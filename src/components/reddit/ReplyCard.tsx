@@ -1,8 +1,8 @@
 import * as React from "react";
-import { ArrowDiagonalIcon, Copy01Icon, AiMagicIcon, ArrowUp01Icon } from "hugeicons-react";
+import { ArrowDiagonalIcon, Copy01Icon, AiMagicIcon, ArrowUp01Icon, UserAdd01Icon, CheckmarkCircle01Icon } from "hugeicons-react";
 import { Button } from "~/components/ui/button";
 import { toast } from "sonner";
-import type { RedditPost, IntentType } from "~/types/reddit";
+import type { RedditPost, IntentType, EngagementType } from "~/types/reddit";
 
 const INTENT_LABEL: Record<IntentType, string> = {
   buying: "Buying",
@@ -18,14 +18,23 @@ const INTENT_COLOR: Record<IntentType, string> = {
   noise: "var(--muted-foreground)",
 };
 
+const ENGAGEMENT_LABEL: Record<EngagementType, string> = {
+  helpful: "Be helpful",
+  pitch: "Soft pitch",
+  authority: "Build authority",
+  question: "Ask a question",
+};
+
 interface ReplyCardProps {
+  orgId: string;
   post: RedditPost;
   onSuggestionSaved: (postId: string, suggestion: string) => void;
 }
 
-export function ReplyCard({ post, onSuggestionSaved }: ReplyCardProps) {
+export function ReplyCard({ orgId, post, onSuggestionSaved }: ReplyCardProps) {
   const [generating, setGenerating] = React.useState(false);
   const [suggestion, setSuggestion] = React.useState(post.replySuggestion ?? "");
+  const [pipelineState, setPipelineState] = React.useState<"idle" | "saving" | "saved" | "duplicate">("idle");
 
   async function generateReply() {
     setGenerating(true);
@@ -38,6 +47,7 @@ export function ReplyCard({ post, onSuggestionSaved }: ReplyCardProps) {
           title: post.title,
           body: post.body,
           subreddit: post.subreddit,
+          engagementType: post.engagementType ?? null,
         }),
       });
       const data = (await res.json()) as { suggestion?: string; error?: string };
@@ -56,6 +66,38 @@ export function ReplyCard({ post, onSuggestionSaved }: ReplyCardProps) {
   function copyReply() {
     if (suggestion) {
       navigator.clipboard.writeText(suggestion).then(() => toast.success("Copied!"));
+    }
+  }
+
+  async function addToPipeline() {
+    setPipelineState("saving");
+    try {
+      const res = await fetch("/api/reddit/to-pipeline", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          organizationId: orgId,
+          postId: post.id,
+          author: post.author,
+          title: post.title,
+          subreddit: post.subreddit,
+          url: post.url,
+          intentType: post.intentType ?? null,
+        }),
+      });
+      if (res.status === 409) {
+        setPipelineState("duplicate");
+        toast.info("Already in pipeline");
+      } else if (res.ok) {
+        setPipelineState("saved");
+        toast.success(`u/${post.author} added to pipeline`);
+      } else {
+        setPipelineState("idle");
+        toast.error("Failed to add to pipeline");
+      }
+    } catch {
+      setPipelineState("idle");
+      toast.error("Failed to add to pipeline");
     }
   }
 
@@ -108,47 +150,102 @@ export function ReplyCard({ post, onSuggestionSaved }: ReplyCardProps) {
 
       {post.body && <p className="reddit-card-body">{post.body}</p>}
 
-      {suggestion ? (
-        <div>
-          <div
-            style={{
-              fontSize: 10,
-              fontWeight: 600,
-              textTransform: "uppercase",
-              letterSpacing: "0.1em",
-              color: "var(--accent)",
-              marginBottom: 6,
-            }}
-          >
-            Suggested Reply
-          </div>
-          <div className="reddit-card-reply">{suggestion}</div>
-          <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
-            <Button variant="ghost" size="sm" onClick={copyReply}>
-              <Copy01Icon size={12} />
-              Copy
-            </Button>
-            <Button variant="ghost" size="sm" onClick={generateReply} disabled={generating}>
-              <AiMagicIcon size={12} />
-              Regenerate
-            </Button>
-          </div>
-        </div>
-      ) : (
-        <Button variant="ghost" size="sm" onClick={generateReply} disabled={generating}>
-          {generating ? (
-            <>
-              <span className="spinner" style={{ width: 12, height: 12 }} />
-              Generating...
-            </>
+      {/* Actions row */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 8 }}>
+        {/* Reply section */}
+        <div style={{ flex: 1 }}>
+          {suggestion ? (
+            <div>
+              <div
+                style={{
+                  fontSize: 10,
+                  fontWeight: 600,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.1em",
+                  color: "var(--accent)",
+                  marginBottom: 6,
+                }}
+              >
+                Suggested Reply
+                {post.engagementType && (
+                  <span style={{ fontWeight: 400, textTransform: "none", letterSpacing: 0, color: "var(--muted-foreground)", marginLeft: 8 }}>
+                    — {ENGAGEMENT_LABEL[post.engagementType]}
+                  </span>
+                )}
+              </div>
+              <div className="reddit-card-reply">{suggestion}</div>
+              <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
+                <Button variant="ghost" size="sm" onClick={copyReply}>
+                  <Copy01Icon size={12} />
+                  Copy
+                </Button>
+                <Button variant="ghost" size="sm" onClick={generateReply} disabled={generating}>
+                  <AiMagicIcon size={12} />
+                  Regenerate
+                </Button>
+              </div>
+            </div>
           ) : (
-            <>
-              <AiMagicIcon size={12} />
-              Generate Reply
-            </>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <Button variant="ghost" size="sm" onClick={generateReply} disabled={generating}>
+                {generating ? (
+                  <>
+                    <span className="spinner" style={{ width: 12, height: 12 }} />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <AiMagicIcon size={12} />
+                    Generate Reply
+                  </>
+                )}
+              </Button>
+              {post.engagementType && !generating && (
+                <span style={{ fontSize: 11, color: "var(--muted-foreground)" }}>
+                  Angle: {ENGAGEMENT_LABEL[post.engagementType]}
+                </span>
+              )}
+            </div>
           )}
-        </Button>
-      )}
+        </div>
+
+        {/* Add to Pipeline */}
+        <div style={{ flexShrink: 0, marginLeft: 12 }}>
+          {pipelineState === "saved" ? (
+            <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: "var(--accent)" }}>
+              <CheckmarkCircle01Icon size={14} />
+              Added
+            </span>
+          ) : pipelineState === "duplicate" ? (
+            <span
+              style={{
+                fontSize: 11,
+                padding: "3px 8px",
+                borderRadius: 4,
+                background: "rgba(245,158,11,0.12)",
+                color: "#f59e0b",
+                fontWeight: 500,
+              }}
+            >
+              In pipeline
+            </span>
+          ) : (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={addToPipeline}
+              disabled={pipelineState === "saving"}
+              style={{ fontSize: 11 }}
+            >
+              {pipelineState === "saving" ? (
+                <><span className="spinner" style={{ width: 11, height: 11 }} />Adding...</>
+              ) : (
+                <><UserAdd01Icon size={12} />Add to Pipeline</>
+              )}
+            </Button>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

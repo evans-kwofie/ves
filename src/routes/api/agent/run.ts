@@ -3,6 +3,7 @@ import { runAgent, DAILY_PROMPT } from "~/agent";
 import { auth } from "~/lib/auth";
 import { getRequestHeaders } from "@tanstack/react-start/server";
 import type { AgentVoiceConfig } from "~/routes/$workspaceId/settings/agent";
+import type { SmtpConfig } from "~/types/smtp";
 
 let isRunning = false;
 
@@ -37,8 +38,9 @@ export const Route = createFileRoute("/api/agent/run")({
           });
         }
 
-        // Load voice config from org metadata
+        // Load voice + smtp config from org metadata
         let voice: Partial<AgentVoiceConfig> = {};
+        let smtpConfig: Partial<SmtpConfig> = {};
         try {
           const headers = getRequestHeaders();
           const orgs = await auth.api.listOrganizations({ headers });
@@ -46,12 +48,13 @@ export const Route = createFileRoute("/api/agent/run")({
           if (org?.metadata) {
             const meta = JSON.parse(org.metadata as string) as Record<string, string>;
             if (meta.agentVoice) voice = JSON.parse(meta.agentVoice) as Partial<AgentVoiceConfig>;
+            if (meta.smtpConfig) smtpConfig = JSON.parse(meta.smtpConfig) as Partial<SmtpConfig>;
           }
         } catch { /* use defaults */ }
 
         isRunning = true;
         try {
-          const logs = await runAgent(prompt, { maxIterations: 30, orgId, voice });
+          const logs = await runAgent(prompt, { maxIterations: 30, orgId, voice, smtpConfig });
           return Response.json({ ok: true, logs });
         } catch (err) {
           const message = err instanceof Error ? err.message : String(err);

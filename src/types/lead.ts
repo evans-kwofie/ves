@@ -59,6 +59,7 @@ export interface CreateLeadInput {
   linkedin?: string;
   fit: FitRating;
   notes?: string;
+  source?: string;
 }
 
 export interface UpdateLeadInput {

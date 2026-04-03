@@ -5,6 +5,9 @@ import { createLead } from "~/db/queries/leads";
 import type { RedditApiResponse, IntentType, EngagementType } from "~/types/reddit";
 import { z } from "zod";
 import Anthropic from "@anthropic-ai/sdk";
+import { auth } from "~/lib/auth";
+import { getRequestHeaders } from "@tanstack/react-start/server";
+import type { AgentVoiceConfig } from "~/routes/$workspaceId/settings/agent";
 
 const requestSchema = z.object({
   organizationId: z.string().min(1),
@@ -22,19 +25,25 @@ async function classifyPost(
   title: string,
   body: string,
   subreddit: string,
+  icpContext: { companyName: string; mission: string },
 ): Promise<z.infer<typeof classificationSchema> | null> {
   const client = new Anthropic();
-  const prompt = `Classify this Reddit post for a B2B sales tool.
+
+  const icpLine = icpContext.companyName
+    ? `You are classifying posts on behalf of ${icpContext.companyName}.${icpContext.mission ? ` Their target customer and mission: ${icpContext.mission}` : ""}\n\nJudge relevance strictly against their ICP — a post is only "buying" or "pain" if the author could realistically be a customer of ${icpContext.companyName}. If the post is off-topic for their target market, classify it as "noise" even if it contains the search keyword.`
+    : "Classify this Reddit post for a B2B sales team.";
+
+  const prompt = `${icpLine}
 
 Subreddit: r/${subreddit}
 Title: ${title}
 Body: ${body.slice(0, 500) || "(no body)"}
 
 Return ONLY valid JSON with these fields:
-- intent_type: one of "buying" (actively looking to buy/hire), "pain" (expressing a problem our product solves), "discussion" (general topic discussion), "noise" (irrelevant)
-- intent_score: 0-100 (how likely this person is a potential buyer right now)
+- intent_type: one of "buying" (author is actively looking for something this company solves), "pain" (author has a problem this company solves), "discussion" (general topic discussion, not a direct opportunity), "noise" (off-topic or not relevant to this company's ICP)
+- intent_score: 0-100 (how likely this specific person is a qualified lead for this company right now — 0 if wrong ICP, 100 if perfect signal)
 - engagement_type: one of "helpful" (share expertise), "pitch" (soft product mention), "authority" (thought leadership), "question" (ask a clarifying question)
-- engagement_score: 0-100 (how valuable engaging with this post would be)
+- engagement_score: 0-100 (how much value engaging with this post would generate for this company)
 
 JSON only, no markdown.`;
 
@@ -71,6 +80,26 @@ export const Route = createFileRoute("/api/reddit/search")({
           });
         }
         const { organizationId, keywordId: filterKeywordId } = parsed.data;
+
+        // Load ICP context from org metadata
+        let icpContext = { companyName: "", mission: "" };
+        try {
+          const headers = getRequestHeaders();
+          const orgs = await auth.api.listOrganizations({ headers });
+          const org = orgs?.find((o) => o.id === organizationId) ?? orgs?.[0];
+          if (org?.metadata) {
+            const meta = JSON.parse(org.metadata as string) as Record<string, string>;
+            if (meta.agentVoice) {
+              const voice = JSON.parse(meta.agentVoice) as Partial<AgentVoiceConfig>;
+              icpContext = {
+                companyName: voice.companyName ?? org.name ?? "",
+                mission: voice.mission ?? "",
+              };
+            }
+          }
+        } catch {
+          // proceed without ICP context — classification degrades gracefully
+        }
 
         const keywords = await listActiveKeywordsWithSubreddits(organizationId);
         const filtered = filterKeywordId
@@ -115,6 +144,7 @@ export const Route = createFileRoute("/api/reddit/search")({
                   post.title,
                   post.selftext ?? "",
                   post.subreddit,
+                  icpContext,
                 );
                 if (!classification) continue;
 

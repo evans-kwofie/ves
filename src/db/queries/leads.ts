@@ -123,8 +123,8 @@ export async function createLead(orgId: string, input: CreateLeadInput): Promise
   const now = new Date().toISOString();
 
   await db.execute({
-    sql: `INSERT INTO leads (id, organization_id, company, website, what_they_do, ceo, email, linkedin_url, fit, status, notes, added_at, discovered_at)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'not_contacted', ?, ?, ?)`,
+    sql: `INSERT INTO leads (id, organization_id, company, website, what_they_do, ceo, email, linkedin_url, fit, status, notes, source, added_at, discovered_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'not_contacted', ?, ?, ?, ?)`,
     args: [
       id,
       orgId,
@@ -136,6 +136,7 @@ export async function createLead(orgId: string, input: CreateLeadInput): Promise
       input.linkedin ?? "",
       input.fit,
       input.notes ?? "",
+      input.source ?? null,
       now,
       now,
     ],

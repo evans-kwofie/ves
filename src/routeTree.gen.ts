@@ -32,6 +32,7 @@ import { Route as WorkspaceIdSettingsIndexRouteImport } from './routes/$workspac
 import { Route as WorkspaceIdCampaignsIndexRouteImport } from './routes/$workspaceId/campaigns/index'
 import { Route as ApiWorkspaceGenerateDescriptionRouteImport } from './routes/api/workspace/generate-description'
 import { Route as ApiSubredditsIdRouteImport } from './routes/api/subreddits/$id'
+import { Route as ApiRedditToPipelineRouteImport } from './routes/api/reddit/to-pipeline'
 import { Route as ApiRedditSuggestRouteImport } from './routes/api/reddit/suggest'
 import { Route as ApiRedditSearchRouteImport } from './routes/api/reddit/search'
 import { Route as ApiRedditPostsRouteImport } from './routes/api/reddit/posts'
@@ -41,6 +42,7 @@ import { Route as ApiLinkedinSearchRouteImport } from './routes/api/linkedin/sea
 import { Route as ApiLinkedinGeneratePostRouteImport } from './routes/api/linkedin/generate-post'
 import { Route as ApiKeywordsGenerateRouteImport } from './routes/api/keywords/generate'
 import { Route as ApiKeywordsIdRouteImport } from './routes/api/keywords/$id'
+import { Route as ApiEmailTestSmtpRouteImport } from './routes/api/email/test-smtp'
 import { Route as ApiEmailSendRouteImport } from './routes/api/email/send'
 import { Route as ApiDirectoriesSearchRouteImport } from './routes/api/directories/search'
 import { Route as ApiDirectoriesAddRouteImport } from './routes/api/directories/add'
@@ -53,6 +55,7 @@ import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as ApiAgentRunRouteImport } from './routes/api/agent/run'
 import { Route as WorkspaceIdSettingsWorkspaceRouteImport } from './routes/$workspaceId/settings/workspace'
 import { Route as WorkspaceIdSettingsProfileRouteImport } from './routes/$workspaceId/settings/profile'
+import { Route as WorkspaceIdSettingsEmailRouteImport } from './routes/$workspaceId/settings/email'
 import { Route as WorkspaceIdSettingsDangerRouteImport } from './routes/$workspaceId/settings/danger'
 import { Route as WorkspaceIdSettingsBillingRouteImport } from './routes/$workspaceId/settings/billing'
 import { Route as WorkspaceIdSettingsAgentRouteImport } from './routes/$workspaceId/settings/agent'
@@ -180,6 +183,11 @@ const ApiSubredditsIdRoute = ApiSubredditsIdRouteImport.update({
   path: '/api/subreddits/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiRedditToPipelineRoute = ApiRedditToPipelineRouteImport.update({
+  id: '/api/reddit/to-pipeline',
+  path: '/api/reddit/to-pipeline',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiRedditSuggestRoute = ApiRedditSuggestRouteImport.update({
   id: '/api/reddit/suggest',
   path: '/api/reddit/suggest',
@@ -223,6 +231,11 @@ const ApiKeywordsGenerateRoute = ApiKeywordsGenerateRouteImport.update({
 const ApiKeywordsIdRoute = ApiKeywordsIdRouteImport.update({
   id: '/api/keywords/$id',
   path: '/api/keywords/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiEmailTestSmtpRoute = ApiEmailTestSmtpRouteImport.update({
+  id: '/api/email/test-smtp',
+  path: '/api/email/test-smtp',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiEmailSendRoute = ApiEmailSendRouteImport.update({
@@ -287,6 +300,12 @@ const WorkspaceIdSettingsProfileRoute =
     path: '/profile',
     getParentRoute: () => WorkspaceIdSettingsRouteRoute,
   } as any)
+const WorkspaceIdSettingsEmailRoute =
+  WorkspaceIdSettingsEmailRouteImport.update({
+    id: '/email',
+    path: '/email',
+    getParentRoute: () => WorkspaceIdSettingsRouteRoute,
+  } as any)
 const WorkspaceIdSettingsDangerRoute =
   WorkspaceIdSettingsDangerRouteImport.update({
     id: '/danger',
@@ -345,6 +364,7 @@ export interface FileRoutesByFullPath {
   '/$workspaceId/settings/agent': typeof WorkspaceIdSettingsAgentRoute
   '/$workspaceId/settings/billing': typeof WorkspaceIdSettingsBillingRoute
   '/$workspaceId/settings/danger': typeof WorkspaceIdSettingsDangerRoute
+  '/$workspaceId/settings/email': typeof WorkspaceIdSettingsEmailRoute
   '/$workspaceId/settings/profile': typeof WorkspaceIdSettingsProfileRoute
   '/$workspaceId/settings/workspace': typeof WorkspaceIdSettingsWorkspaceRoute
   '/api/agent/run': typeof ApiAgentRunRoute
@@ -357,6 +377,7 @@ export interface FileRoutesByFullPath {
   '/api/directories/add': typeof ApiDirectoriesAddRoute
   '/api/directories/search': typeof ApiDirectoriesSearchRoute
   '/api/email/send': typeof ApiEmailSendRoute
+  '/api/email/test-smtp': typeof ApiEmailTestSmtpRoute
   '/api/keywords/$id': typeof ApiKeywordsIdRoute
   '/api/keywords/generate': typeof ApiKeywordsGenerateRoute
   '/api/linkedin/generate-post': typeof ApiLinkedinGeneratePostRoute
@@ -366,6 +387,7 @@ export interface FileRoutesByFullPath {
   '/api/reddit/posts': typeof ApiRedditPostsRoute
   '/api/reddit/search': typeof ApiRedditSearchRoute
   '/api/reddit/suggest': typeof ApiRedditSuggestRoute
+  '/api/reddit/to-pipeline': typeof ApiRedditToPipelineRoute
   '/api/subreddits/$id': typeof ApiSubredditsIdRoute
   '/api/workspace/generate-description': typeof ApiWorkspaceGenerateDescriptionRoute
   '/$workspaceId/campaigns/': typeof WorkspaceIdCampaignsIndexRoute
@@ -396,6 +418,7 @@ export interface FileRoutesByTo {
   '/$workspaceId/settings/agent': typeof WorkspaceIdSettingsAgentRoute
   '/$workspaceId/settings/billing': typeof WorkspaceIdSettingsBillingRoute
   '/$workspaceId/settings/danger': typeof WorkspaceIdSettingsDangerRoute
+  '/$workspaceId/settings/email': typeof WorkspaceIdSettingsEmailRoute
   '/$workspaceId/settings/profile': typeof WorkspaceIdSettingsProfileRoute
   '/$workspaceId/settings/workspace': typeof WorkspaceIdSettingsWorkspaceRoute
   '/api/agent/run': typeof ApiAgentRunRoute
@@ -408,6 +431,7 @@ export interface FileRoutesByTo {
   '/api/directories/add': typeof ApiDirectoriesAddRoute
   '/api/directories/search': typeof ApiDirectoriesSearchRoute
   '/api/email/send': typeof ApiEmailSendRoute
+  '/api/email/test-smtp': typeof ApiEmailTestSmtpRoute
   '/api/keywords/$id': typeof ApiKeywordsIdRoute
   '/api/keywords/generate': typeof ApiKeywordsGenerateRoute
   '/api/linkedin/generate-post': typeof ApiLinkedinGeneratePostRoute
@@ -417,6 +441,7 @@ export interface FileRoutesByTo {
   '/api/reddit/posts': typeof ApiRedditPostsRoute
   '/api/reddit/search': typeof ApiRedditSearchRoute
   '/api/reddit/suggest': typeof ApiRedditSuggestRoute
+  '/api/reddit/to-pipeline': typeof ApiRedditToPipelineRoute
   '/api/subreddits/$id': typeof ApiSubredditsIdRoute
   '/api/workspace/generate-description': typeof ApiWorkspaceGenerateDescriptionRoute
   '/$workspaceId/campaigns': typeof WorkspaceIdCampaignsIndexRoute
@@ -450,6 +475,7 @@ export interface FileRoutesById {
   '/$workspaceId/settings/agent': typeof WorkspaceIdSettingsAgentRoute
   '/$workspaceId/settings/billing': typeof WorkspaceIdSettingsBillingRoute
   '/$workspaceId/settings/danger': typeof WorkspaceIdSettingsDangerRoute
+  '/$workspaceId/settings/email': typeof WorkspaceIdSettingsEmailRoute
   '/$workspaceId/settings/profile': typeof WorkspaceIdSettingsProfileRoute
   '/$workspaceId/settings/workspace': typeof WorkspaceIdSettingsWorkspaceRoute
   '/api/agent/run': typeof ApiAgentRunRoute
@@ -462,6 +488,7 @@ export interface FileRoutesById {
   '/api/directories/add': typeof ApiDirectoriesAddRoute
   '/api/directories/search': typeof ApiDirectoriesSearchRoute
   '/api/email/send': typeof ApiEmailSendRoute
+  '/api/email/test-smtp': typeof ApiEmailTestSmtpRoute
   '/api/keywords/$id': typeof ApiKeywordsIdRoute
   '/api/keywords/generate': typeof ApiKeywordsGenerateRoute
   '/api/linkedin/generate-post': typeof ApiLinkedinGeneratePostRoute
@@ -471,6 +498,7 @@ export interface FileRoutesById {
   '/api/reddit/posts': typeof ApiRedditPostsRoute
   '/api/reddit/search': typeof ApiRedditSearchRoute
   '/api/reddit/suggest': typeof ApiRedditSuggestRoute
+  '/api/reddit/to-pipeline': typeof ApiRedditToPipelineRoute
   '/api/subreddits/$id': typeof ApiSubredditsIdRoute
   '/api/workspace/generate-description': typeof ApiWorkspaceGenerateDescriptionRoute
   '/$workspaceId/campaigns/': typeof WorkspaceIdCampaignsIndexRoute
@@ -505,6 +533,7 @@ export interface FileRouteTypes {
     | '/$workspaceId/settings/agent'
     | '/$workspaceId/settings/billing'
     | '/$workspaceId/settings/danger'
+    | '/$workspaceId/settings/email'
     | '/$workspaceId/settings/profile'
     | '/$workspaceId/settings/workspace'
     | '/api/agent/run'
@@ -517,6 +546,7 @@ export interface FileRouteTypes {
     | '/api/directories/add'
     | '/api/directories/search'
     | '/api/email/send'
+    | '/api/email/test-smtp'
     | '/api/keywords/$id'
     | '/api/keywords/generate'
     | '/api/linkedin/generate-post'
@@ -526,6 +556,7 @@ export interface FileRouteTypes {
     | '/api/reddit/posts'
     | '/api/reddit/search'
     | '/api/reddit/suggest'
+    | '/api/reddit/to-pipeline'
     | '/api/subreddits/$id'
     | '/api/workspace/generate-description'
     | '/$workspaceId/campaigns/'
@@ -556,6 +587,7 @@ export interface FileRouteTypes {
     | '/$workspaceId/settings/agent'
     | '/$workspaceId/settings/billing'
     | '/$workspaceId/settings/danger'
+    | '/$workspaceId/settings/email'
     | '/$workspaceId/settings/profile'
     | '/$workspaceId/settings/workspace'
     | '/api/agent/run'
@@ -568,6 +600,7 @@ export interface FileRouteTypes {
     | '/api/directories/add'
     | '/api/directories/search'
     | '/api/email/send'
+    | '/api/email/test-smtp'
     | '/api/keywords/$id'
     | '/api/keywords/generate'
     | '/api/linkedin/generate-post'
@@ -577,6 +610,7 @@ export interface FileRouteTypes {
     | '/api/reddit/posts'
     | '/api/reddit/search'
     | '/api/reddit/suggest'
+    | '/api/reddit/to-pipeline'
     | '/api/subreddits/$id'
     | '/api/workspace/generate-description'
     | '/$workspaceId/campaigns'
@@ -609,6 +643,7 @@ export interface FileRouteTypes {
     | '/$workspaceId/settings/agent'
     | '/$workspaceId/settings/billing'
     | '/$workspaceId/settings/danger'
+    | '/$workspaceId/settings/email'
     | '/$workspaceId/settings/profile'
     | '/$workspaceId/settings/workspace'
     | '/api/agent/run'
@@ -621,6 +656,7 @@ export interface FileRouteTypes {
     | '/api/directories/add'
     | '/api/directories/search'
     | '/api/email/send'
+    | '/api/email/test-smtp'
     | '/api/keywords/$id'
     | '/api/keywords/generate'
     | '/api/linkedin/generate-post'
@@ -630,6 +666,7 @@ export interface FileRouteTypes {
     | '/api/reddit/posts'
     | '/api/reddit/search'
     | '/api/reddit/suggest'
+    | '/api/reddit/to-pipeline'
     | '/api/subreddits/$id'
     | '/api/workspace/generate-description'
     | '/$workspaceId/campaigns/'
@@ -660,6 +697,7 @@ export interface RootRouteChildren {
   ApiDirectoriesAddRoute: typeof ApiDirectoriesAddRoute
   ApiDirectoriesSearchRoute: typeof ApiDirectoriesSearchRoute
   ApiEmailSendRoute: typeof ApiEmailSendRoute
+  ApiEmailTestSmtpRoute: typeof ApiEmailTestSmtpRoute
   ApiKeywordsIdRoute: typeof ApiKeywordsIdRoute
   ApiKeywordsGenerateRoute: typeof ApiKeywordsGenerateRoute
   ApiLinkedinGeneratePostRoute: typeof ApiLinkedinGeneratePostRoute
@@ -669,6 +707,7 @@ export interface RootRouteChildren {
   ApiRedditPostsRoute: typeof ApiRedditPostsRoute
   ApiRedditSearchRoute: typeof ApiRedditSearchRoute
   ApiRedditSuggestRoute: typeof ApiRedditSuggestRoute
+  ApiRedditToPipelineRoute: typeof ApiRedditToPipelineRoute
   ApiSubredditsIdRoute: typeof ApiSubredditsIdRoute
   ApiWorkspaceGenerateDescriptionRoute: typeof ApiWorkspaceGenerateDescriptionRoute
   ApiBlogIndexRoute: typeof ApiBlogIndexRoute
@@ -841,6 +880,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiSubredditsIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/reddit/to-pipeline': {
+      id: '/api/reddit/to-pipeline'
+      path: '/api/reddit/to-pipeline'
+      fullPath: '/api/reddit/to-pipeline'
+      preLoaderRoute: typeof ApiRedditToPipelineRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/reddit/suggest': {
       id: '/api/reddit/suggest'
       path: '/api/reddit/suggest'
@@ -902,6 +948,13 @@ declare module '@tanstack/react-router' {
       path: '/api/keywords/$id'
       fullPath: '/api/keywords/$id'
       preLoaderRoute: typeof ApiKeywordsIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/email/test-smtp': {
+      id: '/api/email/test-smtp'
+      path: '/api/email/test-smtp'
+      fullPath: '/api/email/test-smtp'
+      preLoaderRoute: typeof ApiEmailTestSmtpRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/email/send': {
@@ -988,6 +1041,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkspaceIdSettingsProfileRouteImport
       parentRoute: typeof WorkspaceIdSettingsRouteRoute
     }
+    '/$workspaceId/settings/email': {
+      id: '/$workspaceId/settings/email'
+      path: '/email'
+      fullPath: '/$workspaceId/settings/email'
+      preLoaderRoute: typeof WorkspaceIdSettingsEmailRouteImport
+      parentRoute: typeof WorkspaceIdSettingsRouteRoute
+    }
     '/$workspaceId/settings/danger': {
       id: '/$workspaceId/settings/danger'
       path: '/danger'
@@ -1044,6 +1104,7 @@ interface WorkspaceIdSettingsRouteRouteChildren {
   WorkspaceIdSettingsAgentRoute: typeof WorkspaceIdSettingsAgentRoute
   WorkspaceIdSettingsBillingRoute: typeof WorkspaceIdSettingsBillingRoute
   WorkspaceIdSettingsDangerRoute: typeof WorkspaceIdSettingsDangerRoute
+  WorkspaceIdSettingsEmailRoute: typeof WorkspaceIdSettingsEmailRoute
   WorkspaceIdSettingsProfileRoute: typeof WorkspaceIdSettingsProfileRoute
   WorkspaceIdSettingsWorkspaceRoute: typeof WorkspaceIdSettingsWorkspaceRoute
   WorkspaceIdSettingsIndexRoute: typeof WorkspaceIdSettingsIndexRoute
@@ -1054,6 +1115,7 @@ const WorkspaceIdSettingsRouteRouteChildren: WorkspaceIdSettingsRouteRouteChildr
     WorkspaceIdSettingsAgentRoute: WorkspaceIdSettingsAgentRoute,
     WorkspaceIdSettingsBillingRoute: WorkspaceIdSettingsBillingRoute,
     WorkspaceIdSettingsDangerRoute: WorkspaceIdSettingsDangerRoute,
+    WorkspaceIdSettingsEmailRoute: WorkspaceIdSettingsEmailRoute,
     WorkspaceIdSettingsProfileRoute: WorkspaceIdSettingsProfileRoute,
     WorkspaceIdSettingsWorkspaceRoute: WorkspaceIdSettingsWorkspaceRoute,
     WorkspaceIdSettingsIndexRoute: WorkspaceIdSettingsIndexRoute,
@@ -1136,6 +1198,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiDirectoriesAddRoute: ApiDirectoriesAddRoute,
   ApiDirectoriesSearchRoute: ApiDirectoriesSearchRoute,
   ApiEmailSendRoute: ApiEmailSendRoute,
+  ApiEmailTestSmtpRoute: ApiEmailTestSmtpRoute,
   ApiKeywordsIdRoute: ApiKeywordsIdRoute,
   ApiKeywordsGenerateRoute: ApiKeywordsGenerateRoute,
   ApiLinkedinGeneratePostRoute: ApiLinkedinGeneratePostRoute,
@@ -1145,6 +1208,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiRedditPostsRoute: ApiRedditPostsRoute,
   ApiRedditSearchRoute: ApiRedditSearchRoute,
   ApiRedditSuggestRoute: ApiRedditSuggestRoute,
+  ApiRedditToPipelineRoute: ApiRedditToPipelineRoute,
   ApiSubredditsIdRoute: ApiSubredditsIdRoute,
   ApiWorkspaceGenerateDescriptionRoute: ApiWorkspaceGenerateDescriptionRoute,
   ApiBlogIndexRoute: ApiBlogIndexRoute,

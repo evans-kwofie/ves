@@ -5,6 +5,7 @@ import { runAgent } from "~/agent/agent";
 import { auth } from "~/lib/auth";
 import { getRequestHeaders } from "@tanstack/react-start/server";
 import type { AgentVoiceConfig } from "~/routes/$workspaceId/settings/agent";
+import type { SmtpConfig } from "~/types/smtp";
 
 const runningCampaigns = new Set<string>();
 
@@ -37,8 +38,9 @@ export const Route = createFileRoute("/api/campaigns/$id/run")({
           });
         }
 
-        // Load org voice config
+        // Load voice + smtp config from org metadata
         let voice: Partial<AgentVoiceConfig> = {};
+        let smtpConfig: Partial<SmtpConfig> = {};
         try {
           const headers = getRequestHeaders();
           const orgs = await auth.api.listOrganizations({ headers });
@@ -46,6 +48,7 @@ export const Route = createFileRoute("/api/campaigns/$id/run")({
           if (org?.metadata) {
             const meta = JSON.parse(org.metadata as string) as Record<string, string>;
             if (meta.agentVoice) voice = JSON.parse(meta.agentVoice) as Partial<AgentVoiceConfig>;
+            if (meta.smtpConfig) smtpConfig = JSON.parse(meta.smtpConfig) as Partial<SmtpConfig>;
           }
         } catch { /* use defaults */ }
 
@@ -57,6 +60,7 @@ export const Route = createFileRoute("/api/campaigns/$id/run")({
             maxIterations: 40,
             orgId: campaign.organizationId,
             voice,
+            smtpConfig,
           });
           await updateCampaignLastRun(id);
           return Response.json({ ok: true, logs });
