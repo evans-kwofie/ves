@@ -11,6 +11,7 @@ import { listKeywords } from "~/db/queries/keywords";
 import { listRedditPosts } from "~/db/queries/reddit";
 import type { RedditPost } from "~/types/reddit";
 import type { Keyword } from "~/types/keyword";
+import { redditFilterSchema } from "~/schema/reddit.schema";
 
 const getRedditData = createServerFn({ method: "GET" })
   .inputValidator(z.string())
@@ -20,8 +21,11 @@ const getRedditData = createServerFn({ method: "GET" })
   });
 
 export const Route = createFileRoute("/$workspaceId/reddit")({
+  validateSearch: (search) => redditFilterSchema.parse(search),
+
   loader: ({ params }) => getRedditData({ data: params.workspaceId }),
   component: RedditPage,
+
 });
 
 function RedditPage() {
@@ -29,8 +33,11 @@ function RedditPage() {
   const { workspaceId } = Route.useParams();
   const [keywords, setKeywords] = React.useState<Keyword[]>(initial.keywords);
   const [posts, setPosts] = React.useState<RedditPost[]>(initial.posts);
-  const [selectedKeywordId, setSelectedKeywordId] = React.useState<string | null>(null);
+
   const [subDrawerOpen, setSubDrawerOpen] = React.useState(false);
+  const searchParams = Route.useSearch()
+
+  const selectedKeywordId = searchParams?.keyword === '' ? null : searchParams?.keyword
 
   const filteredPosts = selectedKeywordId
     ? posts.filter((p) => p.keywordId === selectedKeywordId)
@@ -42,7 +49,7 @@ function RedditPage() {
         title="Reddit"
         subtitle="Monitor subreddits for keyword mentions and generate reply suggestions."
         actions={
-          <Button variant="outline" onClick={() => setSubDrawerOpen(true)}>
+          <Button variant="ghost" onClick={() => setSubDrawerOpen(true)}>
             <Settings01Icon size={14} />
             Manage Subreddits
           </Button>
@@ -53,8 +60,8 @@ function RedditPage() {
           orgId={workspaceId}
           posts={filteredPosts}
           keywords={keywords}
-          selectedKeywordId={selectedKeywordId}
-          onSelectKeyword={setSelectedKeywordId}
+          // selectedKeywordId={selectedKeywordId}
+          // onSelectKeyword={setSelectedKeywordId}
           onPostsUpdated={setPosts}
         />
       </div>

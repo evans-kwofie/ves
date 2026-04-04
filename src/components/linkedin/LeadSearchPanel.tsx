@@ -63,18 +63,18 @@ export function LeadSearchPanel({ orgId, keywords }: LeadSearchPanelProps) {
     <div className="flex flex-col gap-5">
       {/* Controls */}
       <div className="flex items-center gap-3">
-        <div className="flex rounded-[var(--radius)] border border-[var(--border)] overflow-hidden">
+        <div className="flex rounded-(--radius) border border-(--border) overflow-hidden">
           <button
             type="button"
             onClick={() => setMode("single")}
-            className={`px-3 py-1.5 text-[12px] font-medium transition-colors ${mode === "single" ? "bg-[var(--accent)] text-[var(--accent-foreground)]" : "text-[var(--muted-foreground)] hover:text-[var(--foreground)]"}`}
+            className={`px-3 py-1.5 text-[12px] font-medium transition-colors ${mode === "single" ? "bg-(--accent) text-(--accent-foreground)" : "text-(--muted-foreground) hover:text-(--foreground)"}`}
           >
             Single keyword
           </button>
           <button
             type="button"
             onClick={() => setMode("all")}
-            className={`px-3 py-1.5 text-[12px] font-medium transition-colors ${mode === "all" ? "bg-[var(--accent)] text-[var(--accent-foreground)]" : "text-[var(--muted-foreground)] hover:text-[var(--foreground)]"}`}
+            className={`px-3 py-1.5 text-[12px] font-medium transition-colors ${mode === "all" ? "bg-(--accent) text-(--accent-foreground)" : "text-(--muted-foreground) hover:text-(--foreground)"}`}
           >
             All keywords
           </button>
