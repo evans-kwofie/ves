@@ -1,5 +1,5 @@
 import * as React from "react";
-import { LeadRow } from "./LeadRow";
+import { LeadRow } from "../molecules/LeadRow";
 import { Input } from "~/components/ui/input";
 import { UserGroupIcon } from "hugeicons-react";
 import type { Lead, LeadStatus, FitRating } from "~/types/lead";

@@ -241,13 +241,13 @@ export function SidebarHeader({ workspaceId, workspaceName, workspaceLogo }: Sid
 
   function handleSelect(id: string) {
     setOpen(false);
-    if (id !== workspaceId) navigate({ to: "/$workspaceId/", params: { workspaceId: id } });
+    if (id !== workspaceId) navigate({ to: "/$workspaceId", params: { workspaceId: id } });
   }
 
   function handleCreated(id: string) {
     setShowCreate(false);
     setOpen(false);
-    navigate({ to: "/$workspaceId/", params: { workspaceId: id } });
+    navigate({ to: "/$workspaceId", params: { workspaceId: id } });
   }
 
   return (

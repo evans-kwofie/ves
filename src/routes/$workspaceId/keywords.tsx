@@ -2,13 +2,13 @@ import * as React from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import * as z from "zod";
-import { Header } from "~/components/layout/Header";
-import { KeywordList } from "~/components/keywords/KeywordList";
-import { AddKeywordDialog } from "~/components/keywords/AddKeywordDialog";
+import { Header } from "~/components/templates/Header";
+import { KeywordList } from "~/components/modules/KeywordList";
+import { AddKeywordDialog } from "~/components/modules/AddKeywordDialog";
 import { Button } from "~/components/ui/button";
 import { Add01Icon, AiMagicIcon } from "hugeicons-react";
 import { listKeywords } from "~/db/queries/keywords";
-import { GenerateKeywordsDialog } from "~/components/keywords/GenerateKeywordsDialog";
+import { GenerateKeywordsDialog } from "~/components/modules/GenerateKeywordsDialog";
 import type { Keyword } from "~/types/keyword";
 
 const getKeywords = createServerFn({ method: "GET" })

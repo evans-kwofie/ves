@@ -1,7 +1,7 @@
 import * as React from "react";
-import { ArrowReloadHorizontalIcon, MessageSearch01Icon, SortingAZ01Icon } from "hugeicons-react";
+import { ArrowReloadHorizontalIcon } from "hugeicons-react";
 import { Button } from "~/components/ui/button";
-import { ReplyCard } from "./ReplyCard";
+import { ReplyCard } from "../molecules/ReplyCard";
 import { toast } from "sonner";
 import type { RedditPost, IntentType } from "~/types/reddit";
 import type { Keyword } from "~/types/keyword";

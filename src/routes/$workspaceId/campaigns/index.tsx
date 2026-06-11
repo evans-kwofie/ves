@@ -2,18 +2,17 @@ import * as React from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import * as z from "zod";
-import { Header } from "~/components/layout/Header";
+import { Header } from "~/components/templates/Header";
 import { Button } from "~/components/ui/button";
 import {
   Add01Icon,
   Mail01Icon,
   Linkedin01Icon,
   Delete02Icon,
-  PlayIcon,
+  ArrowRight01Icon,
   Target01Icon,
 } from "hugeicons-react";
 import { listCampaigns } from "~/db/queries/campaigns";
-import { OutputLog } from "~/components/agent/OutputLog";
 import { toast } from "sonner";
 import type { Campaign, CampaignStatus, RunFrequency } from "~/types/campaign";
 
@@ -63,93 +62,19 @@ function replyRate(sent: number, replies: number) {
   return `${Math.round((replies / sent) * 100)}%`;
 }
 
-// ─── Run log dialog ───────────────────────────────────────────────────────────
-function RunDialog({
-  campaign,
-  onClose,
-  onRan,
-}: {
-  campaign: Campaign;
-  onClose: () => void;
-  onRan: (id: string) => void;
-}) {
-  const [logs, setLogs] = React.useState<string[]>([]);
-  const [running, setRunning] = React.useState(false);
-  const [done, setDone] = React.useState(false);
-
-  async function handleRun() {
-    setRunning(true);
-    setLogs([]);
-    try {
-      const res = await fetch(`/api/campaigns/${campaign.id}/run`, { method: "POST" });
-      const data = (await res.json()) as { ok?: boolean; logs?: string[]; error?: string; message?: string };
-      if (!res.ok) {
-        toast.error(data.message ?? data.error ?? "Failed to run campaign");
-        setLogs([data.message ?? data.error ?? "Error"]);
-      } else {
-        setLogs(data.logs ?? []);
-        toast.success("Campaign run complete");
-        onRan(campaign.id);
-      }
-    } catch {
-      toast.error("Network error");
-    } finally {
-      setRunning(false);
-      setDone(true);
-    }
-  }
-
-  return (
-    <div className="dialog-overlay" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="dialog-content" style={{ maxWidth: 600 }}>
-        <div style={{ marginBottom: 16 }}>
-          <p className="dialog-title">Run Campaign</p>
-          <p className="dialog-description">
-            {campaign.name} · {campaign.leadCount} lead{campaign.leadCount !== 1 ? "s" : ""}
-            {campaign.goal ? ` · ${campaign.goal}` : ""}
-          </p>
-        </div>
-
-        {!running && !done && (
-          <p style={{ fontSize: 13, color: "var(--muted-foreground)", marginBottom: 16 }}>
-            The AI agent will send outreach to all uncontacted leads in this campaign, follow up on any that haven't replied in 3+ days, and log every action back to the pipeline.
-          </p>
-        )}
-
-        <OutputLog logs={logs} />
-
-        <div className="dialog-footer">
-          <button className="btn btn-ghost" onClick={onClose} disabled={running}>
-            {done ? "Close" : "Cancel"}
-          </button>
-          {!done && (
-            <Button onClick={handleRun} disabled={running}>
-              {running ? (
-                <><span className="spinner" />Running...</>
-              ) : (
-                <><PlayIcon size={13} />Run Now</>
-              )}
-            </Button>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
 // ─── Campaign card ────────────────────────────────────────────────────────────
 function CampaignCard({
   campaign,
+  workspaceId,
   onDelete,
   onStatusChange,
   onFrequencyChange,
-  onRunOpen,
 }: {
   campaign: Campaign;
+  workspaceId: string;
   onDelete: (id: string) => void;
   onStatusChange: (id: string, status: CampaignStatus) => void;
   onFrequencyChange: (id: string, freq: RunFrequency | null) => void;
-  onRunOpen: (campaign: Campaign) => void;
 }) {
   const [deleting, setDeleting] = React.useState(false);
   const badge = STATUS_BADGE[campaign.status];
@@ -207,7 +132,13 @@ function CampaignCard({
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8 }}>
         <div style={{ minWidth: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 4 }}>
-            <span style={{ fontSize: 14, fontWeight: 600, color: "var(--foreground)" }}>{campaign.name}</span>
+            <Link
+              to="/$workspaceId/campaigns/$id"
+              params={{ workspaceId, id: campaign.id }}
+              style={{ fontSize: 14, fontWeight: 600, color: "var(--foreground)", textDecoration: "none" }}
+            >
+              {campaign.name}
+            </Link>
             <span className={badge.cls}>{badge.label}</span>
             {campaign.channel && (
               <span className="badge badge-gray" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
@@ -226,10 +157,12 @@ function CampaignCard({
           <button className="btn btn-ghost btn-sm" onClick={handleActivate}>
             {campaign.status === "active" ? "Pause" : "Activate"}
           </button>
-          <Button onClick={() => onRunOpen(campaign)}>
-            <PlayIcon size={13} />
-            Run
-          </Button>
+          <Link to="/$workspaceId/campaigns/$id" params={{ workspaceId, id: campaign.id }}>
+            <Button>
+              <ArrowRight01Icon size={13} />
+              Open
+            </Button>
+          </Link>
           <button className="btn btn-ghost btn-sm" onClick={handleDelete} disabled={deleting} title="Delete">
             <Delete02Icon size={13} />
           </button>
@@ -294,7 +227,6 @@ function CampaignsPage() {
   const { workspaceId } = Route.useParams();
   const [campaigns, setCampaigns] = React.useState<Campaign[]>(initial);
   const [tab, setTab] = React.useState<CampaignStatus | "all">("all");
-  const [runTarget, setRunTarget] = React.useState<Campaign | null>(null);
 
   const filtered = tab === "all" ? campaigns : campaigns.filter((c) => c.status === tab);
 
@@ -312,12 +244,6 @@ function CampaignsPage() {
 
   function handleFrequencyChange(id: string, freq: RunFrequency | null) {
     setCampaigns((prev) => prev.map((c) => (c.id === id ? { ...c, runFrequency: freq } : c)));
-  }
-
-  function handleRan(id: string) {
-    setCampaigns((prev) =>
-      prev.map((c) => (c.id === id ? { ...c, lastRunAt: new Date().toISOString() } : c))
-    );
   }
 
   return (
@@ -404,10 +330,10 @@ function CampaignsPage() {
               <CampaignCard
                 key={c.id}
                 campaign={c}
+                workspaceId={workspaceId}
                 onDelete={handleDelete}
                 onStatusChange={handleStatusChange}
                 onFrequencyChange={handleFrequencyChange}
-                onRunOpen={setRunTarget}
               />
             ))}
           </div>
@@ -433,14 +359,6 @@ function CampaignsPage() {
         )}
       </div>
 
-      {/* Run dialog */}
-      {runTarget && (
-        <RunDialog
-          campaign={runTarget}
-          onClose={() => setRunTarget(null)}
-          onRan={(id) => { handleRan(id); }}
-        />
-      )}
     </>
   );
 }

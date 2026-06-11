@@ -2,7 +2,7 @@ import * as React from "react";
 import { PlayIcon, FlashIcon } from "hugeicons-react";
 import { Button } from "~/components/ui/button";
 import { Textarea } from "~/components/ui/textarea";
-import { OutputLog } from "./OutputLog";
+import { OutputLog } from "../molecules/OutputLog";
 import { toast } from "sonner";
 
 interface AgentConsoleProps {

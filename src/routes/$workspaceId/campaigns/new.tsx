@@ -2,7 +2,7 @@ import * as React from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import * as z from "zod";
-import { Header } from "~/components/layout/Header";
+import { Header } from "~/components/templates/Header";
 import { Button } from "~/components/ui/button";
 import { ArrowLeft01Icon, CheckmarkCircle01Icon, Mail01Icon, Linkedin01Icon, GlobalIcon } from "hugeicons-react";
 import { listLeads } from "~/db/queries/leads";

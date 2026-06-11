@@ -96,7 +96,7 @@ export async function saveReplySuggestion(id: string, suggestion: string): Promi
 
 export async function getRedditPostCount(orgId: string): Promise<number> {
   const result = await db.execute({
-    sql: "SELECT COUNT(*) as count FROM reddit_posts WHERE organization_id = ?",
+    sql: "SELECT COUNT(*)::int as count FROM reddit_posts WHERE organization_id = ?",
     args: [orgId],
   });
   return (result.rows[0] as Record<string, unknown>).count as number;

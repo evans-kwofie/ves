@@ -2,8 +2,8 @@ import { createFileRoute, redirect, Outlet } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { getRequestHeaders } from "@tanstack/react-start/server";
 import * as z from "zod";
-import { Sidebar } from "~/components/layout/Sidebar";
-import { Shell } from "~/components/layout/Shell";
+import { Sidebar } from "~/components/templates/Sidebar";
+import { Shell } from "~/components/templates/Shell";
 import { auth } from "~/lib/auth";
 import { getSessionFn } from "~/lib/session";
 

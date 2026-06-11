@@ -2,9 +2,9 @@ import * as React from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import * as z from "zod";
-import { Header } from "~/components/layout/Header";
-import { LeadSearchPanel } from "~/components/linkedin/LeadSearchPanel";
-import { LinkedInPostGenerator } from "~/components/linkedin/LinkedInPostGenerator";
+import { Header } from "~/components/templates/Header";
+import { LeadSearchPanel } from "~/components/modules/LeadSearchPanel";
+import { LinkedInPostGenerator } from "~/components/modules/LinkedInPostGenerator";
 import { listKeywords } from "~/db/queries/keywords";
 
 const getLinkedInData = createServerFn({ method: "GET" })

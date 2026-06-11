@@ -6,7 +6,6 @@ import { notifySlack } from "./tools/slack";
 import { buildSystemPrompt } from "./prompts";
 import { createOutreachEvent } from "~/db/queries/leads";
 import type { AgentVoiceConfig } from "~/routes/$workspaceId/settings/agent";
-import type { SmtpConfig } from "~/types/smtp";
 
 const client = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -89,7 +88,7 @@ const USER_TOOLS = [
   },
 ];
 
-async function executeTool(name: string, input: Record<string, unknown>, orgId: string, smtpConfig?: Partial<SmtpConfig>): Promise<string> {
+async function executeTool(name: string, input: Record<string, unknown>, orgId: string): Promise<string> {
   try {
     switch (name) {
       case "read_pipeline": {
@@ -109,7 +108,7 @@ async function executeTool(name: string, input: Record<string, unknown>, orgId: 
           to: input.to as string,
           subject: input.subject as string,
           body: input.body as string,
-        }, smtpConfig);
+        });
         if (result.success && input.leadId) {
           const now = new Date().toISOString();
           await updateLead(input.leadId as string, {
@@ -144,7 +143,7 @@ async function executeTool(name: string, input: Record<string, unknown>, orgId: 
 
 export async function runAgent(
   prompt: string,
-  opts?: { maxIterations?: number; orgId?: string; voice?: Partial<AgentVoiceConfig>; smtpConfig?: Partial<SmtpConfig> },
+  opts?: { maxIterations?: number; orgId?: string; voice?: Partial<AgentVoiceConfig> },
 ): Promise<string[]> {
   const logs: string[] = [];
   const log = (line: string) => {
@@ -213,7 +212,7 @@ export async function runAgent(
       for (const block of response.content) {
         if (block.type === "tool_use") {
           log(`[Tool] ${block.name}`);
-          const result = await executeTool(block.name, block.input as Record<string, unknown>, orgId, opts?.smtpConfig);
+          const result = await executeTool(block.name, block.input as Record<string, unknown>, orgId);
           log(`[Tool Result] ${result.slice(0, 300)}\n`);
           toolResults.push({
             type: "tool_result",

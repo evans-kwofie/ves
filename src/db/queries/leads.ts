@@ -207,11 +207,11 @@ export async function getLeadGrowth(orgId: string): Promise<{ date: string; coun
   // Returns lead counts grouped by day for the last 7 days
   const result = await db.execute({
     sql: `
-      SELECT DATE(added_at) as date, COUNT(*) as count
+      SELECT added_at::date as date, COUNT(*)::int as count
       FROM leads
       WHERE organization_id = ?
-        AND added_at >= DATE('now', '-6 days')
-      GROUP BY DATE(added_at)
+        AND added_at >= (CURRENT_DATE - INTERVAL '6 days')::text
+      GROUP BY added_at::date
       ORDER BY date ASC
     `,
     args: [orgId],

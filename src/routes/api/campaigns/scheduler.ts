@@ -5,7 +5,6 @@ import { runAgent } from "~/agent/agent";
 import { auth } from "~/lib/auth";
 import { getRequestHeaders } from "@tanstack/react-start/server";
 import type { AgentVoiceConfig } from "~/routes/$workspaceId/settings/agent";
-import type { SmtpConfig } from "~/types/smtp";
 
 let schedulerRunning = false;
 
@@ -25,9 +24,8 @@ export const Route = createFileRoute("/api/campaigns/scheduler")({
           return Response.json({ ok: true, ran: 0, message: "No campaigns due to run." });
         }
 
-        // Load all org voice + smtp configs once
+        // Load all org voice configs once
         let orgVoiceMap: Record<string, Partial<AgentVoiceConfig>> = {};
-        let orgSmtpMap: Record<string, Partial<SmtpConfig>> = {};
         try {
           const headers = getRequestHeaders();
           const orgs = await auth.api.listOrganizations({ headers });
@@ -35,7 +33,6 @@ export const Route = createFileRoute("/api/campaigns/scheduler")({
             if (org.metadata) {
               const meta = JSON.parse(org.metadata as string) as Record<string, string>;
               if (meta.agentVoice) orgVoiceMap[org.id] = JSON.parse(meta.agentVoice) as Partial<AgentVoiceConfig>;
-              if (meta.smtpConfig) orgSmtpMap[org.id] = JSON.parse(meta.smtpConfig) as Partial<SmtpConfig>;
             }
           }
         } catch { /* use defaults */ }
@@ -52,11 +49,10 @@ export const Route = createFileRoute("/api/campaigns/scheduler")({
             }
 
             const voice = orgVoiceMap[campaign.organizationId] ?? {};
-            const smtpConfig = orgSmtpMap[campaign.organizationId] ?? {};
             const prompt = buildCampaignPrompt(campaign, leads);
 
             try {
-              await runAgent(prompt, { maxIterations: 40, orgId: campaign.organizationId, voice, smtpConfig });
+              await runAgent(prompt, { maxIterations: 40, orgId: campaign.organizationId, voice });
               await updateCampaignLastRun(campaign.id);
               results.push({ campaignId: campaign.id, name: campaign.name, leadsCount: leads.length, ok: true });
             } catch (err) {

@@ -40,10 +40,14 @@ export const Route = createRootRoute({
   shellComponent: RootDocument,
 });
 
+const themeScript = `(function(){try{var t=localStorage.getItem("vesper-theme");document.documentElement.setAttribute("data-theme",t==="light"?"light":"dark")}catch(e){}})();`;
+
 function RootDocument({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <head>
+        {/* Blocking script prevents theme flash on load/navigation */}
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
         <HeadContent />
       </head>
       <body>

@@ -24,9 +24,9 @@ function rowToCampaign(row: Record<string, unknown>): Campaign {
 async function attachStats(campaigns: Campaign[]): Promise<Campaign[]> {
   for (const c of campaigns) {
     const [lc, sc, rc] = await Promise.all([
-      db.execute({ sql: "SELECT COUNT(*) as count FROM campaign_leads WHERE campaign_id = ?", args: [c.id] }),
-      db.execute({ sql: "SELECT COUNT(*) as count FROM outreach_events WHERE campaign_id = ? AND status = 'email_sent'", args: [c.id] }),
-      db.execute({ sql: "SELECT COUNT(*) as count FROM outreach_events WHERE campaign_id = ? AND status = 'replied'", args: [c.id] }),
+      db.execute({ sql: "SELECT COUNT(*)::int as count FROM campaign_leads WHERE campaign_id = ?", args: [c.id] }),
+      db.execute({ sql: "SELECT COUNT(*)::int as count FROM outreach_events WHERE campaign_id = ? AND status = 'email_sent'", args: [c.id] }),
+      db.execute({ sql: "SELECT COUNT(*)::int as count FROM outreach_events WHERE campaign_id = ? AND status = 'replied'", args: [c.id] }),
     ]);
     c.leadCount = (lc.rows[0] as Record<string, unknown>).count as number;
     c.sentCount = (sc.rows[0] as Record<string, unknown>).count as number;
@@ -63,7 +63,7 @@ export async function createCampaign(orgId: string, input: CreateCampaignInput):
   if (input.leadIds && input.leadIds.length > 0) {
     for (const leadId of input.leadIds) {
       await db.execute({
-        sql: "INSERT OR IGNORE INTO campaign_leads (id, campaign_id, lead_id) VALUES (?, ?, ?)",
+        sql: "INSERT INTO campaign_leads (id, campaign_id, lead_id) VALUES (?, ?, ?) ON CONFLICT DO NOTHING",
         args: [uuidv4(), id, leadId],
       });
     }
@@ -102,7 +102,7 @@ export async function getCampaignLeadIds(campaignId: string): Promise<string[]> 
 
 export async function addLeadToCampaign(campaignId: string, leadId: string): Promise<void> {
   await db.execute({
-    sql: "INSERT OR IGNORE INTO campaign_leads (id, campaign_id, lead_id) VALUES (?, ?, ?)",
+    sql: "INSERT INTO campaign_leads (id, campaign_id, lead_id) VALUES (?, ?, ?) ON CONFLICT DO NOTHING",
     args: [uuidv4(), campaignId, leadId],
   });
 }

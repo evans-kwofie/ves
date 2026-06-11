@@ -1,7 +1,7 @@
 import * as React from "react";
 import { createFileRoute, Outlet, Link } from "@tanstack/react-router";
 import { ArrowLeft01Icon } from "hugeicons-react";
-import { SettingsNav } from "~/components/settings/SettingsNav";
+import { SettingsNav } from "~/components/templates/SettingsNav";
 
 export const Route = createFileRoute("/$workspaceId/settings")({
   component: SettingsLayout,
@@ -15,7 +15,7 @@ function SettingsLayout() {
       {/* Header */}
       <div className="h-[68px] flex items-center px-8 border-b border-[var(--border)] shrink-0 gap-4">
         <Link
-          to="/$workspaceId/"
+          to="/$workspaceId"
           params={{ workspaceId }}
           className="flex items-center gap-1.5 text-[12px] text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors"
           style={{ textDecoration: "none" }}

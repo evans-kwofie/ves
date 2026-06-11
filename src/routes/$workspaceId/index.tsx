@@ -5,19 +5,22 @@ import * as z from "zod";
 import { getDashboardStats, getRecentLeads, getLeadGrowth } from "~/db/queries/leads";
 import { getRedditPostCount, getRecentRedditActivity } from "~/db/queries/reddit";
 import { listKeywords } from "~/db/queries/keywords";
+import { listCampaigns } from "~/db/queries/campaigns";
 import { getSessionFn } from "~/lib/session";
 import { ArrowUpRight01Icon, MinusSignIcon } from "hugeicons-react";
 import type { Lead } from "~/types/lead";
+import { WelcomeDashboard } from "~/components/modules/WelcomeDashboard";
 
 const getDashboard = createServerFn({ method: "GET" })
   .inputValidator(z.string())
   .handler(async ({ data: orgId }) => {
-    const [session, leadStats, redditCount, keywords, recentLeads, leadGrowth, recentActivity] =
+    const [session, leadStats, redditCount, keywords, campaigns, recentLeads, leadGrowth, recentActivity] =
       await Promise.all([
         getSessionFn(),
         getDashboardStats(orgId),
         getRedditPostCount(orgId),
         listKeywords(orgId),
+        listCampaigns(orgId),
         getRecentLeads(orgId, 5),
         getLeadGrowth(orgId),
         getRecentRedditActivity(orgId, 4),
@@ -27,6 +30,8 @@ const getDashboard = createServerFn({ method: "GET" })
       ...leadStats,
       redditPosts: redditCount,
       activeKeywords: keywords.filter((k) => k.isActive).length,
+      hasCampaigns: campaigns.length > 0,
+      hasKeywords: keywords.filter((k) => k.isActive).length > 0,
       recentLeads,
       leadGrowth,
       recentActivity,
@@ -151,6 +156,22 @@ const FIT_COLOR: Record<string, string> = {
 function DashboardPage() {
   const data = Route.useLoaderData();
   const { workspaceId } = Route.useParams();
+
+  const isEmpty = data.totalLeads === 0 && !data.hasCampaigns && !data.hasKeywords;
+
+  if (isEmpty) {
+    return (
+      <div className="page-content">
+        <WelcomeDashboard
+          workspaceId={workspaceId}
+          userName={data.userName}
+          hasLeads={data.totalLeads > 0}
+          hasCampaigns={data.hasCampaigns}
+          hasKeywords={data.hasKeywords}
+        />
+      </div>
+    );
+  }
 
   const convRate = data.totalLeads > 0
     ? ((data.converted / data.totalLeads) * 100).toFixed(1)

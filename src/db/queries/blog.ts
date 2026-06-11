@@ -93,7 +93,7 @@ export async function deleteBlogPost(id: string): Promise<void> {
 
 export async function getBlogPostCount(orgId: string): Promise<number> {
   const result = await db.execute({
-    sql: "SELECT COUNT(*) as count FROM blog_posts WHERE organization_id = ?",
+    sql: "SELECT COUNT(*)::int as count FROM blog_posts WHERE organization_id = ?",
     args: [orgId],
   });
   return (result.rows[0] as Record<string, unknown>).count as number;

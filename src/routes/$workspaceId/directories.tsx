@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Header } from "~/components/layout/Header";
-import { DirectorySearchPanel } from "~/components/directories/DirectorySearchPanel";
+import { Header } from "~/components/templates/Header";
+import { DirectorySearchPanel } from "~/components/modules/DirectorySearchPanel";
 
 export const Route = createFileRoute("/$workspaceId/directories")({
   component: DirectoriesPage,

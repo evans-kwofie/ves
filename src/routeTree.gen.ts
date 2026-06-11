@@ -60,9 +60,13 @@ import { Route as WorkspaceIdSettingsDangerRouteImport } from './routes/$workspa
 import { Route as WorkspaceIdSettingsBillingRouteImport } from './routes/$workspaceId/settings/billing'
 import { Route as WorkspaceIdSettingsAgentRouteImport } from './routes/$workspaceId/settings/agent'
 import { Route as WorkspaceIdCampaignsNewRouteImport } from './routes/$workspaceId/campaigns/new'
+import { Route as WorkspaceIdCampaignsIdIndexRouteImport } from './routes/$workspaceId/campaigns/$id/index'
 import { Route as ApiPipelineLeadsIdRouteImport } from './routes/api/pipeline/leads.$id'
 import { Route as ApiCampaignsIdRunRouteImport } from './routes/api/campaigns/$id/run'
 import { Route as ApiCampaignsIdLeadsRouteImport } from './routes/api/campaigns/$id/leads'
+import { Route as ApiCampaignsIdGenerateDraftsRouteImport } from './routes/api/campaigns/$id/generate-drafts'
+import { Route as ApiCampaignsIdDraftsRouteImport } from './routes/api/campaigns/$id/drafts'
+import { Route as ApiCampaignsIdDraftsDraftIdRouteImport } from './routes/api/campaigns/$id/drafts.$draftId'
 
 const SignUpRoute = SignUpRouteImport.update({
   id: '/sign-up',
@@ -329,6 +333,12 @@ const WorkspaceIdCampaignsNewRoute = WorkspaceIdCampaignsNewRouteImport.update({
   path: '/campaigns/new',
   getParentRoute: () => WorkspaceIdRouteRoute,
 } as any)
+const WorkspaceIdCampaignsIdIndexRoute =
+  WorkspaceIdCampaignsIdIndexRouteImport.update({
+    id: '/campaigns/$id/',
+    path: '/campaigns/$id/',
+    getParentRoute: () => WorkspaceIdRouteRoute,
+  } as any)
 const ApiPipelineLeadsIdRoute = ApiPipelineLeadsIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -344,6 +354,23 @@ const ApiCampaignsIdLeadsRoute = ApiCampaignsIdLeadsRouteImport.update({
   path: '/leads',
   getParentRoute: () => ApiCampaignsIdRoute,
 } as any)
+const ApiCampaignsIdGenerateDraftsRoute =
+  ApiCampaignsIdGenerateDraftsRouteImport.update({
+    id: '/generate-drafts',
+    path: '/generate-drafts',
+    getParentRoute: () => ApiCampaignsIdRoute,
+  } as any)
+const ApiCampaignsIdDraftsRoute = ApiCampaignsIdDraftsRouteImport.update({
+  id: '/drafts',
+  path: '/drafts',
+  getParentRoute: () => ApiCampaignsIdRoute,
+} as any)
+const ApiCampaignsIdDraftsDraftIdRoute =
+  ApiCampaignsIdDraftsDraftIdRouteImport.update({
+    id: '/$draftId',
+    path: '/$draftId',
+    getParentRoute: () => ApiCampaignsIdDraftsRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -397,9 +424,13 @@ export interface FileRoutesByFullPath {
   '/api/keywords/': typeof ApiKeywordsIndexRoute
   '/api/pipeline/': typeof ApiPipelineIndexRoute
   '/api/subreddits/': typeof ApiSubredditsIndexRoute
+  '/api/campaigns/$id/drafts': typeof ApiCampaignsIdDraftsRouteWithChildren
+  '/api/campaigns/$id/generate-drafts': typeof ApiCampaignsIdGenerateDraftsRoute
   '/api/campaigns/$id/leads': typeof ApiCampaignsIdLeadsRoute
   '/api/campaigns/$id/run': typeof ApiCampaignsIdRunRoute
   '/api/pipeline/leads/$id': typeof ApiPipelineLeadsIdRoute
+  '/$workspaceId/campaigns/$id/': typeof WorkspaceIdCampaignsIdIndexRoute
+  '/api/campaigns/$id/drafts/$draftId': typeof ApiCampaignsIdDraftsDraftIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -451,9 +482,13 @@ export interface FileRoutesByTo {
   '/api/keywords': typeof ApiKeywordsIndexRoute
   '/api/pipeline': typeof ApiPipelineIndexRoute
   '/api/subreddits': typeof ApiSubredditsIndexRoute
+  '/api/campaigns/$id/drafts': typeof ApiCampaignsIdDraftsRouteWithChildren
+  '/api/campaigns/$id/generate-drafts': typeof ApiCampaignsIdGenerateDraftsRoute
   '/api/campaigns/$id/leads': typeof ApiCampaignsIdLeadsRoute
   '/api/campaigns/$id/run': typeof ApiCampaignsIdRunRoute
   '/api/pipeline/leads/$id': typeof ApiPipelineLeadsIdRoute
+  '/$workspaceId/campaigns/$id': typeof WorkspaceIdCampaignsIdIndexRoute
+  '/api/campaigns/$id/drafts/$draftId': typeof ApiCampaignsIdDraftsDraftIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -508,9 +543,13 @@ export interface FileRoutesById {
   '/api/keywords/': typeof ApiKeywordsIndexRoute
   '/api/pipeline/': typeof ApiPipelineIndexRoute
   '/api/subreddits/': typeof ApiSubredditsIndexRoute
+  '/api/campaigns/$id/drafts': typeof ApiCampaignsIdDraftsRouteWithChildren
+  '/api/campaigns/$id/generate-drafts': typeof ApiCampaignsIdGenerateDraftsRoute
   '/api/campaigns/$id/leads': typeof ApiCampaignsIdLeadsRoute
   '/api/campaigns/$id/run': typeof ApiCampaignsIdRunRoute
   '/api/pipeline/leads/$id': typeof ApiPipelineLeadsIdRoute
+  '/$workspaceId/campaigns/$id/': typeof WorkspaceIdCampaignsIdIndexRoute
+  '/api/campaigns/$id/drafts/$draftId': typeof ApiCampaignsIdDraftsDraftIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -566,9 +605,13 @@ export interface FileRouteTypes {
     | '/api/keywords/'
     | '/api/pipeline/'
     | '/api/subreddits/'
+    | '/api/campaigns/$id/drafts'
+    | '/api/campaigns/$id/generate-drafts'
     | '/api/campaigns/$id/leads'
     | '/api/campaigns/$id/run'
     | '/api/pipeline/leads/$id'
+    | '/$workspaceId/campaigns/$id/'
+    | '/api/campaigns/$id/drafts/$draftId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -620,9 +663,13 @@ export interface FileRouteTypes {
     | '/api/keywords'
     | '/api/pipeline'
     | '/api/subreddits'
+    | '/api/campaigns/$id/drafts'
+    | '/api/campaigns/$id/generate-drafts'
     | '/api/campaigns/$id/leads'
     | '/api/campaigns/$id/run'
     | '/api/pipeline/leads/$id'
+    | '/$workspaceId/campaigns/$id'
+    | '/api/campaigns/$id/drafts/$draftId'
   id:
     | '__root__'
     | '/'
@@ -676,9 +723,13 @@ export interface FileRouteTypes {
     | '/api/keywords/'
     | '/api/pipeline/'
     | '/api/subreddits/'
+    | '/api/campaigns/$id/drafts'
+    | '/api/campaigns/$id/generate-drafts'
     | '/api/campaigns/$id/leads'
     | '/api/campaigns/$id/run'
     | '/api/pipeline/leads/$id'
+    | '/$workspaceId/campaigns/$id/'
+    | '/api/campaigns/$id/drafts/$draftId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -1076,6 +1127,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkspaceIdCampaignsNewRouteImport
       parentRoute: typeof WorkspaceIdRouteRoute
     }
+    '/$workspaceId/campaigns/$id/': {
+      id: '/$workspaceId/campaigns/$id/'
+      path: '/campaigns/$id'
+      fullPath: '/$workspaceId/campaigns/$id/'
+      preLoaderRoute: typeof WorkspaceIdCampaignsIdIndexRouteImport
+      parentRoute: typeof WorkspaceIdRouteRoute
+    }
     '/api/pipeline/leads/$id': {
       id: '/api/pipeline/leads/$id'
       path: '/$id'
@@ -1096,6 +1154,27 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/campaigns/$id/leads'
       preLoaderRoute: typeof ApiCampaignsIdLeadsRouteImport
       parentRoute: typeof ApiCampaignsIdRoute
+    }
+    '/api/campaigns/$id/generate-drafts': {
+      id: '/api/campaigns/$id/generate-drafts'
+      path: '/generate-drafts'
+      fullPath: '/api/campaigns/$id/generate-drafts'
+      preLoaderRoute: typeof ApiCampaignsIdGenerateDraftsRouteImport
+      parentRoute: typeof ApiCampaignsIdRoute
+    }
+    '/api/campaigns/$id/drafts': {
+      id: '/api/campaigns/$id/drafts'
+      path: '/drafts'
+      fullPath: '/api/campaigns/$id/drafts'
+      preLoaderRoute: typeof ApiCampaignsIdDraftsRouteImport
+      parentRoute: typeof ApiCampaignsIdRoute
+    }
+    '/api/campaigns/$id/drafts/$draftId': {
+      id: '/api/campaigns/$id/drafts/$draftId'
+      path: '/$draftId'
+      fullPath: '/api/campaigns/$id/drafts/$draftId'
+      preLoaderRoute: typeof ApiCampaignsIdDraftsDraftIdRouteImport
+      parentRoute: typeof ApiCampaignsIdDraftsRoute
     }
   }
 }
@@ -1138,6 +1217,7 @@ interface WorkspaceIdRouteRouteChildren {
   WorkspaceIdIndexRoute: typeof WorkspaceIdIndexRoute
   WorkspaceIdCampaignsNewRoute: typeof WorkspaceIdCampaignsNewRoute
   WorkspaceIdCampaignsIndexRoute: typeof WorkspaceIdCampaignsIndexRoute
+  WorkspaceIdCampaignsIdIndexRoute: typeof WorkspaceIdCampaignsIdIndexRoute
 }
 
 const WorkspaceIdRouteRouteChildren: WorkspaceIdRouteRouteChildren = {
@@ -1152,17 +1232,33 @@ const WorkspaceIdRouteRouteChildren: WorkspaceIdRouteRouteChildren = {
   WorkspaceIdIndexRoute: WorkspaceIdIndexRoute,
   WorkspaceIdCampaignsNewRoute: WorkspaceIdCampaignsNewRoute,
   WorkspaceIdCampaignsIndexRoute: WorkspaceIdCampaignsIndexRoute,
+  WorkspaceIdCampaignsIdIndexRoute: WorkspaceIdCampaignsIdIndexRoute,
 }
 
 const WorkspaceIdRouteRouteWithChildren =
   WorkspaceIdRouteRoute._addFileChildren(WorkspaceIdRouteRouteChildren)
 
+interface ApiCampaignsIdDraftsRouteChildren {
+  ApiCampaignsIdDraftsDraftIdRoute: typeof ApiCampaignsIdDraftsDraftIdRoute
+}
+
+const ApiCampaignsIdDraftsRouteChildren: ApiCampaignsIdDraftsRouteChildren = {
+  ApiCampaignsIdDraftsDraftIdRoute: ApiCampaignsIdDraftsDraftIdRoute,
+}
+
+const ApiCampaignsIdDraftsRouteWithChildren =
+  ApiCampaignsIdDraftsRoute._addFileChildren(ApiCampaignsIdDraftsRouteChildren)
+
 interface ApiCampaignsIdRouteChildren {
+  ApiCampaignsIdDraftsRoute: typeof ApiCampaignsIdDraftsRouteWithChildren
+  ApiCampaignsIdGenerateDraftsRoute: typeof ApiCampaignsIdGenerateDraftsRoute
   ApiCampaignsIdLeadsRoute: typeof ApiCampaignsIdLeadsRoute
   ApiCampaignsIdRunRoute: typeof ApiCampaignsIdRunRoute
 }
 
 const ApiCampaignsIdRouteChildren: ApiCampaignsIdRouteChildren = {
+  ApiCampaignsIdDraftsRoute: ApiCampaignsIdDraftsRouteWithChildren,
+  ApiCampaignsIdGenerateDraftsRoute: ApiCampaignsIdGenerateDraftsRoute,
   ApiCampaignsIdLeadsRoute: ApiCampaignsIdLeadsRoute,
   ApiCampaignsIdRunRoute: ApiCampaignsIdRunRoute,
 }

@@ -11,93 +11,85 @@ async function safeAlter(query: string) {
 export async function initDb(): Promise<void> {
   // Better Auth tables — created here so fresh deploys work without running drizzle-kit manually.
   await db.executeMultiple(`
-    CREATE TABLE IF NOT EXISTS \`user\` (
-      \`id\` text PRIMARY KEY NOT NULL,
-      \`name\` text NOT NULL,
-      \`email\` text NOT NULL,
-      \`email_verified\` integer NOT NULL,
-      \`image\` text,
-      \`created_at\` integer NOT NULL,
-      \`updated_at\` integer NOT NULL
+    CREATE TABLE IF NOT EXISTS "user" (
+      id text PRIMARY KEY NOT NULL,
+      name text NOT NULL,
+      email text NOT NULL,
+      email_verified boolean NOT NULL DEFAULT false,
+      image text,
+      created_at timestamptz NOT NULL DEFAULT now(),
+      updated_at timestamptz NOT NULL DEFAULT now()
     );
-    CREATE UNIQUE INDEX IF NOT EXISTS \`user_email_unique\` ON \`user\` (\`email\`);
+    CREATE UNIQUE INDEX IF NOT EXISTS user_email_unique ON "user" (email);
 
-    CREATE TABLE IF NOT EXISTS \`session\` (
-      \`id\` text PRIMARY KEY NOT NULL,
-      \`expires_at\` integer NOT NULL,
-      \`token\` text NOT NULL,
-      \`created_at\` integer NOT NULL,
-      \`updated_at\` integer NOT NULL,
-      \`ip_address\` text,
-      \`user_agent\` text,
-      \`user_id\` text NOT NULL,
-      \`active_organization_id\` text,
-      FOREIGN KEY (\`user_id\`) REFERENCES \`user\`(\`id\`) ON DELETE CASCADE
+    CREATE TABLE IF NOT EXISTS session (
+      id text PRIMARY KEY NOT NULL,
+      expires_at timestamptz NOT NULL,
+      token text NOT NULL,
+      created_at timestamptz NOT NULL DEFAULT now(),
+      updated_at timestamptz NOT NULL DEFAULT now(),
+      ip_address text,
+      user_agent text,
+      user_id text NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
+      active_organization_id text
     );
-    CREATE UNIQUE INDEX IF NOT EXISTS \`session_token_unique\` ON \`session\` (\`token\`);
+    CREATE UNIQUE INDEX IF NOT EXISTS session_token_unique ON session (token);
 
-    CREATE TABLE IF NOT EXISTS \`account\` (
-      \`id\` text PRIMARY KEY NOT NULL,
-      \`account_id\` text NOT NULL,
-      \`provider_id\` text NOT NULL,
-      \`user_id\` text NOT NULL,
-      \`access_token\` text,
-      \`refresh_token\` text,
-      \`id_token\` text,
-      \`access_token_expires_at\` integer,
-      \`refresh_token_expires_at\` integer,
-      \`scope\` text,
-      \`password\` text,
-      \`created_at\` integer NOT NULL,
-      \`updated_at\` integer NOT NULL,
-      FOREIGN KEY (\`user_id\`) REFERENCES \`user\`(\`id\`) ON DELETE CASCADE
+    CREATE TABLE IF NOT EXISTS account (
+      id text PRIMARY KEY NOT NULL,
+      account_id text NOT NULL,
+      provider_id text NOT NULL,
+      user_id text NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
+      access_token text,
+      refresh_token text,
+      id_token text,
+      access_token_expires_at timestamptz,
+      refresh_token_expires_at timestamptz,
+      scope text,
+      password text,
+      created_at timestamptz NOT NULL DEFAULT now(),
+      updated_at timestamptz NOT NULL DEFAULT now()
     );
 
-    CREATE TABLE IF NOT EXISTS \`verification\` (
-      \`id\` text PRIMARY KEY NOT NULL,
-      \`identifier\` text NOT NULL,
-      \`value\` text NOT NULL,
-      \`expires_at\` integer NOT NULL,
-      \`created_at\` integer,
-      \`updated_at\` integer
+    CREATE TABLE IF NOT EXISTS verification (
+      id text PRIMARY KEY NOT NULL,
+      identifier text NOT NULL,
+      value text NOT NULL,
+      expires_at timestamptz NOT NULL,
+      created_at timestamptz,
+      updated_at timestamptz
     );
 
-    CREATE TABLE IF NOT EXISTS \`organization\` (
-      \`id\` text PRIMARY KEY NOT NULL,
-      \`name\` text NOT NULL,
-      \`slug\` text,
-      \`logo\` text,
-      \`created_at\` integer NOT NULL,
-      \`metadata\` text
+    CREATE TABLE IF NOT EXISTS organization (
+      id text PRIMARY KEY NOT NULL,
+      name text NOT NULL,
+      slug text,
+      logo text,
+      created_at timestamptz NOT NULL DEFAULT now(),
+      metadata text
     );
-    CREATE UNIQUE INDEX IF NOT EXISTS \`organization_slug_unique\` ON \`organization\` (\`slug\`);
+    CREATE UNIQUE INDEX IF NOT EXISTS organization_slug_unique ON organization (slug);
 
-    CREATE TABLE IF NOT EXISTS \`member\` (
-      \`id\` text PRIMARY KEY NOT NULL,
-      \`organization_id\` text NOT NULL,
-      \`user_id\` text NOT NULL,
-      \`role\` text NOT NULL,
-      \`created_at\` integer NOT NULL,
-      FOREIGN KEY (\`organization_id\`) REFERENCES \`organization\`(\`id\`) ON DELETE CASCADE,
-      FOREIGN KEY (\`user_id\`) REFERENCES \`user\`(\`id\`) ON DELETE CASCADE
+    CREATE TABLE IF NOT EXISTS member (
+      id text PRIMARY KEY NOT NULL,
+      organization_id text NOT NULL REFERENCES organization(id) ON DELETE CASCADE,
+      user_id text NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
+      role text NOT NULL,
+      created_at timestamptz NOT NULL DEFAULT now()
     );
 
-    CREATE TABLE IF NOT EXISTS \`invitation\` (
-      \`id\` text PRIMARY KEY NOT NULL,
-      \`organization_id\` text NOT NULL,
-      \`email\` text NOT NULL,
-      \`role\` text,
-      \`status\` text NOT NULL,
-      \`expires_at\` integer NOT NULL,
-      \`inviter_id\` text NOT NULL,
-      FOREIGN KEY (\`organization_id\`) REFERENCES \`organization\`(\`id\`) ON DELETE CASCADE,
-      FOREIGN KEY (\`inviter_id\`) REFERENCES \`user\`(\`id\`) ON DELETE CASCADE
+    CREATE TABLE IF NOT EXISTS invitation (
+      id text PRIMARY KEY NOT NULL,
+      organization_id text NOT NULL REFERENCES organization(id) ON DELETE CASCADE,
+      email text NOT NULL,
+      role text,
+      status text NOT NULL,
+      expires_at timestamptz NOT NULL,
+      inviter_id text NOT NULL REFERENCES "user"(id) ON DELETE CASCADE
     );
   `);
 
   await db.executeMultiple(`
-    PRAGMA foreign_keys = ON;
-
     -- ========================
     -- ICP / PRODUCT CONTEXT
     -- ========================
@@ -255,8 +247,9 @@ export async function initDb(): Promise<void> {
       last_run TEXT
     );
 
-    INSERT OR IGNORE INTO pipeline_meta (id, weekly_target, total_emails_sent, total_replies, last_run)
-    VALUES (1, 5, 0, 0, NULL);
+    INSERT INTO pipeline_meta (id, weekly_target, total_emails_sent, total_replies, last_run)
+    VALUES (1, 5, 0, 0, NULL)
+    ON CONFLICT (id) DO NOTHING;
   `);
 
   // Safe column additions for existing DBs
@@ -309,6 +302,24 @@ export async function initDb(): Promise<void> {
   await safeAlter(`ALTER TABLE outreach_events ADD COLUMN campaign_id TEXT REFERENCES campaigns(id) ON DELETE SET NULL`);
   await safeAlter(`ALTER TABLE campaigns ADD COLUMN run_frequency TEXT`);
   await safeAlter(`ALTER TABLE campaigns ADD COLUMN last_run_at TEXT`);
+
+  await db.executeMultiple(`
+    CREATE TABLE IF NOT EXISTS campaign_drafts (
+      id TEXT PRIMARY KEY,
+      campaign_id TEXT NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,
+      lead_id TEXT NOT NULL REFERENCES leads(id) ON DELETE CASCADE,
+      channel TEXT NOT NULL DEFAULT 'email',
+      subject TEXT,
+      body TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'pending',
+      sent_at TEXT,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      UNIQUE(campaign_id, lead_id)
+    );
+    CREATE INDEX IF NOT EXISTS idx_campaign_drafts_campaign ON campaign_drafts(campaign_id);
+    CREATE INDEX IF NOT EXISTS idx_campaign_drafts_status ON campaign_drafts(status);
+  `);
 
   await db.executeMultiple(`
     CREATE INDEX IF NOT EXISTS idx_campaigns_org ON campaigns(organization_id);

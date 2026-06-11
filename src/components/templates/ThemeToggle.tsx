@@ -10,14 +10,10 @@ function applyTheme(theme: Theme) {
 }
 
 export function useTheme() {
-  const [theme, setThemeState] = React.useState<Theme>("dark");
-
-  React.useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY) as Theme | null;
-    const initial = stored ?? "dark";
-    setThemeState(initial);
-    applyTheme(initial);
-  }, []);
+  const [theme, setThemeState] = React.useState<Theme>(() => {
+    if (typeof window === "undefined") return "dark";
+    return (localStorage.getItem(STORAGE_KEY) as Theme | null) ?? "dark";
+  });
 
   function toggle() {
     const next: Theme = theme === "dark" ? "light" : "dark";

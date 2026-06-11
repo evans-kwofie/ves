@@ -1,7 +1,7 @@
 import * as React from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { Header } from "~/components/layout/Header";
-import { AgentConsole } from "~/components/agent/AgentConsole";
+import { Header } from "~/components/templates/Header";
+import { AgentConsole } from "~/components/modules/AgentConsole";
 
 export const Route = createFileRoute("/$workspaceId/agent")({
   component: AgentPage,
