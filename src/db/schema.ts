@@ -300,6 +300,9 @@ export async function initDb(): Promise<void> {
   `);
 
   await safeAlter(`ALTER TABLE outreach_events ADD COLUMN campaign_id TEXT REFERENCES campaigns(id) ON DELETE SET NULL`);
+  await safeAlter(`ALTER TABLE campaign_drafts ADD COLUMN resend_message_id TEXT`);
+  await safeAlter(`ALTER TABLE campaign_drafts ADD COLUMN send_after TEXT`);
+  await safeAlter(`ALTER TABLE campaign_drafts ADD COLUMN step_number INTEGER`);
   await safeAlter(`ALTER TABLE campaigns ADD COLUMN run_frequency TEXT`);
   await safeAlter(`ALTER TABLE campaigns ADD COLUMN last_run_at TEXT`);
 
@@ -322,6 +325,17 @@ export async function initDb(): Promise<void> {
   `);
 
   await db.executeMultiple(`
+    CREATE TABLE IF NOT EXISTS campaign_steps (
+      id TEXT PRIMARY KEY,
+      campaign_id TEXT NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,
+      step_number INTEGER NOT NULL,
+      delay_days INTEGER NOT NULL DEFAULT 0,
+      channel TEXT NOT NULL DEFAULT 'email',
+      context TEXT,
+      created_at TEXT NOT NULL,
+      UNIQUE(campaign_id, step_number)
+    );
+    CREATE INDEX IF NOT EXISTS idx_campaign_steps_campaign ON campaign_steps(campaign_id);
     CREATE INDEX IF NOT EXISTS idx_campaigns_org ON campaigns(organization_id);
     CREATE INDEX IF NOT EXISTS idx_campaign_leads_campaign ON campaign_leads(campaign_id);
     CREATE INDEX IF NOT EXISTS idx_campaign_leads_lead ON campaign_leads(lead_id);

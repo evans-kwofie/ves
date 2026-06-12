@@ -15,6 +15,7 @@ import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as WorkspaceIdRouteRouteImport } from './routes/$workspaceId/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as WorkspaceIdIndexRouteImport } from './routes/$workspaceId/index'
+import { Route as WorkspaceIdTemplatesRouteImport } from './routes/$workspaceId/templates'
 import { Route as WorkspaceIdRedditRouteImport } from './routes/$workspaceId/reddit'
 import { Route as WorkspaceIdPipelineRouteImport } from './routes/$workspaceId/pipeline'
 import { Route as WorkspaceIdLinkedinRouteImport } from './routes/$workspaceId/linkedin'
@@ -37,6 +38,7 @@ import { Route as ApiRedditSuggestRouteImport } from './routes/api/reddit/sugges
 import { Route as ApiRedditSearchRouteImport } from './routes/api/reddit/search'
 import { Route as ApiRedditPostsRouteImport } from './routes/api/reddit/posts'
 import { Route as ApiPipelineLeadsRouteImport } from './routes/api/pipeline/leads'
+import { Route as ApiPipelineImportRouteImport } from './routes/api/pipeline/import'
 import { Route as ApiPipelineEnrichRouteImport } from './routes/api/pipeline/enrich'
 import { Route as ApiLinkedinSearchRouteImport } from './routes/api/linkedin/search'
 import { Route as ApiLinkedinGeneratePostRouteImport } from './routes/api/linkedin/generate-post'
@@ -48,12 +50,14 @@ import { Route as ApiDirectoriesSearchRouteImport } from './routes/api/directori
 import { Route as ApiDirectoriesAddRouteImport } from './routes/api/directories/add'
 import { Route as ApiDashboardStatsRouteImport } from './routes/api/dashboard/stats'
 import { Route as ApiCampaignsSchedulerRouteImport } from './routes/api/campaigns/scheduler'
+import { Route as ApiCampaignsProcessDueDraftsRouteImport } from './routes/api/campaigns/process-due-drafts'
 import { Route as ApiCampaignsIdRouteImport } from './routes/api/campaigns/$id'
 import { Route as ApiBlogGenerateRouteImport } from './routes/api/blog/generate'
 import { Route as ApiBlogIdRouteImport } from './routes/api/blog/$id'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as ApiAgentRunRouteImport } from './routes/api/agent/run'
 import { Route as WorkspaceIdSettingsWorkspaceRouteImport } from './routes/$workspaceId/settings/workspace'
+import { Route as WorkspaceIdSettingsTemplatesRouteImport } from './routes/$workspaceId/settings/templates'
 import { Route as WorkspaceIdSettingsProfileRouteImport } from './routes/$workspaceId/settings/profile'
 import { Route as WorkspaceIdSettingsEmailRouteImport } from './routes/$workspaceId/settings/email'
 import { Route as WorkspaceIdSettingsDangerRouteImport } from './routes/$workspaceId/settings/danger'
@@ -62,10 +66,12 @@ import { Route as WorkspaceIdSettingsAgentRouteImport } from './routes/$workspac
 import { Route as WorkspaceIdCampaignsNewRouteImport } from './routes/$workspaceId/campaigns/new'
 import { Route as WorkspaceIdCampaignsIdIndexRouteImport } from './routes/$workspaceId/campaigns/$id/index'
 import { Route as ApiPipelineLeadsIdRouteImport } from './routes/api/pipeline/leads.$id'
+import { Route as ApiCampaignsIdStepsRouteImport } from './routes/api/campaigns/$id/steps'
 import { Route as ApiCampaignsIdRunRouteImport } from './routes/api/campaigns/$id/run'
 import { Route as ApiCampaignsIdLeadsRouteImport } from './routes/api/campaigns/$id/leads'
 import { Route as ApiCampaignsIdGenerateDraftsRouteImport } from './routes/api/campaigns/$id/generate-drafts'
 import { Route as ApiCampaignsIdDraftsRouteImport } from './routes/api/campaigns/$id/drafts'
+import { Route as ApiCampaignsIdStepsStepIdRouteImport } from './routes/api/campaigns/$id/steps.$stepId'
 import { Route as ApiCampaignsIdDraftsDraftIdRouteImport } from './routes/api/campaigns/$id/drafts.$draftId'
 
 const SignUpRoute = SignUpRouteImport.update({
@@ -96,6 +102,11 @@ const IndexRoute = IndexRouteImport.update({
 const WorkspaceIdIndexRoute = WorkspaceIdIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => WorkspaceIdRouteRoute,
+} as any)
+const WorkspaceIdTemplatesRoute = WorkspaceIdTemplatesRouteImport.update({
+  id: '/templates',
+  path: '/templates',
   getParentRoute: () => WorkspaceIdRouteRoute,
 } as any)
 const WorkspaceIdRedditRoute = WorkspaceIdRedditRouteImport.update({
@@ -212,6 +223,11 @@ const ApiPipelineLeadsRoute = ApiPipelineLeadsRouteImport.update({
   path: '/api/pipeline/leads',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPipelineImportRoute = ApiPipelineImportRouteImport.update({
+  id: '/api/pipeline/import',
+  path: '/api/pipeline/import',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPipelineEnrichRoute = ApiPipelineEnrichRouteImport.update({
   id: '/api/pipeline/enrich',
   path: '/api/pipeline/enrich',
@@ -267,6 +283,12 @@ const ApiCampaignsSchedulerRoute = ApiCampaignsSchedulerRouteImport.update({
   path: '/api/campaigns/scheduler',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiCampaignsProcessDueDraftsRoute =
+  ApiCampaignsProcessDueDraftsRouteImport.update({
+    id: '/api/campaigns/process-due-drafts',
+    path: '/api/campaigns/process-due-drafts',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiCampaignsIdRoute = ApiCampaignsIdRouteImport.update({
   id: '/api/campaigns/$id',
   path: '/api/campaigns/$id',
@@ -296,6 +318,12 @@ const WorkspaceIdSettingsWorkspaceRoute =
   WorkspaceIdSettingsWorkspaceRouteImport.update({
     id: '/workspace',
     path: '/workspace',
+    getParentRoute: () => WorkspaceIdSettingsRouteRoute,
+  } as any)
+const WorkspaceIdSettingsTemplatesRoute =
+  WorkspaceIdSettingsTemplatesRouteImport.update({
+    id: '/templates',
+    path: '/templates',
     getParentRoute: () => WorkspaceIdSettingsRouteRoute,
   } as any)
 const WorkspaceIdSettingsProfileRoute =
@@ -344,6 +372,11 @@ const ApiPipelineLeadsIdRoute = ApiPipelineLeadsIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => ApiPipelineLeadsRoute,
 } as any)
+const ApiCampaignsIdStepsRoute = ApiCampaignsIdStepsRouteImport.update({
+  id: '/steps',
+  path: '/steps',
+  getParentRoute: () => ApiCampaignsIdRoute,
+} as any)
 const ApiCampaignsIdRunRoute = ApiCampaignsIdRunRouteImport.update({
   id: '/run',
   path: '/run',
@@ -365,6 +398,12 @@ const ApiCampaignsIdDraftsRoute = ApiCampaignsIdDraftsRouteImport.update({
   path: '/drafts',
   getParentRoute: () => ApiCampaignsIdRoute,
 } as any)
+const ApiCampaignsIdStepsStepIdRoute =
+  ApiCampaignsIdStepsStepIdRouteImport.update({
+    id: '/$stepId',
+    path: '/$stepId',
+    getParentRoute: () => ApiCampaignsIdStepsRoute,
+  } as any)
 const ApiCampaignsIdDraftsDraftIdRoute =
   ApiCampaignsIdDraftsDraftIdRouteImport.update({
     id: '/$draftId',
@@ -386,6 +425,7 @@ export interface FileRoutesByFullPath {
   '/$workspaceId/linkedin': typeof WorkspaceIdLinkedinRoute
   '/$workspaceId/pipeline': typeof WorkspaceIdPipelineRoute
   '/$workspaceId/reddit': typeof WorkspaceIdRedditRoute
+  '/$workspaceId/templates': typeof WorkspaceIdTemplatesRoute
   '/$workspaceId/': typeof WorkspaceIdIndexRoute
   '/$workspaceId/campaigns/new': typeof WorkspaceIdCampaignsNewRoute
   '/$workspaceId/settings/agent': typeof WorkspaceIdSettingsAgentRoute
@@ -393,12 +433,14 @@ export interface FileRoutesByFullPath {
   '/$workspaceId/settings/danger': typeof WorkspaceIdSettingsDangerRoute
   '/$workspaceId/settings/email': typeof WorkspaceIdSettingsEmailRoute
   '/$workspaceId/settings/profile': typeof WorkspaceIdSettingsProfileRoute
+  '/$workspaceId/settings/templates': typeof WorkspaceIdSettingsTemplatesRoute
   '/$workspaceId/settings/workspace': typeof WorkspaceIdSettingsWorkspaceRoute
   '/api/agent/run': typeof ApiAgentRunRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/blog/$id': typeof ApiBlogIdRoute
   '/api/blog/generate': typeof ApiBlogGenerateRoute
   '/api/campaigns/$id': typeof ApiCampaignsIdRouteWithChildren
+  '/api/campaigns/process-due-drafts': typeof ApiCampaignsProcessDueDraftsRoute
   '/api/campaigns/scheduler': typeof ApiCampaignsSchedulerRoute
   '/api/dashboard/stats': typeof ApiDashboardStatsRoute
   '/api/directories/add': typeof ApiDirectoriesAddRoute
@@ -410,6 +452,7 @@ export interface FileRoutesByFullPath {
   '/api/linkedin/generate-post': typeof ApiLinkedinGeneratePostRoute
   '/api/linkedin/search': typeof ApiLinkedinSearchRoute
   '/api/pipeline/enrich': typeof ApiPipelineEnrichRoute
+  '/api/pipeline/import': typeof ApiPipelineImportRoute
   '/api/pipeline/leads': typeof ApiPipelineLeadsRouteWithChildren
   '/api/reddit/posts': typeof ApiRedditPostsRoute
   '/api/reddit/search': typeof ApiRedditSearchRoute
@@ -428,9 +471,11 @@ export interface FileRoutesByFullPath {
   '/api/campaigns/$id/generate-drafts': typeof ApiCampaignsIdGenerateDraftsRoute
   '/api/campaigns/$id/leads': typeof ApiCampaignsIdLeadsRoute
   '/api/campaigns/$id/run': typeof ApiCampaignsIdRunRoute
+  '/api/campaigns/$id/steps': typeof ApiCampaignsIdStepsRouteWithChildren
   '/api/pipeline/leads/$id': typeof ApiPipelineLeadsIdRoute
   '/$workspaceId/campaigns/$id/': typeof WorkspaceIdCampaignsIdIndexRoute
   '/api/campaigns/$id/drafts/$draftId': typeof ApiCampaignsIdDraftsDraftIdRoute
+  '/api/campaigns/$id/steps/$stepId': typeof ApiCampaignsIdStepsStepIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -444,6 +489,7 @@ export interface FileRoutesByTo {
   '/$workspaceId/linkedin': typeof WorkspaceIdLinkedinRoute
   '/$workspaceId/pipeline': typeof WorkspaceIdPipelineRoute
   '/$workspaceId/reddit': typeof WorkspaceIdRedditRoute
+  '/$workspaceId/templates': typeof WorkspaceIdTemplatesRoute
   '/$workspaceId': typeof WorkspaceIdIndexRoute
   '/$workspaceId/campaigns/new': typeof WorkspaceIdCampaignsNewRoute
   '/$workspaceId/settings/agent': typeof WorkspaceIdSettingsAgentRoute
@@ -451,12 +497,14 @@ export interface FileRoutesByTo {
   '/$workspaceId/settings/danger': typeof WorkspaceIdSettingsDangerRoute
   '/$workspaceId/settings/email': typeof WorkspaceIdSettingsEmailRoute
   '/$workspaceId/settings/profile': typeof WorkspaceIdSettingsProfileRoute
+  '/$workspaceId/settings/templates': typeof WorkspaceIdSettingsTemplatesRoute
   '/$workspaceId/settings/workspace': typeof WorkspaceIdSettingsWorkspaceRoute
   '/api/agent/run': typeof ApiAgentRunRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/blog/$id': typeof ApiBlogIdRoute
   '/api/blog/generate': typeof ApiBlogGenerateRoute
   '/api/campaigns/$id': typeof ApiCampaignsIdRouteWithChildren
+  '/api/campaigns/process-due-drafts': typeof ApiCampaignsProcessDueDraftsRoute
   '/api/campaigns/scheduler': typeof ApiCampaignsSchedulerRoute
   '/api/dashboard/stats': typeof ApiDashboardStatsRoute
   '/api/directories/add': typeof ApiDirectoriesAddRoute
@@ -468,6 +516,7 @@ export interface FileRoutesByTo {
   '/api/linkedin/generate-post': typeof ApiLinkedinGeneratePostRoute
   '/api/linkedin/search': typeof ApiLinkedinSearchRoute
   '/api/pipeline/enrich': typeof ApiPipelineEnrichRoute
+  '/api/pipeline/import': typeof ApiPipelineImportRoute
   '/api/pipeline/leads': typeof ApiPipelineLeadsRouteWithChildren
   '/api/reddit/posts': typeof ApiRedditPostsRoute
   '/api/reddit/search': typeof ApiRedditSearchRoute
@@ -486,9 +535,11 @@ export interface FileRoutesByTo {
   '/api/campaigns/$id/generate-drafts': typeof ApiCampaignsIdGenerateDraftsRoute
   '/api/campaigns/$id/leads': typeof ApiCampaignsIdLeadsRoute
   '/api/campaigns/$id/run': typeof ApiCampaignsIdRunRoute
+  '/api/campaigns/$id/steps': typeof ApiCampaignsIdStepsRouteWithChildren
   '/api/pipeline/leads/$id': typeof ApiPipelineLeadsIdRoute
   '/$workspaceId/campaigns/$id': typeof WorkspaceIdCampaignsIdIndexRoute
   '/api/campaigns/$id/drafts/$draftId': typeof ApiCampaignsIdDraftsDraftIdRoute
+  '/api/campaigns/$id/steps/$stepId': typeof ApiCampaignsIdStepsStepIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -505,6 +556,7 @@ export interface FileRoutesById {
   '/$workspaceId/linkedin': typeof WorkspaceIdLinkedinRoute
   '/$workspaceId/pipeline': typeof WorkspaceIdPipelineRoute
   '/$workspaceId/reddit': typeof WorkspaceIdRedditRoute
+  '/$workspaceId/templates': typeof WorkspaceIdTemplatesRoute
   '/$workspaceId/': typeof WorkspaceIdIndexRoute
   '/$workspaceId/campaigns/new': typeof WorkspaceIdCampaignsNewRoute
   '/$workspaceId/settings/agent': typeof WorkspaceIdSettingsAgentRoute
@@ -512,12 +564,14 @@ export interface FileRoutesById {
   '/$workspaceId/settings/danger': typeof WorkspaceIdSettingsDangerRoute
   '/$workspaceId/settings/email': typeof WorkspaceIdSettingsEmailRoute
   '/$workspaceId/settings/profile': typeof WorkspaceIdSettingsProfileRoute
+  '/$workspaceId/settings/templates': typeof WorkspaceIdSettingsTemplatesRoute
   '/$workspaceId/settings/workspace': typeof WorkspaceIdSettingsWorkspaceRoute
   '/api/agent/run': typeof ApiAgentRunRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/blog/$id': typeof ApiBlogIdRoute
   '/api/blog/generate': typeof ApiBlogGenerateRoute
   '/api/campaigns/$id': typeof ApiCampaignsIdRouteWithChildren
+  '/api/campaigns/process-due-drafts': typeof ApiCampaignsProcessDueDraftsRoute
   '/api/campaigns/scheduler': typeof ApiCampaignsSchedulerRoute
   '/api/dashboard/stats': typeof ApiDashboardStatsRoute
   '/api/directories/add': typeof ApiDirectoriesAddRoute
@@ -529,6 +583,7 @@ export interface FileRoutesById {
   '/api/linkedin/generate-post': typeof ApiLinkedinGeneratePostRoute
   '/api/linkedin/search': typeof ApiLinkedinSearchRoute
   '/api/pipeline/enrich': typeof ApiPipelineEnrichRoute
+  '/api/pipeline/import': typeof ApiPipelineImportRoute
   '/api/pipeline/leads': typeof ApiPipelineLeadsRouteWithChildren
   '/api/reddit/posts': typeof ApiRedditPostsRoute
   '/api/reddit/search': typeof ApiRedditSearchRoute
@@ -547,9 +602,11 @@ export interface FileRoutesById {
   '/api/campaigns/$id/generate-drafts': typeof ApiCampaignsIdGenerateDraftsRoute
   '/api/campaigns/$id/leads': typeof ApiCampaignsIdLeadsRoute
   '/api/campaigns/$id/run': typeof ApiCampaignsIdRunRoute
+  '/api/campaigns/$id/steps': typeof ApiCampaignsIdStepsRouteWithChildren
   '/api/pipeline/leads/$id': typeof ApiPipelineLeadsIdRoute
   '/$workspaceId/campaigns/$id/': typeof WorkspaceIdCampaignsIdIndexRoute
   '/api/campaigns/$id/drafts/$draftId': typeof ApiCampaignsIdDraftsDraftIdRoute
+  '/api/campaigns/$id/steps/$stepId': typeof ApiCampaignsIdStepsStepIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -567,6 +624,7 @@ export interface FileRouteTypes {
     | '/$workspaceId/linkedin'
     | '/$workspaceId/pipeline'
     | '/$workspaceId/reddit'
+    | '/$workspaceId/templates'
     | '/$workspaceId/'
     | '/$workspaceId/campaigns/new'
     | '/$workspaceId/settings/agent'
@@ -574,12 +632,14 @@ export interface FileRouteTypes {
     | '/$workspaceId/settings/danger'
     | '/$workspaceId/settings/email'
     | '/$workspaceId/settings/profile'
+    | '/$workspaceId/settings/templates'
     | '/$workspaceId/settings/workspace'
     | '/api/agent/run'
     | '/api/auth/$'
     | '/api/blog/$id'
     | '/api/blog/generate'
     | '/api/campaigns/$id'
+    | '/api/campaigns/process-due-drafts'
     | '/api/campaigns/scheduler'
     | '/api/dashboard/stats'
     | '/api/directories/add'
@@ -591,6 +651,7 @@ export interface FileRouteTypes {
     | '/api/linkedin/generate-post'
     | '/api/linkedin/search'
     | '/api/pipeline/enrich'
+    | '/api/pipeline/import'
     | '/api/pipeline/leads'
     | '/api/reddit/posts'
     | '/api/reddit/search'
@@ -609,9 +670,11 @@ export interface FileRouteTypes {
     | '/api/campaigns/$id/generate-drafts'
     | '/api/campaigns/$id/leads'
     | '/api/campaigns/$id/run'
+    | '/api/campaigns/$id/steps'
     | '/api/pipeline/leads/$id'
     | '/$workspaceId/campaigns/$id/'
     | '/api/campaigns/$id/drafts/$draftId'
+    | '/api/campaigns/$id/steps/$stepId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -625,6 +688,7 @@ export interface FileRouteTypes {
     | '/$workspaceId/linkedin'
     | '/$workspaceId/pipeline'
     | '/$workspaceId/reddit'
+    | '/$workspaceId/templates'
     | '/$workspaceId'
     | '/$workspaceId/campaigns/new'
     | '/$workspaceId/settings/agent'
@@ -632,12 +696,14 @@ export interface FileRouteTypes {
     | '/$workspaceId/settings/danger'
     | '/$workspaceId/settings/email'
     | '/$workspaceId/settings/profile'
+    | '/$workspaceId/settings/templates'
     | '/$workspaceId/settings/workspace'
     | '/api/agent/run'
     | '/api/auth/$'
     | '/api/blog/$id'
     | '/api/blog/generate'
     | '/api/campaigns/$id'
+    | '/api/campaigns/process-due-drafts'
     | '/api/campaigns/scheduler'
     | '/api/dashboard/stats'
     | '/api/directories/add'
@@ -649,6 +715,7 @@ export interface FileRouteTypes {
     | '/api/linkedin/generate-post'
     | '/api/linkedin/search'
     | '/api/pipeline/enrich'
+    | '/api/pipeline/import'
     | '/api/pipeline/leads'
     | '/api/reddit/posts'
     | '/api/reddit/search'
@@ -667,9 +734,11 @@ export interface FileRouteTypes {
     | '/api/campaigns/$id/generate-drafts'
     | '/api/campaigns/$id/leads'
     | '/api/campaigns/$id/run'
+    | '/api/campaigns/$id/steps'
     | '/api/pipeline/leads/$id'
     | '/$workspaceId/campaigns/$id'
     | '/api/campaigns/$id/drafts/$draftId'
+    | '/api/campaigns/$id/steps/$stepId'
   id:
     | '__root__'
     | '/'
@@ -685,6 +754,7 @@ export interface FileRouteTypes {
     | '/$workspaceId/linkedin'
     | '/$workspaceId/pipeline'
     | '/$workspaceId/reddit'
+    | '/$workspaceId/templates'
     | '/$workspaceId/'
     | '/$workspaceId/campaigns/new'
     | '/$workspaceId/settings/agent'
@@ -692,12 +762,14 @@ export interface FileRouteTypes {
     | '/$workspaceId/settings/danger'
     | '/$workspaceId/settings/email'
     | '/$workspaceId/settings/profile'
+    | '/$workspaceId/settings/templates'
     | '/$workspaceId/settings/workspace'
     | '/api/agent/run'
     | '/api/auth/$'
     | '/api/blog/$id'
     | '/api/blog/generate'
     | '/api/campaigns/$id'
+    | '/api/campaigns/process-due-drafts'
     | '/api/campaigns/scheduler'
     | '/api/dashboard/stats'
     | '/api/directories/add'
@@ -709,6 +781,7 @@ export interface FileRouteTypes {
     | '/api/linkedin/generate-post'
     | '/api/linkedin/search'
     | '/api/pipeline/enrich'
+    | '/api/pipeline/import'
     | '/api/pipeline/leads'
     | '/api/reddit/posts'
     | '/api/reddit/search'
@@ -727,9 +800,11 @@ export interface FileRouteTypes {
     | '/api/campaigns/$id/generate-drafts'
     | '/api/campaigns/$id/leads'
     | '/api/campaigns/$id/run'
+    | '/api/campaigns/$id/steps'
     | '/api/pipeline/leads/$id'
     | '/$workspaceId/campaigns/$id/'
     | '/api/campaigns/$id/drafts/$draftId'
+    | '/api/campaigns/$id/steps/$stepId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -743,6 +818,7 @@ export interface RootRouteChildren {
   ApiBlogIdRoute: typeof ApiBlogIdRoute
   ApiBlogGenerateRoute: typeof ApiBlogGenerateRoute
   ApiCampaignsIdRoute: typeof ApiCampaignsIdRouteWithChildren
+  ApiCampaignsProcessDueDraftsRoute: typeof ApiCampaignsProcessDueDraftsRoute
   ApiCampaignsSchedulerRoute: typeof ApiCampaignsSchedulerRoute
   ApiDashboardStatsRoute: typeof ApiDashboardStatsRoute
   ApiDirectoriesAddRoute: typeof ApiDirectoriesAddRoute
@@ -754,6 +830,7 @@ export interface RootRouteChildren {
   ApiLinkedinGeneratePostRoute: typeof ApiLinkedinGeneratePostRoute
   ApiLinkedinSearchRoute: typeof ApiLinkedinSearchRoute
   ApiPipelineEnrichRoute: typeof ApiPipelineEnrichRoute
+  ApiPipelineImportRoute: typeof ApiPipelineImportRoute
   ApiPipelineLeadsRoute: typeof ApiPipelineLeadsRouteWithChildren
   ApiRedditPostsRoute: typeof ApiRedditPostsRoute
   ApiRedditSearchRoute: typeof ApiRedditSearchRoute
@@ -810,6 +887,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/$workspaceId/'
       preLoaderRoute: typeof WorkspaceIdIndexRouteImport
+      parentRoute: typeof WorkspaceIdRouteRoute
+    }
+    '/$workspaceId/templates': {
+      id: '/$workspaceId/templates'
+      path: '/templates'
+      fullPath: '/$workspaceId/templates'
+      preLoaderRoute: typeof WorkspaceIdTemplatesRouteImport
       parentRoute: typeof WorkspaceIdRouteRoute
     }
     '/$workspaceId/reddit': {
@@ -966,6 +1050,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPipelineLeadsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/pipeline/import': {
+      id: '/api/pipeline/import'
+      path: '/api/pipeline/import'
+      fullPath: '/api/pipeline/import'
+      preLoaderRoute: typeof ApiPipelineImportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/pipeline/enrich': {
       id: '/api/pipeline/enrich'
       path: '/api/pipeline/enrich'
@@ -1043,6 +1134,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiCampaignsSchedulerRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/campaigns/process-due-drafts': {
+      id: '/api/campaigns/process-due-drafts'
+      path: '/api/campaigns/process-due-drafts'
+      fullPath: '/api/campaigns/process-due-drafts'
+      preLoaderRoute: typeof ApiCampaignsProcessDueDraftsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/campaigns/$id': {
       id: '/api/campaigns/$id'
       path: '/api/campaigns/$id'
@@ -1083,6 +1181,13 @@ declare module '@tanstack/react-router' {
       path: '/workspace'
       fullPath: '/$workspaceId/settings/workspace'
       preLoaderRoute: typeof WorkspaceIdSettingsWorkspaceRouteImport
+      parentRoute: typeof WorkspaceIdSettingsRouteRoute
+    }
+    '/$workspaceId/settings/templates': {
+      id: '/$workspaceId/settings/templates'
+      path: '/templates'
+      fullPath: '/$workspaceId/settings/templates'
+      preLoaderRoute: typeof WorkspaceIdSettingsTemplatesRouteImport
       parentRoute: typeof WorkspaceIdSettingsRouteRoute
     }
     '/$workspaceId/settings/profile': {
@@ -1141,6 +1246,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPipelineLeadsIdRouteImport
       parentRoute: typeof ApiPipelineLeadsRoute
     }
+    '/api/campaigns/$id/steps': {
+      id: '/api/campaigns/$id/steps'
+      path: '/steps'
+      fullPath: '/api/campaigns/$id/steps'
+      preLoaderRoute: typeof ApiCampaignsIdStepsRouteImport
+      parentRoute: typeof ApiCampaignsIdRoute
+    }
     '/api/campaigns/$id/run': {
       id: '/api/campaigns/$id/run'
       path: '/run'
@@ -1169,6 +1281,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiCampaignsIdDraftsRouteImport
       parentRoute: typeof ApiCampaignsIdRoute
     }
+    '/api/campaigns/$id/steps/$stepId': {
+      id: '/api/campaigns/$id/steps/$stepId'
+      path: '/$stepId'
+      fullPath: '/api/campaigns/$id/steps/$stepId'
+      preLoaderRoute: typeof ApiCampaignsIdStepsStepIdRouteImport
+      parentRoute: typeof ApiCampaignsIdStepsRoute
+    }
     '/api/campaigns/$id/drafts/$draftId': {
       id: '/api/campaigns/$id/drafts/$draftId'
       path: '/$draftId'
@@ -1185,6 +1304,7 @@ interface WorkspaceIdSettingsRouteRouteChildren {
   WorkspaceIdSettingsDangerRoute: typeof WorkspaceIdSettingsDangerRoute
   WorkspaceIdSettingsEmailRoute: typeof WorkspaceIdSettingsEmailRoute
   WorkspaceIdSettingsProfileRoute: typeof WorkspaceIdSettingsProfileRoute
+  WorkspaceIdSettingsTemplatesRoute: typeof WorkspaceIdSettingsTemplatesRoute
   WorkspaceIdSettingsWorkspaceRoute: typeof WorkspaceIdSettingsWorkspaceRoute
   WorkspaceIdSettingsIndexRoute: typeof WorkspaceIdSettingsIndexRoute
 }
@@ -1196,6 +1316,7 @@ const WorkspaceIdSettingsRouteRouteChildren: WorkspaceIdSettingsRouteRouteChildr
     WorkspaceIdSettingsDangerRoute: WorkspaceIdSettingsDangerRoute,
     WorkspaceIdSettingsEmailRoute: WorkspaceIdSettingsEmailRoute,
     WorkspaceIdSettingsProfileRoute: WorkspaceIdSettingsProfileRoute,
+    WorkspaceIdSettingsTemplatesRoute: WorkspaceIdSettingsTemplatesRoute,
     WorkspaceIdSettingsWorkspaceRoute: WorkspaceIdSettingsWorkspaceRoute,
     WorkspaceIdSettingsIndexRoute: WorkspaceIdSettingsIndexRoute,
   }
@@ -1214,6 +1335,7 @@ interface WorkspaceIdRouteRouteChildren {
   WorkspaceIdLinkedinRoute: typeof WorkspaceIdLinkedinRoute
   WorkspaceIdPipelineRoute: typeof WorkspaceIdPipelineRoute
   WorkspaceIdRedditRoute: typeof WorkspaceIdRedditRoute
+  WorkspaceIdTemplatesRoute: typeof WorkspaceIdTemplatesRoute
   WorkspaceIdIndexRoute: typeof WorkspaceIdIndexRoute
   WorkspaceIdCampaignsNewRoute: typeof WorkspaceIdCampaignsNewRoute
   WorkspaceIdCampaignsIndexRoute: typeof WorkspaceIdCampaignsIndexRoute
@@ -1229,6 +1351,7 @@ const WorkspaceIdRouteRouteChildren: WorkspaceIdRouteRouteChildren = {
   WorkspaceIdLinkedinRoute: WorkspaceIdLinkedinRoute,
   WorkspaceIdPipelineRoute: WorkspaceIdPipelineRoute,
   WorkspaceIdRedditRoute: WorkspaceIdRedditRoute,
+  WorkspaceIdTemplatesRoute: WorkspaceIdTemplatesRoute,
   WorkspaceIdIndexRoute: WorkspaceIdIndexRoute,
   WorkspaceIdCampaignsNewRoute: WorkspaceIdCampaignsNewRoute,
   WorkspaceIdCampaignsIndexRoute: WorkspaceIdCampaignsIndexRoute,
@@ -1249,11 +1372,23 @@ const ApiCampaignsIdDraftsRouteChildren: ApiCampaignsIdDraftsRouteChildren = {
 const ApiCampaignsIdDraftsRouteWithChildren =
   ApiCampaignsIdDraftsRoute._addFileChildren(ApiCampaignsIdDraftsRouteChildren)
 
+interface ApiCampaignsIdStepsRouteChildren {
+  ApiCampaignsIdStepsStepIdRoute: typeof ApiCampaignsIdStepsStepIdRoute
+}
+
+const ApiCampaignsIdStepsRouteChildren: ApiCampaignsIdStepsRouteChildren = {
+  ApiCampaignsIdStepsStepIdRoute: ApiCampaignsIdStepsStepIdRoute,
+}
+
+const ApiCampaignsIdStepsRouteWithChildren =
+  ApiCampaignsIdStepsRoute._addFileChildren(ApiCampaignsIdStepsRouteChildren)
+
 interface ApiCampaignsIdRouteChildren {
   ApiCampaignsIdDraftsRoute: typeof ApiCampaignsIdDraftsRouteWithChildren
   ApiCampaignsIdGenerateDraftsRoute: typeof ApiCampaignsIdGenerateDraftsRoute
   ApiCampaignsIdLeadsRoute: typeof ApiCampaignsIdLeadsRoute
   ApiCampaignsIdRunRoute: typeof ApiCampaignsIdRunRoute
+  ApiCampaignsIdStepsRoute: typeof ApiCampaignsIdStepsRouteWithChildren
 }
 
 const ApiCampaignsIdRouteChildren: ApiCampaignsIdRouteChildren = {
@@ -1261,6 +1396,7 @@ const ApiCampaignsIdRouteChildren: ApiCampaignsIdRouteChildren = {
   ApiCampaignsIdGenerateDraftsRoute: ApiCampaignsIdGenerateDraftsRoute,
   ApiCampaignsIdLeadsRoute: ApiCampaignsIdLeadsRoute,
   ApiCampaignsIdRunRoute: ApiCampaignsIdRunRoute,
+  ApiCampaignsIdStepsRoute: ApiCampaignsIdStepsRouteWithChildren,
 }
 
 const ApiCampaignsIdRouteWithChildren = ApiCampaignsIdRoute._addFileChildren(
@@ -1289,6 +1425,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiBlogIdRoute: ApiBlogIdRoute,
   ApiBlogGenerateRoute: ApiBlogGenerateRoute,
   ApiCampaignsIdRoute: ApiCampaignsIdRouteWithChildren,
+  ApiCampaignsProcessDueDraftsRoute: ApiCampaignsProcessDueDraftsRoute,
   ApiCampaignsSchedulerRoute: ApiCampaignsSchedulerRoute,
   ApiDashboardStatsRoute: ApiDashboardStatsRoute,
   ApiDirectoriesAddRoute: ApiDirectoriesAddRoute,
@@ -1300,6 +1437,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiLinkedinGeneratePostRoute: ApiLinkedinGeneratePostRoute,
   ApiLinkedinSearchRoute: ApiLinkedinSearchRoute,
   ApiPipelineEnrichRoute: ApiPipelineEnrichRoute,
+  ApiPipelineImportRoute: ApiPipelineImportRoute,
   ApiPipelineLeadsRoute: ApiPipelineLeadsRouteWithChildren,
   ApiRedditPostsRoute: ApiRedditPostsRoute,
   ApiRedditSearchRoute: ApiRedditSearchRoute,

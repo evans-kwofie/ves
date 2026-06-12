@@ -1,21 +1,28 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
-import { listDrafts, deleteDraftsForCampaign, upsertDraft } from "~/db/queries/drafts";
+import { listSteps, createStep, updateStep, deleteStep } from "~/db/queries/steps";
 
 const createSchema = z.object({
-  leadId: z.string().min(1),
-  subject: z.string().optional(),
-  body: z.string().min(1),
+  stepNumber: z.number().int().min(1),
+  delayDays: z.number().int().min(0).default(0),
   channel: z.enum(["email", "linkedin"]).default("email"),
+  context: z.string().nullable().optional(),
 });
 
-export const Route = createFileRoute("/api/campaigns/$id/drafts")({
+const updateSchema = z.object({
+  delayDays: z.number().int().min(0).optional(),
+  channel: z.enum(["email", "linkedin"]).optional(),
+  context: z.string().nullable().optional(),
+});
+
+export const Route = createFileRoute("/api/campaigns/$id/steps")({
   server: {
     handlers: {
       GET: async ({ params }) => {
-        const drafts = await listDrafts(params.id);
-        return Response.json(drafts);
+        const steps = await listSteps(params.id);
+        return Response.json(steps);
       },
+
       POST: async ({ params, request }) => {
         let body: unknown;
         try { body = await request.json(); } catch {
@@ -25,18 +32,8 @@ export const Route = createFileRoute("/api/campaigns/$id/drafts")({
         if (!parsed.success) {
           return new Response(JSON.stringify({ error: parsed.error.flatten() }), { status: 422, headers: { "Content-Type": "application/json" } });
         }
-        const draft = await upsertDraft({
-          campaignId: params.id,
-          leadId: parsed.data.leadId,
-          channel: parsed.data.channel,
-          subject: parsed.data.subject ?? null,
-          body: parsed.data.body,
-        });
-        return Response.json(draft, { status: 201 });
-      },
-      DELETE: async ({ params }) => {
-        await deleteDraftsForCampaign(params.id);
-        return Response.json({ ok: true });
+        const step = await createStep({ campaignId: params.id, ...parsed.data });
+        return Response.json(step, { status: 201 });
       },
     },
   },

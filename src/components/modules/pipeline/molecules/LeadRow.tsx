@@ -1,7 +1,7 @@
 import * as React from "react";
 import { Mail01Icon, ArrowDiagonalIcon, PencilEdit01Icon } from "hugeicons-react";
 import { Button } from "~/components/ui/button";
-import { LeadStatusBadge } from "./LeadStatusBadge";
+import { LeadStatusBadge } from "../atoms/LeadStatusBadge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "~/components/ui/dialog";
 import { Label } from "~/components/ui/label";
 import { Textarea } from "~/components/ui/textarea";
@@ -58,9 +58,11 @@ const STAGE_CLASS: Record<string, string> = {
 interface LeadRowProps {
   lead: Lead;
   onChange: (lead: Lead) => void;
+  checked?: boolean;
+  onToggle?: () => void;
 }
 
-export function LeadRow({ lead, onChange }: LeadRowProps) {
+export function LeadRow({ lead, onChange, checked = false, onToggle }: LeadRowProps) {
   const [emailOpen, setEmailOpen] = React.useState(false);
   const [editOpen, setEditOpen] = React.useState(false);
   const [emailSubject, setEmailSubject] = React.useState("");
@@ -127,7 +129,15 @@ export function LeadRow({ lead, onChange }: LeadRowProps) {
 
   return (
     <>
-      <tr>
+      <tr className={checked ? "bg-accent-subtle" : undefined}>
+        <td className="w-10">
+          <input
+            type="checkbox"
+            checked={checked}
+            onChange={onToggle}
+            className="w-3.5 h-3.5 accent-accent cursor-pointer"
+          />
+        </td>
         <td>
           <div className="font-semibold text-[13px] text-[var(--foreground)]">{lead.company}</div>
           <div className="text-[11px] text-[var(--muted-foreground)] mt-0.5 truncate max-w-[200px]">

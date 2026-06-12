@@ -3,11 +3,12 @@ import { createFileRoute } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import * as z from "zod";
 import { Header } from "~/components/templates/Header";
-import { PipelineStats } from "~/components/modules/PipelineStats";
-import { LeadTable } from "~/components/modules/LeadTable";
-import { AddLeadDialog } from "~/components/modules/AddLeadDialog";
+import { PipelineStats } from "~/components/modules/pipeline/templates/PipelineStats";
+import { LeadTable } from "~/components/modules/pipeline/templates/LeadTable";
+import { AddLeadDialog } from "~/components/modules/pipeline/templates/AddLeadDialog";
+import { ImportLeadsModal } from "~/components/modules/pipeline/templates/ImportLeadsModal";
 import { Button } from "~/components/ui/button";
-import { Add01Icon, AiMagicIcon } from "hugeicons-react";
+import { Add01Icon, AiMagicIcon, Upload04Icon } from "hugeicons-react";
 import { getPipeline } from "~/db/queries/leads";
 import { toast } from "sonner";
 import type { Lead, PipelineMeta } from "~/types/lead";
@@ -27,6 +28,7 @@ function PipelinePage() {
   const [leads, setLeads] = React.useState<Lead[]>(initial.leads);
   const [meta] = React.useState<PipelineMeta>(initial.meta);
   const [addOpen, setAddOpen] = React.useState(false);
+  const [importOpen, setImportOpen] = React.useState(false);
   const [enriching, setEnriching] = React.useState(false);
 
   const toEnrichCount = leads.filter((l) => l.pipelineStage === "discovered").length;
@@ -69,6 +71,10 @@ function PipelinePage() {
                 {enriching ? "Enriching..." : `Enrich ${toEnrichCount} lead${toEnrichCount !== 1 ? "s" : ""}`}
               </Button>
             )}
+            <Button variant="ghost" onClick={() => setImportOpen(true)}>
+              <Upload04Icon size={14} />
+              Import
+            </Button>
             <Button onClick={() => setAddOpen(true)}>
               <Add01Icon size={14} />
               Add Lead
@@ -86,6 +92,12 @@ function PipelinePage() {
         onOpenChange={setAddOpen}
         orgId={workspaceId}
         onSuccess={(lead) => setLeads((prev) => [lead, ...prev])}
+      />
+      <ImportLeadsModal
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        orgId={workspaceId}
+        onSuccess={(newLeads) => setLeads((prev) => [...newLeads, ...prev])}
       />
     </>
   );

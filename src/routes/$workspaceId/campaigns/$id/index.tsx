@@ -6,16 +6,28 @@ import { Header } from "~/components/templates/Header";
 import { Button } from "~/components/ui/button";
 import {
   ArrowLeft01Icon,
-  SparklesIcon,
   Mail01Icon,
   CheckmarkBadge01Icon,
   Cancel01Icon,
   Edit01Icon,
   Delete02Icon,
   Loading03Icon,
+  Add01Icon,
+  Linkedin01Icon,
+  SparklesIcon,
+  PencilEdit01Icon,
+  InformationCircleIcon,
 } from "hugeicons-react";
 import { getCampaign, getCampaignLeadsWithData } from "~/db/queries/campaigns";
 import { listDrafts } from "~/db/queries/drafts";
+import { listSteps } from "~/db/queries/steps";
+import type { CampaignStep } from "~/db/queries/steps";
+import { auth } from "~/lib/auth";
+import { getRequestHeaders } from "@tanstack/react-start/server";
+import { ComposeDraftPanel } from "~/components/modules/campaign/ComposeDraftPanel";
+import { useComposeDraft } from "~/store/compose-draft";
+import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
+import type { EmailSignature } from "~/types/signature";
 import { toast } from "sonner";
 import type { Campaign } from "~/types/campaign";
 import type { Lead } from "~/types/lead";
@@ -26,13 +38,22 @@ import type { CampaignDraft } from "~/db/queries/drafts";
 const getCampaignDetail = createServerFn({ method: "GET" })
   .inputValidator(z.string())
   .handler(async ({ data: id }) => {
-    const [campaign, leads, drafts] = await Promise.all([
+    const headers = getRequestHeaders();
+    const [campaign, leads, drafts, steps, orgs] = await Promise.all([
       getCampaign(id),
       getCampaignLeadsWithData(id),
       listDrafts(id),
+      listSteps(id),
+      auth.api.listOrganizations({ headers }).catch(() => []),
     ]);
     if (!campaign) return null;
-    return { campaign, leads, drafts };
+    let signatures: EmailSignature[] = [];
+    try {
+      const org = orgs?.[0];
+      const meta = org?.metadata ? JSON.parse(org.metadata as string) : {};
+      signatures = (meta.emailSignatures as EmailSignature[]) ?? [];
+    } catch {}
+    return { campaign, leads, drafts, steps, signatures };
   });
 
 export const Route = createFileRoute("/$workspaceId/campaigns/$id/")({
@@ -42,7 +63,7 @@ export const Route = createFileRoute("/$workspaceId/campaigns/$id/")({
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-type Tab = "queue" | "leads" | "results";
+type Tab = "queue" | "leads" | "results" | "sequence";
 
 function CampaignDetailPage() {
   const initial = Route.useLoaderData();
@@ -52,8 +73,9 @@ function CampaignDetailPage() {
   const [campaign, setCampaign] = React.useState<Campaign | null>(initial?.campaign ?? null);
   const [leads] = React.useState<Lead[]>(initial?.leads ?? []);
   const [drafts, setDrafts] = React.useState<CampaignDraft[]>(initial?.drafts ?? []);
-  const [tab, setTab] = React.useState<Tab>("queue");
-  const [generating, setGenerating] = React.useState(false);
+  const [steps, setSteps] = React.useState<CampaignStep[]>(initial?.steps ?? []);
+  const [tab, setTab] = React.useState<Tab>("sequence");
+  const openCompose = useComposeDraft((s) => s.open);
 
   if (!campaign) {
     return (
@@ -67,30 +89,13 @@ function CampaignDetailPage() {
   const sent = drafts.filter((d) => d.status === "sent");
   const skipped = drafts.filter((d) => d.status === "skipped");
 
-  async function generateDrafts() {
-    setGenerating(true);
-    try {
-      const res = await fetch(`/api/campaigns/${id}/generate-drafts`, { method: "POST" });
-      const data = (await res.json()) as { ok?: boolean; generated?: number; total?: number; error?: string };
-      if (!res.ok) {
-        toast.error(data.error ?? "Failed to generate drafts");
-        return;
-      }
-      toast.success(`Generated ${data.generated} of ${data.total} drafts`);
-      // Reload drafts
-      const draftsRes = await fetch(`/api/campaigns/${id}/drafts`);
-      const newDrafts = (await draftsRes.json()) as CampaignDraft[];
-      setDrafts(newDrafts);
-      setTab("queue");
-    } catch {
-      toast.error("Network error");
-    } finally {
-      setGenerating(false);
-    }
-  }
-
   function handleDraftUpdate(updated: CampaignDraft) {
     setDrafts((prev) => prev.map((d) => (d.id === updated.id ? updated : d)));
+  }
+
+  function handleDraftAdded(draft: CampaignDraft) {
+    setDrafts((prev) => [...prev, draft]);
+    setTab("queue");
   }
 
   const statusBadge = {
@@ -106,21 +111,12 @@ function CampaignDetailPage() {
         title={campaign.name}
         subtitle={campaign.goal ?? "Outreach campaign"}
         actions={
-          <div style={{ display: "flex", gap: 8 }}>
-            <Link to="/$workspaceId/campaigns" params={{ workspaceId }}>
-              <Button variant="ghost">
-                <ArrowLeft01Icon size={14} />
-                Campaigns
-              </Button>
-            </Link>
-            <Button onClick={generateDrafts} disabled={generating || leads.length === 0}>
-              {generating ? (
-                <><Loading03Icon size={14} className="animate-spin" />Generating...</>
-              ) : (
-                <><SparklesIcon size={14} />Generate Drafts</>
-              )}
+          <Link to="/$workspaceId/campaigns" params={{ workspaceId }}>
+            <Button variant="ghost">
+              <ArrowLeft01Icon size={14} />
+              Campaigns
             </Button>
-          </div>
+          </Link>
         }
       />
 
@@ -148,6 +144,7 @@ function CampaignDetailPage() {
         {/* Tabs */}
         <div className="tab-list">
           {([
+            { value: "sequence" as Tab, label: "Sequence", count: steps.length },
             { value: "queue" as Tab, label: "Review Queue", count: pending.length },
             { value: "leads" as Tab, label: "Leads", count: leads.length },
             { value: "results" as Tab, label: "Results", count: sent.length },
@@ -174,9 +171,8 @@ function CampaignDetailPage() {
             drafts={pending}
             leads={leads}
             campaignId={id}
+            signatures={initial?.signatures ?? []}
             onUpdate={handleDraftUpdate}
-            onGenerate={generateDrafts}
-            generating={generating}
           />
         )}
 
@@ -189,7 +185,14 @@ function CampaignDetailPage() {
         {tab === "results" && (
           <ResultsTab sent={sent} skipped={skipped} leads={leads} />
         )}
+
+        {/* Sequence */}
+        {tab === "sequence" && (
+          <SequenceTab campaignId={id} steps={steps} onStepsChange={setSteps} />
+        )}
       </div>
+
+      <ComposeDraftPanel onDraftAdded={handleDraftAdded} />
     </>
   );
 }
@@ -200,49 +203,73 @@ function ReviewQueue({
   drafts,
   leads,
   campaignId,
+  signatures,
   onUpdate,
-  onGenerate,
-  generating,
 }: {
   drafts: CampaignDraft[];
   leads: Lead[];
   campaignId: string;
+  signatures: EmailSignature[];
   onUpdate: (d: CampaignDraft) => void;
-  onGenerate: () => void;
-  generating: boolean;
 }) {
-  if (drafts.length === 0) {
-    return (
-      <div className="empty-state">
-        <div style={{ marginBottom: 16 }}>
-          {leads.length === 0
-            ? "No leads in this campaign yet."
-            : "No drafts pending review. Generate drafts to get started."}
-        </div>
-        {leads.length > 0 && (
-          <Button onClick={onGenerate} disabled={generating}>
-            <SparklesIcon size={13} />
-            {generating ? "Generating..." : "Generate Drafts"}
-          </Button>
-        )}
-      </div>
-    );
+  const [generating, setGenerating] = React.useState(false);
+  const openCompose = useComposeDraft((s) => s.open);
+
+  async function handleAiGen() {
+    setGenerating(true);
+    try {
+      const res = await fetch(`/api/campaigns/${campaignId}/generate-drafts`, { method: "POST" });
+      const data = (await res.json()) as { generated?: number; total?: number; error?: string };
+      if (!res.ok) { toast.error(data.error ?? "Generation failed"); return; }
+      toast.success(`Generated ${data.generated} of ${data.total} drafts`);
+      const newDrafts = (await fetch(`/api/campaigns/${campaignId}/drafts`).then((r) => r.json())) as CampaignDraft[];
+      newDrafts.forEach(onUpdate);
+    } catch {
+      toast.error("Network error");
+    } finally {
+      setGenerating(false);
+    }
   }
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-      {drafts.map((draft) => {
-        const lead = leads.find((l) => l.id === draft.leadId);
-        return (
-          <DraftCard
-            key={draft.id}
-            draft={draft}
-            lead={lead ?? null}
-            campaignId={campaignId}
-            onUpdate={onUpdate}
-          />
-        );
-      })}
+      {/* Action row */}
+      <div style={{ display: "flex", gap: 8 }}>
+        <Button onClick={handleAiGen} disabled={generating || leads.length === 0}>
+          {generating
+            ? <><Loading03Icon size={13} className="animate-spin" /> Generating...</>
+            : <><SparklesIcon size={13} /> AI Generate</>}
+        </Button>
+        <Button
+          variant="ghost"
+          disabled={leads.length === 0}
+          onClick={() => openCompose({ campaignId, leads, signatures })}
+        >
+          <PencilEdit01Icon size={13} />
+          Manually Draft
+        </Button>
+      </div>
+
+      {drafts.length === 0 ? (
+        <div className="empty-state">
+          {leads.length === 0
+            ? "No leads in this campaign yet."
+            : "No drafts pending review. Use AI Generate or Manually Draft above."}
+        </div>
+      ) : (
+        drafts.map((draft) => {
+          const lead = leads.find((l) => l.id === draft.leadId);
+          return (
+            <DraftCard
+              key={draft.id}
+              draft={draft}
+              lead={lead ?? null}
+              campaignId={campaignId}
+              onUpdate={onUpdate}
+            />
+          );
+        })
+      )}
     </div>
   );
 }
@@ -524,5 +551,315 @@ function ResultsTab({ sent, skipped, leads }: { sent: CampaignDraft[]; skipped: 
         </div>
       )}
     </div>
+  );
+}
+
+// ─── Sequence Tab ─────────────────────────────────────────────────────────────
+
+const CHANNEL_META = {
+  email: { label: "Email", icon: <Mail01Icon size={14} /> },
+  linkedin: { label: "LinkedIn", icon: <Linkedin01Icon size={14} /> },
+} as const;
+
+function StepPopover({
+  step,
+  campaignId,
+  onUpdate,
+  onDelete,
+}: {
+  step: CampaignStep;
+  campaignId: string;
+  onUpdate: (s: CampaignStep) => void;
+  onDelete: (id: string) => void;
+}) {
+  const [channel, setChannel] = React.useState<"email" | "linkedin">(step.channel as "email" | "linkedin");
+  const [delay, setDelay] = React.useState(step.delayDays);
+  const [context, setContext] = React.useState(step.context ?? "");
+  const [saving, setSaving] = React.useState(false);
+  const [deleting, setDeleting] = React.useState(false);
+
+  async function save() {
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/campaigns/${campaignId}/steps/${step.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ channel, delayDays: delay, context: context || null }),
+      });
+      const updated = (await res.json()) as CampaignStep;
+      onUpdate(updated);
+    } catch {
+      toast.error("Failed to save step");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function remove() {
+    setDeleting(true);
+    try {
+      await fetch(`/api/campaigns/${campaignId}/steps/${step.id}`, { method: "DELETE" });
+      onDelete(step.id);
+    } catch {
+      toast.error("Failed to delete step");
+    } finally {
+      setDeleting(false);
+    }
+  }
+
+  return (
+    <Popover>
+      <PopoverTrigger
+        className="btn btn-ghost btn-sm"
+        style={{ color: "var(--muted-foreground)" }}
+      >
+        <Edit01Icon size={13} />
+      </PopoverTrigger>
+      <PopoverContent side="right" className="w-64 flex flex-col gap-3 p-4">
+        <p className="text-[12px] font-semibold text-foreground">Edit step</p>
+
+        <div className="flex flex-col gap-1">
+          <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Channel</label>
+          <select className="input text-[12px]" value={channel} onChange={(e) => setChannel(e.target.value as "email" | "linkedin")}>
+            <option value="email">Email</option>
+            <option value="linkedin">LinkedIn</option>
+          </select>
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Send on day</label>
+          <input type="number" min={0} className="input text-[12px]" value={delay} onChange={(e) => setDelay(Number(e.target.value))} />
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">AI context hint</label>
+          <textarea
+            className="input text-[12px] resize-none"
+            rows={3}
+            placeholder="e.g. Reference their recent funding round, mention a specific pain point, keep it short and genuine..."
+            value={context}
+            onChange={(e) => setContext(e.target.value)}
+          />
+          <p className="text-[10px] text-muted-foreground" style={{ lineHeight: 1.5 }}>
+            Guides the AI on tone and angle for this specific step.
+          </p>
+        </div>
+
+        <div className="flex gap-2">
+          <Button size="sm" onClick={save} disabled={saving}>
+            {saving ? <Loading03Icon size={12} className="animate-spin" /> : "Save"}
+          </Button>
+          <button
+            className="btn btn-ghost btn-sm text-red-400 ml-auto"
+            onClick={remove}
+            disabled={deleting}
+          >
+            {deleting ? <Loading03Icon size={12} className="animate-spin" /> : <Delete02Icon size={13} />}
+          </button>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+function SequenceTab({
+  campaignId,
+  steps,
+  onStepsChange,
+}: {
+  campaignId: string;
+  steps: CampaignStep[];
+  onStepsChange: (steps: CampaignStep[]) => void;
+}) {
+  function handleUpdate(updated: CampaignStep) {
+    onStepsChange(steps.map((s) => (s.id === updated.id ? updated : s)));
+  }
+
+  function handleDelete(id: string) {
+    onStepsChange(
+      steps.filter((s) => s.id !== id).map((s, i) => ({ ...s, stepNumber: i + 1 }))
+    );
+  }
+
+  const SPINE_WIDTH = 28;
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", maxWidth: 560 }}>
+      {steps.length === 0 && (
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, padding: "36px 0 24px", textAlign: "center" }}>
+          <InformationCircleIcon size={26} style={{ color: "var(--muted-foreground)", opacity: 0.35 }} />
+          <p style={{ fontSize: 13, fontWeight: 600, margin: 0 }}>No steps yet</p>
+          <p style={{ fontSize: 12, color: "var(--muted-foreground)", margin: "0 0 20px", maxWidth: 340, lineHeight: 1.65 }}>
+            A sequence controls when and how each outreach is sent. Start with an email on Day 0, then add follow-ups spaced a few days apart.
+          </p>
+        </div>
+      )}
+
+      {steps.map((step, i) => {
+        const meta = CHANNEL_META[step.channel as keyof typeof CHANNEL_META] ?? CHANNEL_META.email;
+        const next = steps[i + 1];
+        const waitDays = next != null ? next.delayDays - step.delayDays : null;
+
+        return (
+          <React.Fragment key={step.id}>
+            {/* Step row — no card wrapper, just inline text + actions */}
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              {/* Circle */}
+              <div style={{
+                width: SPINE_WIDTH, height: SPINE_WIDTH, flexShrink: 0,
+                borderRadius: "50%", background: "var(--accent-subtle)", color: "var(--accent)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 11, fontWeight: 700,
+              }}>
+                {i + 1}
+              </div>
+              {/* Content */}
+              <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 13, fontWeight: 600, flexShrink: 0 }}>
+                  {meta.icon}
+                  {meta.label}
+                </div>
+                <span style={{ fontSize: 12, color: "var(--muted-foreground)", flexShrink: 0 }}>
+                  {step.delayDays === 0 ? "Immediately" : `Day ${step.delayDays}`}
+                </span>
+                {step.context && (
+                  <span style={{ fontSize: 11, color: "var(--muted-foreground)", fontStyle: "italic", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>
+                    "{step.context}"
+                  </span>
+                )}
+                <div style={{ display: "flex", alignItems: "center", gap: 2, marginLeft: "auto", flexShrink: 0 }}>
+                  <StepPopover step={step} campaignId={campaignId} onUpdate={handleUpdate} onDelete={handleDelete} />
+                  <button
+                    className="btn btn-ghost btn-sm"
+                    style={{ color: "var(--muted-foreground)" }}
+                    title="Delete step"
+                    onClick={async () => {
+                      try {
+                        await fetch(`/api/campaigns/${campaignId}/steps/${step.id}`, { method: "DELETE" });
+                        handleDelete(step.id);
+                      } catch {
+                        toast.error("Failed to delete step");
+                      }
+                    }}
+                  >
+                    <Delete02Icon size={13} />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Dashed connector + wait label */}
+            <div style={{ display: "flex", gap: 10 }}>
+              <div style={{ width: SPINE_WIDTH, flexShrink: 0, display: "flex", justifyContent: "center" }}>
+                <div style={{ borderLeft: "1.5px dashed var(--border)", height: waitDays != null ? 40 : 20 }} />
+              </div>
+              {waitDays != null && (
+                <div style={{ display: "flex", alignItems: "center", fontSize: 11, color: "var(--muted-foreground)", fontStyle: "italic" }}>
+                  Wait {waitDays} day{waitDays !== 1 ? "s" : ""}
+                </div>
+              )}
+            </div>
+          </React.Fragment>
+        );
+      })}
+
+      {/* Add step popover button */}
+      <AddStepPopover campaignId={campaignId} steps={steps} onAdd={(step) => onStepsChange([...steps, step])} />
+    </div>
+  );
+}
+
+function AddStepPopover({
+  campaignId,
+  steps,
+  onAdd,
+}: {
+  campaignId: string;
+  steps: CampaignStep[];
+  onAdd: (step: CampaignStep) => void;
+}) {
+  const lastDelay = steps[steps.length - 1]?.delayDays ?? -1;
+  const [channel, setChannel] = React.useState<"email" | "linkedin">("email");
+  const [delay, setDelay] = React.useState(lastDelay < 0 ? 0 : lastDelay + 3);
+  const [context, setContext] = React.useState("");
+  const [open, setOpen] = React.useState(false);
+  const [adding, setAdding] = React.useState(false);
+
+  React.useEffect(() => {
+    const last = steps[steps.length - 1]?.delayDays ?? -1;
+    setDelay(last < 0 ? 0 : last + 3);
+  }, [steps.length]);
+
+  async function handleAdd() {
+    setAdding(true);
+    try {
+      const res = await fetch(`/api/campaigns/${campaignId}/steps`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ stepNumber: steps.length + 1, delayDays: delay, channel, context: context.trim() || null }),
+      });
+      const step = (await res.json()) as CampaignStep;
+      onAdd(step);
+      setOpen(false);
+      setContext("");
+    } catch {
+      toast.error("Failed to add step");
+    } finally {
+      setAdding(false);
+    }
+  }
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger style={{
+        display: "inline-flex", alignItems: "center", gap: 6,
+        padding: "7px 14px",
+        border: "1px dashed var(--border)",
+        borderRadius: "var(--radius)",
+        background: "transparent",
+        color: "var(--muted-foreground)",
+        fontSize: 12, cursor: "pointer",
+      }}>
+        <Add01Icon size={13} />
+        Add step
+      </PopoverTrigger>
+      <PopoverContent side="bottom" align="start" className="w-72 flex flex-col gap-3 p-4">
+        <p className="text-[12px] font-semibold text-foreground">New step</p>
+
+        <div className="flex flex-col gap-1">
+          <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Channel</label>
+          <select className="input text-[12px]" value={channel} onChange={(e) => setChannel(e.target.value as "email" | "linkedin")}>
+            <option value="email">Email</option>
+            <option value="linkedin">LinkedIn</option>
+          </select>
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Send on day</label>
+          <input type="number" min={0} className="input text-[12px]" value={delay} onChange={(e) => setDelay(Number(e.target.value))} />
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">AI context hint</label>
+          <textarea
+            className="input text-[12px] resize-none"
+            rows={3}
+            placeholder={steps.length === 0
+              ? "e.g. Introduce us, mention what we do, keep it short and curious..."
+              : "e.g. Follow up on the first email, softer tone, mention a specific use case..."}
+            value={context}
+            onChange={(e) => setContext(e.target.value)}
+          />
+          <p className="text-[10px] text-muted-foreground" style={{ lineHeight: 1.5 }}>
+            This tells the AI what angle to take when generating a draft for this step.
+          </p>
+        </div>
+
+        <Button size="sm" onClick={handleAdd} disabled={adding}>
+          {adding ? <Loading03Icon size={12} className="animate-spin" /> : <Add01Icon size={12} />}
+          Add Step
+        </Button>
+      </PopoverContent>
+    </Popover>
   );
 }

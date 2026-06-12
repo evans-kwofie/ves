@@ -14,7 +14,7 @@ import {
 } from "hugeicons-react";
 import { listCampaigns } from "~/db/queries/campaigns";
 import { toast } from "sonner";
-import type { Campaign, CampaignStatus, RunFrequency } from "~/types/campaign";
+import type { Campaign, CampaignStatus } from "~/types/campaign";
 
 const getCampaignsData = createServerFn({ method: "GET" })
   .inputValidator(z.string())
@@ -51,12 +51,6 @@ const CHANNEL_ICON: Record<string, React.ReactNode> = {
   ),
 };
 
-const FREQUENCY_LABELS: Record<RunFrequency, string> = {
-  daily: "Daily",
-  every_3_days: "Every 3 days",
-  weekly: "Weekly",
-};
-
 function replyRate(sent: number, replies: number) {
   if (sent === 0) return "—";
   return `${Math.round((replies / sent) * 100)}%`;
@@ -68,13 +62,11 @@ function CampaignCard({
   workspaceId,
   onDelete,
   onStatusChange,
-  onFrequencyChange,
 }: {
   campaign: Campaign;
   workspaceId: string;
   onDelete: (id: string) => void;
   onStatusChange: (id: string, status: CampaignStatus) => void;
-  onFrequencyChange: (id: string, freq: RunFrequency | null) => void;
 }) {
   const [deleting, setDeleting] = React.useState(false);
   const badge = STATUS_BADGE[campaign.status];
@@ -106,25 +98,6 @@ function CampaignCard({
       toast.error("Failed to update campaign");
     }
   }
-
-  async function handleFrequencyChange(e: React.ChangeEvent<HTMLSelectElement>) {
-    const val = e.target.value as RunFrequency | "";
-    const freq = val === "" ? null : val;
-    try {
-      await fetch(`/api/campaigns/${campaign.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ runFrequency: freq }),
-      });
-      onFrequencyChange(campaign.id, freq);
-    } catch {
-      toast.error("Failed to update schedule");
-    }
-  }
-
-  const lastRun = campaign.lastRunAt
-    ? new Date(campaign.lastRunAt).toLocaleDateString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })
-    : null;
 
   return (
     <div className="card" style={{ display: "flex", flexDirection: "column", gap: 14 }}>
@@ -198,24 +171,6 @@ function CampaignCard({
           </div>
         </div>
 
-        {/* Schedule selector */}
-        <div style={{ marginLeft: "auto", display: "flex", flexDirection: "column", gap: 4, alignItems: "flex-end" }}>
-          <div className="stat-label">Auto-run</div>
-          <select
-            className="input text-[12px]"
-            value={campaign.runFrequency ?? ""}
-            onChange={handleFrequencyChange}
-            style={{ padding: "3px 24px 3px 8px", fontSize: 12, height: "auto" }}
-          >
-            <option value="">Manual only</option>
-            {(Object.entries(FREQUENCY_LABELS) as [RunFrequency, string][]).map(([val, label]) => (
-              <option key={val} value={val}>{label}</option>
-            ))}
-          </select>
-          {lastRun && (
-            <span style={{ fontSize: 10, color: "var(--muted-foreground)" }}>Last run {lastRun}</span>
-          )}
-        </div>
       </div>
     </div>
   );
@@ -240,10 +195,6 @@ function CampaignsPage() {
 
   function handleStatusChange(id: string, status: CampaignStatus) {
     setCampaigns((prev) => prev.map((c) => (c.id === id ? { ...c, status } : c)));
-  }
-
-  function handleFrequencyChange(id: string, freq: RunFrequency | null) {
-    setCampaigns((prev) => prev.map((c) => (c.id === id ? { ...c, runFrequency: freq } : c)));
   }
 
   return (
@@ -333,7 +284,6 @@ function CampaignsPage() {
                 workspaceId={workspaceId}
                 onDelete={handleDelete}
                 onStatusChange={handleStatusChange}
-                onFrequencyChange={handleFrequencyChange}
               />
             ))}
           </div>

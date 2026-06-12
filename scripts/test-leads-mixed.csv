@@ -1,0 +1,9 @@
+Company,Contact,Email,Website,Description,Notes
+Linear,Karri Saarinen,karri@linear.app,https://linear.app,Issue tracking tool built for modern software teams,High fit
+Loom,,support@loom.com,https://loom.com,Async video messaging for teams,
+Cal.com,Peer Richelsen,peer@cal.com,https://cal.com,Open source scheduling infrastructure,OSS play
+,Tom Preston-Werner,tom@toml.io,https://toml.io,Config language creator,
+Supabase,Paul Copplestone,paul@supabase.com,https://supabase.com,Open source Firebase alternative,Series B
+,,noreply@example.com,https://example.com,Unknown company,
+Fly.io,Kurt Mackey,kurt@fly.io,https://fly.io,App deployment close to users worldwide,Strong eng culture
+Clerk,,hello@clerk.com,https://clerk.com,Authentication and user management for React apps,
