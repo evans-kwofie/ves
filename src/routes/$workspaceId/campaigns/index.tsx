@@ -213,27 +213,22 @@ function CampaignsPage() {
       />
       <div className="page-content">
         {/* Aggregate stats */}
-        <div className="stat-grid" style={{ marginBottom: 24 }}>
-          <div className="stat-card">
-            <div className="stat-label">Total Campaigns</div>
-            <div className="stat-value">{campaigns.length}</div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-label">Active</div>
-            <div className="stat-value">{activeCampaigns}</div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-label">Total Sent</div>
-            <div className="stat-value">{totalSent}</div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-label">Total Replies</div>
-            <div className="stat-value green">{totalReplies}</div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-label">Avg Reply Rate</div>
-            <div className="stat-value">{replyRate(totalSent, totalReplies)}</div>
-          </div>
+        <div className="flex items-center gap-6 pb-5 mb-6 border-b border-border flex-wrap">
+          {[
+            { label: "Campaigns", value: campaigns.length },
+            { label: "Active", value: activeCampaigns },
+            { label: "Total Sent", value: totalSent },
+            { label: "Total Replies", value: totalReplies, accent: true },
+            { label: "Avg Reply Rate", value: replyRate(totalSent, totalReplies), accent: totalReplies > 0 },
+          ].map((s, i) => (
+            <React.Fragment key={s.label}>
+              {i > 0 && <div className="h-7 w-px bg-border shrink-0" />}
+              <div>
+                <div className={`text-[26px] font-bold tracking-tight leading-none${s.accent ? " text-accent" : ""}`}>{s.value}</div>
+                <div className="text-[11px] text-muted-foreground uppercase tracking-wider mt-1">{s.label}</div>
+              </div>
+            </React.Fragment>
+          ))}
         </div>
 
         {/* Tabs */}
