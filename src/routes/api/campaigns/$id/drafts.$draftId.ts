@@ -50,10 +50,14 @@ export const Route = createFileRoute("/api/campaigns/$id/drafts/$draftId")({
           return new Response(JSON.stringify({ error: "lead_no_email" }), { status: 400, headers: { "Content-Type": "application/json" } });
         }
 
+        const inboundDomain = process.env.INBOUND_EMAIL_DOMAIN;
+        const replyTo = inboundDomain ? `reply+${lead.id}@${inboundDomain}` : undefined;
+
         const result = await sendEmail({
           to: lead.email,
           subject: draft.subject ?? "(no subject)",
           body: draft.body,
+          replyTo,
         });
 
         if (!result.success) {
@@ -62,7 +66,7 @@ export const Route = createFileRoute("/api/campaigns/$id/drafts/$draftId")({
 
         const now = new Date().toISOString();
         const [updated] = await Promise.all([
-          updateDraft(params.draftId, { status: "sent", sentAt: now }),
+          updateDraft(params.draftId, { status: "sent", sentAt: now, resendMessageId: result.messageId ?? undefined }),
           updateLead(lead.id, { status: "email_sent", emailSentAt: now }),
           createOutreachEvent({
             leadId: lead.id,

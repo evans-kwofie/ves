@@ -66,6 +66,15 @@ export async function getDueCampaignSteps(): Promise<{ campaignId: string; stepN
   });
 }
 
+export async function getDraftByResendMessageId(messageId: string): Promise<CampaignDraft | null> {
+  const result = await db.execute({
+    sql: "SELECT * FROM campaign_drafts WHERE resend_message_id = ? LIMIT 1",
+    args: [messageId],
+  });
+  if (result.rows.length === 0) return null;
+  return rowToDraft(result.rows[0] as Record<string, unknown>);
+}
+
 export async function getDraft(id: string): Promise<CampaignDraft | null> {
   const result = await db.execute({
     sql: "SELECT * FROM campaign_drafts WHERE id = ?",

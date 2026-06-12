@@ -32,6 +32,8 @@ import { Route as ApiBlogIndexRouteImport } from './routes/api/blog/index'
 import { Route as WorkspaceIdSettingsIndexRouteImport } from './routes/$workspaceId/settings/index'
 import { Route as WorkspaceIdCampaignsIndexRouteImport } from './routes/$workspaceId/campaigns/index'
 import { Route as ApiWorkspaceGenerateDescriptionRouteImport } from './routes/api/workspace/generate-description'
+import { Route as ApiWebhooksResendRouteImport } from './routes/api/webhooks/resend'
+import { Route as ApiWebhooksEmailInboundRouteImport } from './routes/api/webhooks/email-inbound'
 import { Route as ApiSubredditsIdRouteImport } from './routes/api/subreddits/$id'
 import { Route as ApiRedditToPipelineRouteImport } from './routes/api/reddit/to-pipeline'
 import { Route as ApiRedditSuggestRouteImport } from './routes/api/reddit/suggest'
@@ -193,6 +195,16 @@ const ApiWorkspaceGenerateDescriptionRoute =
     path: '/api/workspace/generate-description',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiWebhooksResendRoute = ApiWebhooksResendRouteImport.update({
+  id: '/api/webhooks/resend',
+  path: '/api/webhooks/resend',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiWebhooksEmailInboundRoute = ApiWebhooksEmailInboundRouteImport.update({
+  id: '/api/webhooks/email-inbound',
+  path: '/api/webhooks/email-inbound',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiSubredditsIdRoute = ApiSubredditsIdRouteImport.update({
   id: '/api/subreddits/$id',
   path: '/api/subreddits/$id',
@@ -459,6 +471,8 @@ export interface FileRoutesByFullPath {
   '/api/reddit/suggest': typeof ApiRedditSuggestRoute
   '/api/reddit/to-pipeline': typeof ApiRedditToPipelineRoute
   '/api/subreddits/$id': typeof ApiSubredditsIdRoute
+  '/api/webhooks/email-inbound': typeof ApiWebhooksEmailInboundRoute
+  '/api/webhooks/resend': typeof ApiWebhooksResendRoute
   '/api/workspace/generate-description': typeof ApiWorkspaceGenerateDescriptionRoute
   '/$workspaceId/campaigns/': typeof WorkspaceIdCampaignsIndexRoute
   '/$workspaceId/settings/': typeof WorkspaceIdSettingsIndexRoute
@@ -523,6 +537,8 @@ export interface FileRoutesByTo {
   '/api/reddit/suggest': typeof ApiRedditSuggestRoute
   '/api/reddit/to-pipeline': typeof ApiRedditToPipelineRoute
   '/api/subreddits/$id': typeof ApiSubredditsIdRoute
+  '/api/webhooks/email-inbound': typeof ApiWebhooksEmailInboundRoute
+  '/api/webhooks/resend': typeof ApiWebhooksResendRoute
   '/api/workspace/generate-description': typeof ApiWorkspaceGenerateDescriptionRoute
   '/$workspaceId/campaigns': typeof WorkspaceIdCampaignsIndexRoute
   '/$workspaceId/settings': typeof WorkspaceIdSettingsIndexRoute
@@ -590,6 +606,8 @@ export interface FileRoutesById {
   '/api/reddit/suggest': typeof ApiRedditSuggestRoute
   '/api/reddit/to-pipeline': typeof ApiRedditToPipelineRoute
   '/api/subreddits/$id': typeof ApiSubredditsIdRoute
+  '/api/webhooks/email-inbound': typeof ApiWebhooksEmailInboundRoute
+  '/api/webhooks/resend': typeof ApiWebhooksResendRoute
   '/api/workspace/generate-description': typeof ApiWorkspaceGenerateDescriptionRoute
   '/$workspaceId/campaigns/': typeof WorkspaceIdCampaignsIndexRoute
   '/$workspaceId/settings/': typeof WorkspaceIdSettingsIndexRoute
@@ -658,6 +676,8 @@ export interface FileRouteTypes {
     | '/api/reddit/suggest'
     | '/api/reddit/to-pipeline'
     | '/api/subreddits/$id'
+    | '/api/webhooks/email-inbound'
+    | '/api/webhooks/resend'
     | '/api/workspace/generate-description'
     | '/$workspaceId/campaigns/'
     | '/$workspaceId/settings/'
@@ -722,6 +742,8 @@ export interface FileRouteTypes {
     | '/api/reddit/suggest'
     | '/api/reddit/to-pipeline'
     | '/api/subreddits/$id'
+    | '/api/webhooks/email-inbound'
+    | '/api/webhooks/resend'
     | '/api/workspace/generate-description'
     | '/$workspaceId/campaigns'
     | '/$workspaceId/settings'
@@ -788,6 +810,8 @@ export interface FileRouteTypes {
     | '/api/reddit/suggest'
     | '/api/reddit/to-pipeline'
     | '/api/subreddits/$id'
+    | '/api/webhooks/email-inbound'
+    | '/api/webhooks/resend'
     | '/api/workspace/generate-description'
     | '/$workspaceId/campaigns/'
     | '/$workspaceId/settings/'
@@ -837,6 +861,8 @@ export interface RootRouteChildren {
   ApiRedditSuggestRoute: typeof ApiRedditSuggestRoute
   ApiRedditToPipelineRoute: typeof ApiRedditToPipelineRoute
   ApiSubredditsIdRoute: typeof ApiSubredditsIdRoute
+  ApiWebhooksEmailInboundRoute: typeof ApiWebhooksEmailInboundRoute
+  ApiWebhooksResendRoute: typeof ApiWebhooksResendRoute
   ApiWorkspaceGenerateDescriptionRoute: typeof ApiWorkspaceGenerateDescriptionRoute
   ApiBlogIndexRoute: typeof ApiBlogIndexRoute
   ApiCampaignsIndexRoute: typeof ApiCampaignsIndexRoute
@@ -1006,6 +1032,20 @@ declare module '@tanstack/react-router' {
       path: '/api/workspace/generate-description'
       fullPath: '/api/workspace/generate-description'
       preLoaderRoute: typeof ApiWorkspaceGenerateDescriptionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/webhooks/resend': {
+      id: '/api/webhooks/resend'
+      path: '/api/webhooks/resend'
+      fullPath: '/api/webhooks/resend'
+      preLoaderRoute: typeof ApiWebhooksResendRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/webhooks/email-inbound': {
+      id: '/api/webhooks/email-inbound'
+      path: '/api/webhooks/email-inbound'
+      fullPath: '/api/webhooks/email-inbound'
+      preLoaderRoute: typeof ApiWebhooksEmailInboundRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/subreddits/$id': {
@@ -1444,6 +1484,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiRedditSuggestRoute: ApiRedditSuggestRoute,
   ApiRedditToPipelineRoute: ApiRedditToPipelineRoute,
   ApiSubredditsIdRoute: ApiSubredditsIdRoute,
+  ApiWebhooksEmailInboundRoute: ApiWebhooksEmailInboundRoute,
+  ApiWebhooksResendRoute: ApiWebhooksResendRoute,
   ApiWorkspaceGenerateDescriptionRoute: ApiWorkspaceGenerateDescriptionRoute,
   ApiBlogIndexRoute: ApiBlogIndexRoute,
   ApiCampaignsIndexRoute: ApiCampaignsIndexRoute,

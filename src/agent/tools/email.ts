@@ -4,6 +4,7 @@ interface SendEmailInput {
   to: string;
   subject: string;
   body: string;
+  replyTo?: string;
 }
 
 const resend = new Resend(process.env.RESEND_API_KEY);
@@ -19,6 +20,7 @@ export async function sendEmail(
       to: [input.to],
       subject: input.subject,
       text: input.body,
+      ...(input.replyTo ? { replyTo: input.replyTo } : {}),
     });
 
     if (error) {
