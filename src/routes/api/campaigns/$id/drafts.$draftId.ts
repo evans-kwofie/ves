@@ -44,6 +44,17 @@ export const Route = createFileRoute("/api/campaigns/$id/drafts/$draftId")({
           return Response.json({ ok: true, draft: updated });
         }
 
+        if (action === "mark_sent") {
+          const lead = await getLead(draft.leadId);
+          const now = new Date().toISOString();
+          const [updated] = await Promise.all([
+            updateDraft(params.draftId, { status: "sent", sentAt: now }),
+            lead ? updateLead(lead.id, { linkedinSentAt: now }) : Promise.resolve(null),
+            lead ? createOutreachEvent({ leadId: lead.id, channel: draft.channel, status: "linkedin_sent", sentAt: now, campaignId: draft.campaignId }) : Promise.resolve(null),
+          ]);
+          return Response.json({ ok: true, draft: updated });
+        }
+
         // Approve: send the email
         const lead = await getLead(draft.leadId);
         if (!lead || !lead.email) {

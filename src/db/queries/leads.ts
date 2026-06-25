@@ -203,6 +203,10 @@ export async function getRecentLeads(orgId: string, limit = 5): Promise<Lead[]> 
   return result.rows.map((r) => rowToLead(r as Record<string, unknown>));
 }
 
+export async function deleteLead(id: string): Promise<void> {
+  await db.execute({ sql: "DELETE FROM leads WHERE id = ?", args: [id] });
+}
+
 export async function getLeadGrowth(orgId: string): Promise<{ date: string; count: number }[]> {
   // Returns lead counts grouped by day for the last 7 days
   const result = await db.execute({

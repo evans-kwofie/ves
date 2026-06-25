@@ -3,6 +3,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
 import { createLead } from "~/db/queries/leads";
 import { listActiveKeywordsWithSubreddits } from "~/db/queries/keywords";
+import { findEmail, splitName } from "~/agent/tools/find-email";
 
 const requestSchema = z.object({
   organizationId: z.string().min(1),
@@ -90,7 +91,10 @@ export const Route = createFileRoute("/api/linkedin/search")({
           const results = await searchForKeyword(kw);
           for (const r of results) {
             const domain = r.website.replace(/^https?:\/\//, "").split("/")[0].replace(/^www\./, "");
-            const emailGuess = `${r.name.split(" ")[0]?.toLowerCase() ?? "contact"}@${domain || "unknown.com"}`;
+            const { firstName, lastName } = splitName(r.name);
+            const hunterResult = await findEmail(firstName, lastName, domain);
+            const email = hunterResult.email ?? null;
+
             let saved = false;
             try {
               await createLead(organizationId, {
@@ -98,10 +102,10 @@ export const Route = createFileRoute("/api/linkedin/search")({
                 website: r.website ? `https://${domain}` : "",
                 whatTheyDo: r.whatTheyDo,
                 ceo: r.name,
-                email: emailGuess,
+                email: email ?? `noemail-${r.company.toLowerCase().replace(/\s+/g, "-")}@placeholder.vesper`,
                 linkedin: r.linkedinHint ? `https://linkedin.com/in/${r.linkedinHint}` : "",
                 fit: "MEDIUM",
-                notes: `Discovered via LinkedIn search: ${kw}`,
+                notes: `Discovered via keyword search: ${kw}${!email ? " — email not verified, needs manual lookup" : ` — email verified via Hunter (confidence: ${hunterResult.confidence})`}`,
               });
               saved = true;
               totalSaved++;

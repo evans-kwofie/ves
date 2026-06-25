@@ -277,6 +277,7 @@ export async function initDb(): Promise<void> {
   await safeAlter(`ALTER TABLE reddit_posts ADD COLUMN comment_count INTEGER`);
   await safeAlter(`ALTER TABLE reddit_posts ADD COLUMN has_replies INTEGER`);
   await safeAlter(`ALTER TABLE reddit_posts ADD COLUMN last_checked_at TEXT`);
+  await safeAlter(`ALTER TABLE reddit_posts ADD COLUMN posted_at TEXT`);
 
   // Campaigns tables
   await db.executeMultiple(`
@@ -303,8 +304,28 @@ export async function initDb(): Promise<void> {
   await safeAlter(`ALTER TABLE campaign_drafts ADD COLUMN resend_message_id TEXT`);
   await safeAlter(`ALTER TABLE campaign_drafts ADD COLUMN send_after TEXT`);
   await safeAlter(`ALTER TABLE campaign_drafts ADD COLUMN step_number INTEGER`);
+  await db.executeMultiple(`
+    CREATE TABLE IF NOT EXISTS templates (
+      id TEXT PRIMARY KEY,
+      organization_id TEXT NOT NULL,
+      name TEXT NOT NULL,
+      channel TEXT NOT NULL DEFAULT 'email',
+      subject TEXT,
+      body TEXT NOT NULL DEFAULT '',
+      brand_color TEXT,
+      show_logo INTEGER NOT NULL DEFAULT 1,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_templates_org ON templates(organization_id);
+  `);
+  await safeAlter(`ALTER TABLE templates ADD COLUMN brand_color TEXT`);
+  await safeAlter(`ALTER TABLE templates ADD COLUMN show_logo INTEGER NOT NULL DEFAULT 1`);
+
   await safeAlter(`ALTER TABLE campaigns ADD COLUMN run_frequency TEXT`);
   await safeAlter(`ALTER TABLE campaigns ADD COLUMN last_run_at TEXT`);
+  await safeAlter(`ALTER TABLE campaign_drafts ADD COLUMN opened_at TEXT`);
+  await safeAlter(`ALTER TABLE campaign_drafts ADD COLUMN clicked_at TEXT`);
 
   await db.executeMultiple(`
     CREATE TABLE IF NOT EXISTS campaign_drafts (
@@ -350,4 +371,13 @@ export async function initDb(): Promise<void> {
     CREATE INDEX IF NOT EXISTS idx_outreach_lead_id ON outreach_events(lead_id);
     CREATE INDEX IF NOT EXISTS idx_org_profile_org ON organization_profile(organization_id);
   `);
+
+  // A/B testing
+  await safeAlter(`ALTER TABLE templates ADD COLUMN variant_b_subject TEXT`);
+  await safeAlter(`ALTER TABLE templates ADD COLUMN variant_b_body TEXT`);
+  await safeAlter(`ALTER TABLE campaign_drafts ADD COLUMN ab_variant TEXT NOT NULL DEFAULT 'a'`);
+  await safeAlter(`ALTER TABLE campaign_steps ADD COLUMN template_id TEXT`);
+
+  // Bounce tracking
+  await safeAlter(`ALTER TABLE campaign_drafts ADD COLUMN bounced_at TEXT`);
 }

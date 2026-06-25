@@ -4,11 +4,12 @@ import { authClient } from "~/lib/auth-client";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import { PasswordInput } from "~/components/ui/password-input";
 import { toast } from "sonner";
+import { AuthLayout } from "~/components/modules/AuthLayout";
 
 export const Route = createFileRoute("/sign-in")({
   beforeLoad: ({ context }) => {
-    console.log(' context', context)
     if (context.session) throw redirect({ to: "/" });
   },
   component: SignInPage,
@@ -22,61 +23,58 @@ function SignInPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
-    console.log("[sign-in] submitting for", email);
     const result = await authClient.signIn.email({ email, password });
-    console.log("[sign-in] result:", JSON.stringify(result));
     setLoading(false);
     if (result.error) {
       toast.error(result.error.message ?? "Sign in failed");
       return;
     }
-    console.log("[sign-in] success — navigating to /");
     window.location.href = "/";
   }
 
   return (
-    <div className="auth-layout">
-      <div className="auth-card">
-        <div className="auth-logo">
-          vesper<span style={{ color: "var(--accent)" }}>.</span>
-        </div>
-        <p className="auth-sub">Sign in to your workspace</p>
-
-        <form onSubmit={handleSubmit} className="auth-form">
-          <div className="auth-field">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="you@company.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-          </div>
-          <div className="auth-field">
-            <Label htmlFor="password">Password</Label>
-            <Input
-              id="password"
-              type="password"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-          </div>
-          <Button type="submit" disabled={loading} style={{ width: "100%", marginTop: 8 }}>
-            {loading ? "Signing in..." : "Sign in"}
-          </Button>
-        </form>
-
-        <p className="auth-link-row">
-          Don&apos;t have an account?{" "}
-          <a href="/sign-up" className="auth-link">
-            Sign up
-          </a>
-        </p>
+    <AuthLayout>
+      <div className="flex flex-col gap-1">
+        <h1 className="text-xl font-bold tracking-tight text-foreground">Welcome back</h1>
+        <p className="text-sm text-muted-foreground">Sign in to your workspace</p>
       </div>
-    </div>
+
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="email">Email</Label>
+          <Input
+            id="email"
+            type="email"
+            placeholder="you@company.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <div className="flex items-center justify-between">
+            <Label htmlFor="password">Password</Label>
+            <a href="/forgot-password" className="text-[12px] text-muted-foreground hover:text-accent transition-colors">
+              Forgot password?
+            </a>
+          </div>
+          <PasswordInput
+            id="password"
+            placeholder="••••••••"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
+        </div>
+        <Button type="submit" disabled={loading} className="w-full mt-1">
+          {loading ? "Signing in..." : "Sign in"}
+        </Button>
+      </form>
+
+      <p className="text-[12px] text-center text-muted-foreground">
+        Don&apos;t have an account?{" "}
+        <a href="/sign-up" className="text-accent font-medium hover:underline">Sign up</a>
+      </p>
+    </AuthLayout>
   );
 }

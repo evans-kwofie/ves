@@ -6,6 +6,7 @@ const updateSchema = z.object({
   delayDays: z.number().int().min(0).optional(),
   channel: z.enum(["email", "linkedin"]).optional(),
   context: z.string().nullable().optional(),
+  templateId: z.string().nullable().optional(),
 });
 
 export const Route = createFileRoute("/api/campaigns/$id/steps/$stepId")({

@@ -11,7 +11,11 @@ interface SidebarProps {
   workspaceLogo?: string | null;
 }
 
-export function Sidebar({ workspaceId, workspaceName, workspaceLogo }: SidebarProps) {
+export function Sidebar({
+  workspaceId,
+  workspaceName,
+  workspaceLogo,
+}: SidebarProps) {
   return (
     <aside className="sidebar">
       <SidebarHeader
@@ -25,7 +29,7 @@ export function Sidebar({ workspaceId, workspaceName, workspaceLogo }: SidebarPr
         <Link
           to="/$workspaceId/campaigns/new"
           params={{ workspaceId }}
-          className="flex items-center gap-2 w-full px-3 py-2 rounded-[var(--radius)] text-[13px] font-semibold transition-all"
+          className="flex items-center gap-2 w-full px-3 py-2 rounded-(--radius) text-[13px] font-semibold transition-all"
           style={{
             background: "var(--accent)",
             color: "var(--accent-foreground)",

@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { auth } from "~/lib/auth";
-import Anthropic from "@anthropic-ai/sdk";
+import { mistralComplete } from "~/agent/tools/mistral";
 import { z } from "zod";
 
 const requestSchema = z.object({
@@ -66,17 +66,11 @@ Be specific and direct. No fluff, no buzzwords. Write in third person. Keep it u
 Return only the description text, no quotes, no labels.`;
 
         try {
-          const client = new Anthropic();
-          const response = await client.messages.create({
-            model: "claude-haiku-4-5-20251001",
-            max_tokens: 200,
-            messages: [{ role: "user", content: prompt }],
+          const description = await mistralComplete(prompt, {
+            model: "mistral-small-latest",
+            maxTokens: 200,
           });
-
-          const description =
-            response.content[0]?.type === "text" ? response.content[0].text.trim() : "";
-
-          return Response.json({ description });
+          return Response.json({ description: description.trim() });
         } catch {
           return new Response(JSON.stringify({ error: "Generation failed" }), {
             status: 500,

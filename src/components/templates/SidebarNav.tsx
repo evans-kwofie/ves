@@ -10,6 +10,7 @@ import {
   Linkedin01Icon,
   Setting07Icon,
   FileEditIcon,
+  BarChartIcon,
 } from "hugeicons-react";
 
 interface NavItem {
@@ -36,6 +37,7 @@ const NAV_SECTIONS: NavSection[] = [
       { to: "/$workspaceId/campaigns", label: "Campaigns", icon: <Target01Icon size={14} /> },
       { to: "/$workspaceId/pipeline", label: "Pipeline", icon: <User02Icon size={14} /> },
       { to: "/$workspaceId/templates", label: "Templates", icon: <FileEditIcon size={14} /> },
+      { to: "/$workspaceId/analytics", label: "Analytics", icon: <BarChartIcon size={14} /> },
     ],
   },
   {

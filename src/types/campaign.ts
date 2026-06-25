@@ -1,5 +1,5 @@
 export type CampaignStatus = 'draft' | 'active' | 'scheduled' | 'completed';
-export type CampaignChannel = 'email' | 'linkedin' | 'both';
+export type CampaignChannel = 'email' | 'linkedin' | 'instagram' | 'both';
 
 export type RunFrequency = 'daily' | 'every_3_days' | 'weekly';
 

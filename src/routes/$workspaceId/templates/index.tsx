@@ -4,11 +4,11 @@ import { createServerFn } from "@tanstack/react-start";
 import { getRequestHeaders } from "@tanstack/react-start/server";
 import { Header } from "~/components/templates/Header";
 import { auth } from "~/lib/auth";
+import { listTemplates } from "~/db/queries/templates";
 import { SignaturesTab } from "~/components/modules/templates/SignaturesTab";
 import { EmailTemplatesTab } from "~/components/modules/templates/EmailTemplatesTab";
 import type { EmailSignature } from "~/types/signature";
-
-// ─── Server ───────────────────────────────────────────────────────────────────
+import type { Template } from "~/db/queries/templates";
 
 const getTemplatesData = createServerFn({ method: "GET" }).handler(async () => {
   const headers = getRequestHeaders();
@@ -22,29 +22,37 @@ const getTemplatesData = createServerFn({ method: "GET" }).handler(async () => {
   let signatures: EmailSignature[] = [];
   try { signatures = (metadata.emailSignatures as EmailSignature[]) ?? []; } catch {}
 
-  return { orgId: org.id, metadata: metadata as Record<string, string>, signatures };
+  const templates = await listTemplates(org.id);
+
+  return {
+    orgId: org.id,
+    orgName: org.name,
+    orgLogo: org.logo ?? null,
+    metadata: metadata as Record<string, string>,
+    signatures,
+    templates,
+  };
 });
 
-// ─── Route ────────────────────────────────────────────────────────────────────
-
-export const Route = createFileRoute("/$workspaceId/templates")({
+export const Route = createFileRoute("/$workspaceId/templates/")({
   loader: () => getTemplatesData(),
   component: TemplatesPage,
 });
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
-
-type Tab = "signatures" | "email-templates";
+type Tab = "templates" | "signatures";
 
 function TemplatesPage() {
   const data = Route.useLoaderData();
-  const [tab, setTab] = React.useState<Tab>("signatures");
+  const [tab, setTab] = React.useState<Tab>("templates");
+  const [templates, setTemplates] = React.useState<Template[]>(data?.templates ?? []);
+
+  const signerName = data?.signatures?.[0]?.name ?? data?.orgName;
 
   return (
     <>
       <Header
         title="Templates"
-        subtitle="Reusable content blocks for your outreach."
+        subtitle="Reusable message structures for your outreach."
       />
       <div className="page-content">
         {!data ? (
@@ -52,17 +60,27 @@ function TemplatesPage() {
         ) : (
           <>
             <div className="tab-list">
-              {(["signatures", "email-templates"] as Tab[]).map((t) => (
+              {(["templates", "signatures"] as Tab[]).map((t) => (
                 <button
                   key={t}
                   className="tab-trigger"
                   data-state={tab === t ? "active" : "inactive"}
                   onClick={() => setTab(t)}
                 >
-                  {t === "signatures" ? "Signatures" : "Email templates"}
+                  {t === "templates" ? "Templates" : "Signatures"}
                 </button>
               ))}
             </div>
+
+            {tab === "templates" && (
+              <EmailTemplatesTab
+                orgId={data.orgId}
+                orgName={data.orgName}
+                orgLogo={data.orgLogo}
+                signerName={signerName}
+                initialTemplates={templates}
+              />
+            )}
 
             {tab === "signatures" && (
               <SignaturesTab
@@ -71,8 +89,6 @@ function TemplatesPage() {
                 initialSignatures={data.signatures}
               />
             )}
-
-            {tab === "email-templates" && <EmailTemplatesTab />}
           </>
         )}
       </div>

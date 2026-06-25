@@ -8,6 +8,7 @@ export interface CampaignStep {
   delayDays: number;
   channel: string;
   context: string | null;
+  templateId: string | null;
   createdAt: string;
 }
 
@@ -19,6 +20,7 @@ function rowToStep(row: Record<string, unknown>): CampaignStep {
     delayDays: row.delay_days as number,
     channel: (row.channel as string) ?? "email",
     context: (row.context as string | null) ?? null,
+    templateId: (row.template_id as string | null) ?? null,
     createdAt: row.created_at as string,
   };
 }
@@ -59,13 +61,14 @@ export async function createStep(input: {
 
 export async function updateStep(
   id: string,
-  updates: { delayDays?: number; channel?: string; context?: string | null },
+  updates: { delayDays?: number; channel?: string; context?: string | null; templateId?: string | null },
 ): Promise<CampaignStep> {
   const fields: string[] = [];
   const args: unknown[] = [];
   if (updates.delayDays !== undefined) { fields.push("delay_days = ?"); args.push(updates.delayDays); }
   if (updates.channel !== undefined) { fields.push("channel = ?"); args.push(updates.channel); }
   if ("context" in updates) { fields.push("context = ?"); args.push(updates.context ?? null); }
+  if ("templateId" in updates) { fields.push("template_id = ?"); args.push(updates.templateId ?? null); }
   if (fields.length === 0) {
     const existing = await getStep(id);
     if (!existing) throw new Error(`Step ${id} not found`);

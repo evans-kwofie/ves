@@ -82,12 +82,12 @@ function ProfileForm({ initialName, email }: { initialName: string; email: strin
       </FieldGroup>
       <FieldGroup label="Email">
         <Input value={email} disabled className="opacity-50 cursor-not-allowed" />
-        <p className="text-[11px] text-[var(--muted-foreground)] mt-1">
+        <p className="text-[11px] text-muted-foreground mt-1">
           Email cannot be changed.
         </p>
       </FieldGroup>
       <div>
-        <Button type="submit" disabled={loading || name === initialName}>
+        <Button type="submit" className="w-full" disabled={loading || name === initialName}>
           {loading ? "Saving…" : "Save changes"}
         </Button>
       </div>
@@ -161,7 +161,7 @@ function PasswordForm() {
         />
       </FieldGroup>
       <div>
-        <Button type="submit" disabled={loading || !current || !next || !confirm}>
+        <Button type="submit" className="w-full" disabled={loading || !current || !next || !confirm}>
           {loading ? "Updating…" : "Update password"}
         </Button>
       </div>
@@ -185,10 +185,10 @@ function SettingsSection({
   return (
     <div className="flex flex-col gap-4">
       <div>
-        <h2 className={`text-[14px] font-semibold ${danger ? "text-[var(--destructive)]" : "text-[var(--foreground)]"}`}>
+        <h2 className={`text-[14px] font-semibold ${danger ? "text-destructive" : "text-foreground"}`}>
           {title}
         </h2>
-        <p className="text-[12px] text-[var(--muted-foreground)] mt-0.5">{description}</p>
+        <p className="text-[12px] text-muted-foreground mt-0.5">{description}</p>
       </div>
       {children}
     </div>
@@ -198,7 +198,7 @@ function SettingsSection({
 function FieldGroup({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <label className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--muted-foreground)]">
+      <label className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
         {label}
       </label>
       {children}
@@ -207,5 +207,5 @@ function FieldGroup({ label, children }: { label: string; children: React.ReactN
 }
 
 function Divider() {
-  return <div className="border-t border-[var(--border)]" />;
+  return <div className="border-t border-border" />;
 }

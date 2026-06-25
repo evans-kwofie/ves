@@ -11,7 +11,7 @@
 
 import { createFileRoute } from "@tanstack/react-router";
 import { Webhook } from "svix";
-import { getDraftByResendMessageId } from "~/db/queries/drafts";
+import { getDraftByResendMessageId, updateDraft } from "~/db/queries/drafts";
 import { getLead, updateLead } from "~/db/queries/leads";
 
 interface ResendEmailEvent {
@@ -64,9 +64,26 @@ export const Route = createFileRoute("/api/webhooks/resend")({
         const { type, data } = event;
         console.log(`[webhook/resend] event=${type} email_id=${data.email_id}`);
 
+        const draft = type !== "email.sent" ? await getDraftByResendMessageId(data.email_id) : null;
+
+        if (type === "email.opened" && draft && !draft.openedAt) {
+          await updateDraft(draft.id, { openedAt: new Date().toISOString() });
+          console.log(`[webhook/resend] Marked draft ${draft.id} as opened`);
+        }
+
+        if (type === "email.clicked" && draft) {
+          const now = new Date().toISOString();
+          await updateDraft(draft.id, {
+            clickedAt: now,
+            ...(!draft.openedAt ? { openedAt: now } : {}),
+          });
+          console.log(`[webhook/resend] Marked draft ${draft.id} as clicked`);
+        }
+
         if (type === "email.bounced" || type === "email.complained") {
-          const draft = await getDraftByResendMessageId(data.email_id);
           if (draft) {
+            const now = new Date().toISOString();
+            await updateDraft(draft.id, { bouncedAt: now });
             const lead = await getLead(draft.leadId);
             if (lead && lead.status === "email_sent") {
               await updateLead(lead.id, { status: "not_contacted" });

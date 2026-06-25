@@ -1,6 +1,15 @@
 import * as React from "react";
 import { Button } from "~/components/ui/button";
-import { Loading03Icon, Linkedin01Icon, Mail01Icon, SparklesIcon, PencilEdit01Icon } from "hugeicons-react";
+import {
+  Loading03Icon,
+  Linkedin01Icon,
+  InstagramIcon,
+  Mail01Icon,
+  SparklesIcon,
+  PencilEdit01Icon,
+  CheckmarkCircle01Icon,
+  MinusSignIcon,
+} from "hugeicons-react";
 import { toast } from "sonner";
 import { useComposeDraft } from "~/store/compose-draft";
 import { DraftCard } from "./molecules/DraftCard";
@@ -67,8 +76,9 @@ export function ReviewQueue({
   }
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex gap-2">
+    <div className="flex flex-col gap-4">
+      {/* Toolbar */}
+      <div className="flex gap-2 justify-end">
         <Button onClick={() => handleAiGen()} disabled={generating}>
           {generating
             ? <><Loading03Icon size={13} className="animate-spin" />Generating...</>
@@ -80,65 +90,120 @@ export function ReviewQueue({
         </Button>
       </div>
 
+      {/* Lead cards */}
       {leads.map((lead) => {
         const leadStepMap = draftMatrix.get(lead.id) ?? new Map<number, CampaignDraft>();
+        const doneCount = steps.filter((s) => {
+          const d = leadStepMap.get(s.stepNumber);
+          return d?.status === "sent" || d?.status === "skipped";
+        }).length;
 
         return (
-          <div key={lead.id} className="flex flex-col gap-3">
-            <div className="flex items-center gap-2 pb-2 border-b border-border">
-              <span className="text-[13px] font-semibold">{lead.company}</span>
-              <span className="text-[12px] text-muted-foreground">{lead.ceo}</span>
-              {lead.email && <span className="text-[12px] text-muted-foreground">· {lead.email}</span>}
+          <div key={lead.id} className="rounded-xl border border-card-border bg-card overflow-hidden">
+            {/* Lead header */}
+            <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-card-border bg-muted/40">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="text-[13px] font-semibold text-foreground truncate">{lead.company}</span>
+                <span className="text-[12px] text-muted-foreground shrink-0">{lead.ceo}</span>
+                {lead.email && (
+                  <span className="text-[11px] text-muted-foreground shrink-0 hidden sm:block">· {lead.email}</span>
+                )}
+              </div>
+              <span className="text-[11px] text-muted-foreground shrink-0 font-medium">
+                {doneCount}/{steps.length} done
+              </span>
             </div>
 
-            {steps.map((step) => {
-              const draft = leadStepMap.get(step.stepNumber);
-              const channelIcon = step.channel === "linkedin" ? <Linkedin01Icon size={12} /> : <Mail01Icon size={12} />;
+            {/* Steps */}
+            <div className="divide-y divide-border">
+              {steps.map((step) => {
+                const draft = leadStepMap.get(step.stepNumber);
+                const cellKey = `${lead.id}-${step.stepNumber}`;
+                const isGenerating = generatingCell === cellKey;
+                const channelIcon = step.channel === "linkedin"
+                  ? <Linkedin01Icon size={12} />
+                  : step.channel === "instagram"
+                  ? <InstagramIcon size={12} />
+                  : <Mail01Icon size={12} />;
 
-              return (
-                <div key={step.id} className="flex flex-col gap-2 pl-3 border-l-2 border-accent/20">
-                  <div className="flex items-center gap-2 text-[11px] text-muted-foreground font-medium uppercase tracking-wide">
-                    <span>Step {step.stepNumber}</span>
-                    <span className="flex items-center gap-1">{channelIcon}{step.channel}</span>
-                    <span>{step.delayDays === 0 ? "Immediately" : `Day ${step.delayDays}`}</span>
-                    {step.context && <span className="normal-case font-normal italic">— {step.context}</span>}
-                  </div>
+                return (
+                  <div key={step.id} className="flex flex-col">
+                    {/* Step row */}
+                    <div className="flex items-center gap-3 px-4 py-3">
+                      {/* Step number */}
+                      <span className="size-5 rounded-full bg-accent/10 text-accent text-[10px] font-bold flex items-center justify-center shrink-0">
+                        {step.stepNumber}
+                      </span>
 
-                  {draft ? (
-                    draft.status === "pending" ? (
-                      <DraftCard draft={draft} lead={lead} campaignId={campaignId} onUpdate={onUpdate} />
-                    ) : (
-                      <div className="flex items-center gap-2 text-[12px] text-muted-foreground py-1">
-                        {draft.status === "sent" && <span className="badge badge-green">Sent</span>}
-                        {draft.status === "skipped" && <span className="badge badge-gray">Skipped</span>}
-                        {draft.subject && <span>{draft.subject}</span>}
+                      {/* Step info */}
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <span className="inline-flex items-center gap-1 text-[12px] text-muted-foreground font-medium capitalize">
+                          {channelIcon}
+                          {step.channel}
+                        </span>
+                        <span className="text-[11px] text-muted-foreground">
+                          {step.delayDays === 0 ? "Immediately" : `Day ${step.delayDays}`}
+                        </span>
+                        {step.context && (
+                          <span className="text-[11px] text-muted-foreground italic truncate hidden md:block">
+                            — {step.context}
+                          </span>
+                        )}
                       </div>
-                    )
-                  ) : (
-                    <div className="flex items-center gap-2 py-1">
-                      <span className="text-[12px] text-muted-foreground">No draft yet</span>
-                      <button
-                        className="btn btn-ghost btn-sm"
-                        disabled={generatingCell === `${lead.id}-${step.stepNumber}`}
-                        onClick={() => handleAiGen(lead.id, step.stepNumber)}
-                      >
-                        {generatingCell === `${lead.id}-${step.stepNumber}`
-                          ? <Loading03Icon size={12} className="animate-spin" />
-                          : <SparklesIcon size={12} />}
-                        AI Draft
-                      </button>
-                      <button
-                        className="btn btn-ghost btn-sm"
-                        onClick={() => openCompose({ campaignId, leads, signatures, steps, leadId: lead.id, stepNumber: step.stepNumber })}
-                      >
-                        <PencilEdit01Icon size={12} />
-                        Write
-                      </button>
+
+                      {/* Status / actions (right side) */}
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        {draft?.status === "sent" && (
+                          <span className="inline-flex items-center gap-1 text-[11px] font-medium text-green-500">
+                            <CheckmarkCircle01Icon size={12} />
+                            Sent
+                          </span>
+                        )}
+                        {draft?.status === "skipped" && (
+                          <span className="inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground">
+                            <MinusSignIcon size={12} />
+                            Skipped
+                          </span>
+                        )}
+                        {!draft && (
+                          <>
+                            <button
+                              className="btn btn-ghost btn-sm"
+                              disabled={isGenerating}
+                              onClick={() => handleAiGen(lead.id, step.stepNumber)}
+                            >
+                              {isGenerating
+                                ? <Loading03Icon size={12} className="animate-spin" />
+                                : <SparklesIcon size={12} />}
+                              AI Draft
+                            </button>
+                            <button
+                              className="btn btn-ghost btn-sm"
+                              onClick={() => openCompose({ campaignId, leads, signatures, steps, leadId: lead.id, stepNumber: step.stepNumber })}
+                            >
+                              <PencilEdit01Icon size={12} />
+                              Write
+                            </button>
+                          </>
+                        )}
+                      </div>
                     </div>
-                  )}
-                </div>
-              );
-            })}
+
+                    {/* Draft card — only for pending drafts */}
+                    {draft?.status === "pending" && (
+                      <div className="px-4 pb-4">
+                        <DraftCard
+                          draft={draft}
+                          lead={lead}
+                          campaignId={campaignId}
+                          onUpdate={onUpdate}
+                        />
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
         );
       })}

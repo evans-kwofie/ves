@@ -1,17 +1,15 @@
 import * as React from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import * as z from "zod";
 import { Header } from "~/components/templates/Header";
-import { PipelineStats } from "~/components/modules/pipeline/templates/PipelineStats";
 import { LeadTable } from "~/components/modules/pipeline/templates/LeadTable";
 import { AddLeadDialog } from "~/components/modules/pipeline/templates/AddLeadDialog";
 import { ImportLeadsModal } from "~/components/modules/pipeline/templates/ImportLeadsModal";
 import { Button } from "~/components/ui/button";
-import { Add01Icon, AiMagicIcon, Upload04Icon } from "hugeicons-react";
+import { Add01Icon, Upload04Icon } from "hugeicons-react";
 import { getPipeline } from "~/db/queries/leads";
-import { toast } from "sonner";
-import type { Lead, PipelineMeta } from "~/types/lead";
+import type { Lead } from "~/types/lead";
 
 const getPipelineData = createServerFn({ method: "GET" })
   .inputValidator(z.string())
@@ -25,38 +23,10 @@ export const Route = createFileRoute("/$workspaceId/pipeline")({
 function PipelinePage() {
   const initial = Route.useLoaderData();
   const { workspaceId } = Route.useParams();
+  const navigate = useNavigate();
   const [leads, setLeads] = React.useState<Lead[]>(initial.leads);
-  const [meta] = React.useState<PipelineMeta>(initial.meta);
   const [addOpen, setAddOpen] = React.useState(false);
   const [importOpen, setImportOpen] = React.useState(false);
-  const [enriching, setEnriching] = React.useState(false);
-
-  const toEnrichCount = leads.filter((l) => l.pipelineStage === "discovered").length;
-
-  async function enrichAll() {
-    setEnriching(true);
-    try {
-      const res = await fetch("/api/pipeline/enrich", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ organizationId: workspaceId }),
-      });
-      const data = (await res.json()) as { enriched?: number; failed?: number; total?: number };
-      if (data.enriched !== undefined) {
-        toast.success(`${data.enriched} lead${data.enriched !== 1 ? "s" : ""} enriched & scored`);
-        // Refresh leads
-        const refreshed = await fetch(`/api/pipeline/leads?orgId=${workspaceId}`).catch(() => null);
-        if (refreshed?.ok) {
-          const updated = (await refreshed.json()) as Lead[];
-          setLeads(updated);
-        }
-      }
-    } catch {
-      toast.error("Enrichment failed");
-    } finally {
-      setEnriching(false);
-    }
-  }
 
   return (
     <>
@@ -65,12 +35,6 @@ function PipelinePage() {
         subtitle="Track and manage your outreach leads."
         actions={
           <div className="flex gap-2">
-            {toEnrichCount > 0 && (
-              <Button variant="ghost" onClick={enrichAll} disabled={enriching}>
-                <AiMagicIcon size={14} />
-                {enriching ? "Enriching..." : `Enrich ${toEnrichCount} lead${toEnrichCount !== 1 ? "s" : ""}`}
-              </Button>
-            )}
             <Button variant="ghost" onClick={() => setImportOpen(true)}>
               <Upload04Icon size={14} />
               Import
@@ -83,8 +47,16 @@ function PipelinePage() {
         }
       />
       <div className="page-content">
-        <PipelineStats leads={leads} meta={meta} />
-        <LeadTable leads={leads} onChange={setLeads} />
+        <LeadTable
+          leads={leads}
+          onChange={setLeads}
+          orgId={workspaceId}
+          onBulkCampaign={(ids) => navigate({
+            to: "/$workspaceId/campaigns/new",
+            params: { workspaceId },
+            search: { leadIds: ids.join(",") },
+          })}
+        />
       </div>
 
       <AddLeadDialog

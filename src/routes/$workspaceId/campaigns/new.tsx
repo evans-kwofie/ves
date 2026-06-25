@@ -1,5 +1,5 @@
 import * as React from "react";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, useSearch } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import * as z from "zod";
 import { Header } from "~/components/templates/Header";
@@ -15,6 +15,7 @@ const getLeadsData = createServerFn({ method: "GET" })
   .handler(async ({ data: orgId }) => listLeads(orgId));
 
 export const Route = createFileRoute("/$workspaceId/campaigns/new")({
+  validateSearch: z.object({ leadIds: z.string().optional() }),
   loader: ({ params }) => getLeadsData({ data: params.workspaceId }),
   component: NewCampaignPage,
 });
@@ -36,13 +37,19 @@ const CHANNELS: { value: CampaignChannel; label: string; icon: React.ReactNode }
 function NewCampaignPage() {
   const leads = Route.useLoaderData();
   const { workspaceId } = Route.useParams();
+  const { leadIds: leadIdsParam } = useSearch({ from: "/$workspaceId/campaigns/new" });
   const navigate = useNavigate();
 
-  const [step, setStep] = React.useState<Step>("details");
+  const preselected = React.useMemo(
+    () => new Set(leadIdsParam ? leadIdsParam.split(",").filter(Boolean) : []),
+    [leadIdsParam],
+  );
+
+  const [step, setStep] = React.useState<Step>(preselected.size > 0 ? "details" : "details");
   const [name, setName] = React.useState("");
   const [channel, setChannel] = React.useState<CampaignChannel | "">("");
   const [goal, setGoal] = React.useState("");
-  const [selectedLeads, setSelectedLeads] = React.useState<Set<string>>(new Set());
+  const [selectedLeads, setSelectedLeads] = React.useState<Set<string>>(preselected);
   const [search, setSearch] = React.useState("");
   const [saving, setSaving] = React.useState(false);
 

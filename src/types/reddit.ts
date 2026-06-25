@@ -17,6 +17,7 @@ export interface RedditPost {
   engagementType: EngagementType | null;
   engagementScore: number | null;
   fetchedAt: string;
+  postedAt: string | null;
 }
 
 export interface RedditApiChild {

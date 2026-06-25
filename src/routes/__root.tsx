@@ -12,6 +12,8 @@ import { Toaster } from "sonner";
 import appCss from "~/styles/app.css?url";
 import { seo } from "~/utils/seo";
 import { getSessionFn } from "~/lib/session";
+import { CreateWorkspaceDialog } from "~/components/modules/workspace/CreateWorkspaceDialog";
+import { AddLeadToCampaignDialog } from "~/components/modules/campaign/AddLeadToCampaignDialog";
 
 export const Route = createRootRoute({
   head: () => ({
@@ -40,11 +42,23 @@ export const Route = createRootRoute({
   shellComponent: RootDocument,
 });
 
-const themeScript = `(function(){try{var t=localStorage.getItem("vesper-theme");document.documentElement.setAttribute("data-theme",t==="light"?"light":"dark")}catch(e){}})();`;
+const themeScript = `(function(){try{var t=localStorage.getItem("vesper-theme"),d="dark";if(t==="light")d="light";else if(t==="dark")d="dark";else if(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)d="light";document.documentElement.setAttribute("data-theme",d)}catch(e){}})();`;
 
 function RootDocument({ children }: { children: React.ReactNode }) {
+  const [theme, setTheme] = React.useState<"dark" | "light">("dark");
+
+  React.useEffect(() => {
+    const read = () => {
+      setTheme(document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark");
+    };
+    read();
+    const obs = new MutationObserver(read);
+    obs.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+    return () => obs.disconnect();
+  }, []);
+
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         {/* Blocking script prevents theme flash on load/navigation */}
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
@@ -53,7 +67,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       <body>
         {children}
         <Toaster
-          theme="dark"
+          theme={theme}
           position="bottom-right"
           toastOptions={{
             style: {
@@ -65,6 +79,8 @@ function RootDocument({ children }: { children: React.ReactNode }) {
             },
           }}
         />
+        <CreateWorkspaceDialog />
+        <AddLeadToCampaignDialog />
         <Scripts />
       </body>
     </html>

@@ -4,7 +4,9 @@ import { authClient } from "~/lib/auth-client";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import { PasswordInput } from "~/components/ui/password-input";
 import { toast } from "sonner";
+import { AuthLayout } from "~/components/modules/AuthLayout";
 
 export const Route = createFileRoute("/sign-up")({
   beforeLoad: ({ context }) => {
@@ -22,73 +24,65 @@ function SignUpPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
-    console.log("[sign-up] submitting for", email);
     const result = await authClient.signUp.email({ name, email, password });
-    console.log("[sign-up] result:", JSON.stringify(result));
     setLoading(false);
     if (result.error) {
       toast.error(result.error.message ?? "Sign up failed");
       return;
     }
-    console.log("[sign-up] success — navigating to /");
     window.location.href = "/";
   }
 
   return (
-    <div className="auth-layout">
-      <div className="auth-card">
-        <div className="auth-logo">
-          vesper<span style={{ color: "var(--accent)" }}>.</span>
-        </div>
-        <p className="auth-sub">Create your account</p>
-
-        <form onSubmit={handleSubmit} className="auth-form">
-          <div className="auth-field">
-            <Label htmlFor="name">Full name</Label>
-            <Input
-              id="name"
-              type="text"
-              placeholder="Evans Kwofie"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-            />
-          </div>
-          <div className="auth-field">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="you@company.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-          </div>
-          <div className="auth-field">
-            <Label htmlFor="password">Password</Label>
-            <Input
-              id="password"
-              type="password"
-              placeholder="Min. 8 characters"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              minLength={8}
-              required
-            />
-          </div>
-          <Button type="submit" disabled={loading} style={{ width: "100%", marginTop: 8 }}>
-            {loading ? "Creating account..." : "Create account"}
-          </Button>
-        </form>
-
-        <p className="auth-link-row">
-          Already have an account?{" "}
-          <a href="/sign-in" className="auth-link">
-            Sign in
-          </a>
-        </p>
+    <AuthLayout>
+      <div className="flex flex-col gap-1">
+        <h1 className="text-[22px] font-bold tracking-tight text-foreground">Create an account</h1>
+        <p className="text-[13px] text-muted-foreground">Get started with Nextreach for free</p>
       </div>
-    </div>
+
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="name">Full name</Label>
+          <Input
+            id="name"
+            type="text"
+            placeholder="Evans Kwofie"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
+          />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="email">Email</Label>
+          <Input
+            id="email"
+            type="email"
+            placeholder="you@company.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="password">Password</Label>
+          <PasswordInput
+            id="password"
+            placeholder="Min. 8 characters"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            minLength={8}
+            required
+          />
+        </div>
+        <Button type="submit" disabled={loading} className="w-full mt-1">
+          {loading ? "Creating account..." : "Create account"}
+        </Button>
+      </form>
+
+      <p className="text-[12px] text-center text-muted-foreground">
+        Already have an account?{" "}
+        <a href="/sign-in" className="text-accent font-medium hover:underline">Sign in</a>
+      </p>
+    </AuthLayout>
   );
 }

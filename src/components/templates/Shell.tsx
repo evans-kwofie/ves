@@ -2,6 +2,7 @@ import * as React from "react";
 import { Logout01Icon, Sun01Icon, Moon01Icon, Search01Icon } from "hugeicons-react";
 import { authClient } from "~/lib/auth-client";
 import { useTheme } from "./ThemeToggle";
+import { Breadcrumbs } from "./Breadcrumbs";
 
 function getInitials(name: string) {
   return name
@@ -12,9 +13,12 @@ function getInitials(name: string) {
     .toUpperCase();
 }
 
+const isMac = typeof navigator !== "undefined" && /Mac/i.test(navigator.platform);
+
 function TopBar() {
   const { data: session } = authClient.useSession();
-  const { theme, toggle } = useTheme();
+  const { theme, setTheme, resolved } = useTheme();
+  function toggle() { setTheme(resolved === "dark" ? "light" : "dark"); }
   const user = session?.user;
 
   async function handleSignOut() {
@@ -23,116 +27,54 @@ function TopBar() {
   }
 
   return (
-    <div
-      className="top-bar"
-      style={{
-        height: 52,
-        borderBottom: "1px solid var(--border)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        padding: "0 20px",
-        gap: 12,
-        flexShrink: 0,
-      }}
-    >
-      {/* Search */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 8,
-          flex: "0 1 360px",
-          background: "var(--muted)",
-          border: "1px solid var(--border)",
-          borderRadius: "var(--radius)",
-          padding: "0 10px",
-          height: 32,
-        }}
-      >
-        <Search01Icon size={13} style={{ color: "var(--muted-foreground)", flexShrink: 0 }} />
+    <div className="h-13 flex items-center px-5 gap-3 border-b border-border shrink-0">
+      {/* LEFT: Breadcrumbs */}
+      <div className="flex-1 flex items-center min-w-0">
+        <Breadcrumbs />
+      </div>
+
+      {/* CENTER: Search */}
+      <div className="flex items-center gap-2 bg-muted border border-border rounded h-8 px-2.5 w-90 shrink-0">
+        <Search01Icon size={13} className="text-muted-foreground shrink-0" />
         <input
           placeholder="Search leads, keywords, or settings..."
-          style={{
-            flex: 1,
-            background: "none",
-            border: "none",
-            outline: "none",
-            fontSize: 12,
-            color: "var(--foreground)",
-          }}
+          className="flex-1 bg-transparent border-none outline-none text-[12px] text-foreground placeholder:text-muted-foreground"
         />
-        <kbd
-          style={{
-            fontSize: 10,
-            color: "var(--muted-foreground)",
-            background: "var(--card)",
-            border: "1px solid var(--border)",
-            borderRadius: 4,
-            padding: "1px 5px",
-            fontFamily: "var(--font-mono, monospace)",
-            flexShrink: 0,
-          }}
-        >
-          ⌘K
+        <kbd className="text-[10px] text-muted-foreground bg-card border border-border rounded px-1 py-px font-mono shrink-0">
+          {isMac ? "⌘K" : "Ctrl K"}
         </kbd>
       </div>
 
-      {/* Right side */}
-      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-      {user && (
-        <>
-          <button
-            onClick={toggle}
-            title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-            className="w-7 h-7 flex items-center justify-center rounded text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-white/8 transition-colors"
-            style={{ background: "none", border: "none", cursor: "pointer" }}
-          >
-            {theme === "dark" ? <Sun01Icon size={13} /> : <Moon01Icon size={13} />}
-          </button>
-
-          <div
-            style={{
-              width: 1,
-              height: 18,
-              background: "var(--border)",
-              marginInline: 2,
-            }}
-          />
-
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <div
-              style={{
-                width: 26,
-                height: 26,
-                borderRadius: "50%",
-                background: "var(--muted)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: 10,
-                fontWeight: 700,
-                color: "var(--muted-foreground)",
-                flexShrink: 0,
-              }}
+      {/* RIGHT: User controls */}
+      <div className="flex-1 flex items-center justify-end gap-2">
+        {user && (
+          <>
+            <button
+              onClick={toggle}
+              title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+              className="size-7 flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-white/8 transition-colors"
             >
-              {getInitials(user.name)}
-            </div>
-            <span style={{ fontSize: 12, fontWeight: 500, color: "var(--foreground)" }}>
-              {user.name}
-            </span>
-          </div>
+              {theme === "dark" ? <Sun01Icon size={13} /> : <Moon01Icon size={13} />}
+            </button>
 
-          <button
-            onClick={handleSignOut}
-            title="Sign out"
-            className="w-7 h-7 flex items-center justify-center rounded text-[var(--muted-foreground)] hover:text-[var(--destructive)] hover:bg-white/8 transition-colors"
-            style={{ background: "none", border: "none", cursor: "pointer" }}
-          >
-            <Logout01Icon size={13} />
-          </button>
-        </>
-      )}
+            <div className="w-px h-4.5 bg-border mx-0.5" />
+
+            <div className="flex items-center gap-2">
+              <div className="size-6.5 rounded-full bg-muted flex items-center justify-center text-[10px] font-bold text-muted-foreground shrink-0">
+                {getInitials(user.name)}
+              </div>
+              <span className="text-[12px] font-medium text-foreground">{user.name}</span>
+            </div>
+
+            <button
+              onClick={handleSignOut}
+              title="Sign out"
+              className="size-7 flex items-center justify-center rounded text-muted-foreground hover:text-destructive hover:bg-white/8 transition-colors"
+            >
+              <Logout01Icon size={13} />
+            </button>
+          </>
+        )}
       </div>
     </div>
   );
@@ -144,9 +86,9 @@ interface ShellProps {
 
 export function Shell({ children }: ShellProps) {
   return (
-    <div className="main-area" style={{ display: "flex", flexDirection: "column" }}>
+    <div className="main-area flex flex-col">
       <TopBar />
-      <div style={{ flex: 1, overflow: "auto" }}>{children}</div>
+      <div className="flex-1 overflow-auto">{children}</div>
     </div>
   );
 }

@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { auth } from "~/lib/auth";
 import { listKeywords } from "~/db/queries/keywords";
-import Anthropic from "@anthropic-ai/sdk";
+import { mistralJSON } from "~/agent/tools/mistral";
 import { z } from "zod";
 
 const requestSchema = z.object({
@@ -27,6 +27,7 @@ export const Route = createFileRoute("/api/keywords/generate")({
 
         const parsed = requestSchema.safeParse(body);
         if (!parsed.success) {
+          console.error("[keywords/generate] invalid body:", body);
           return new Response(JSON.stringify({ error: "organizationId required" }), {
             status: 400,
             headers: { "Content-Type": "application/json" },
@@ -35,10 +36,7 @@ export const Route = createFileRoute("/api/keywords/generate")({
 
         const { organizationId } = parsed.data;
 
-        // Get org metadata from Better Auth
-        const orgs = await auth.api.listOrganizations({
-          headers: request.headers,
-        });
+        const orgs = await auth.api.listOrganizations({ headers: request.headers });
         const org = orgs?.find((o: { id: string }) => o.id === organizationId) ?? orgs?.[0];
         if (!org) {
           return new Response(JSON.stringify({ error: "Organization not found" }), {
@@ -81,35 +79,67 @@ Generate 10 specific, high-intent keyword suggestions this company should track.
 
 For each keyword also suggest 2-3 relevant subreddits where that keyword would surface buying intent.
 
-Respond ONLY with a JSON array. Each item must have:
-- "keyword": the search term (lowercase, concise)
-- "subreddits": array of subreddit names (no r/ prefix)
-- "reason": one sentence why this keyword matters for them
+Respond ONLY with a JSON object in this exact shape:
+{"suggestions": [{"keyword": "...", "subreddits": ["..."], "reason": "..."}, ...]}
 
-JSON array only, no markdown.`;
+No markdown, no extra keys.`;
 
         try {
-          const client = new Anthropic();
-          const response = await client.messages.create({
-            model: "claude-sonnet-4-6",
-            max_tokens: 1500,
-            messages: [{ role: "user", content: prompt }],
+          const raw = await mistralJSON<{ suggestions: unknown[] }>(prompt, {
+            model: "mistral-small-latest",
+            maxTokens: 1500,
           });
 
-          const text =
-            response.content[0]?.type === "text" ? response.content[0].text.trim() : "[]";
-          const suggestions = suggestionSchema.safeParse(JSON.parse(text));
+          if (!raw?.suggestions) {
+            return new Response(JSON.stringify({ error: "AI generation failed" }), {
+              status: 500,
+              headers: { "Content-Type": "application/json" },
+            });
+          }
 
+          const suggestions = suggestionSchema.safeParse(raw.suggestions);
           if (!suggestions.success) {
+            console.error("[keywords/generate] schema validation failed:", suggestions.error.flatten());
             return new Response(JSON.stringify({ error: "Failed to parse suggestions" }), {
               status: 500,
               headers: { "Content-Type": "application/json" },
             });
           }
 
-          return Response.json({ suggestions: suggestions.data });
-        } catch {
-          return new Response(JSON.stringify({ error: "AI generation failed" }), {
+          // Validate all subreddits against Reddit API in parallel, drop fakes
+          const userAgent = process.env.REDDIT_USER_AGENT ?? "vesper/1.0";
+          // Normalise: strip any leading "r/" Mistral may have included
+          const normaliseSub = (s: string) => s.replace(/^r\//, "");
+          const allSubs = [...new Set(suggestions.data.flatMap((s) => s.subreddits).map(normaliseSub))];
+
+          const validSet = new Set(
+            (
+              await Promise.all(
+                allSubs.map(async (sub) => {
+                  const url = `https://www.reddit.com/r/${sub}/about.json`;
+                  try {
+                    const res = await fetch(url, { headers: { "User-Agent": userAgent } });
+                    return res.status !== 404 ? sub : null;
+                  } catch {
+                    return null;
+                  }
+                }),
+              )
+            ).filter((s): s is string => s !== null),
+          );
+
+          suggestions.data.forEach((s) => {
+            s.subreddits = s.subreddits.map(normaliseSub);
+          });
+
+          const validated = suggestions.data
+            .map((s) => ({ ...s, subreddits: s.subreddits.filter((r) => validSet.has(r)) }))
+            .filter((s) => s.subreddits.length > 0);
+
+          return Response.json({ suggestions: validated });
+        } catch (err) {
+          console.error("[keywords/generate] Mistral API error:", err);
+          return new Response(JSON.stringify({ error: "AI generation failed", detail: String(err) }), {
             status: 500,
             headers: { "Content-Type": "application/json" },
           });

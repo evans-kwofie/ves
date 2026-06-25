@@ -1,4 +1,3 @@
-import * as React from "react";
 import { Link, useMatchRoute } from "@tanstack/react-router";
 
 interface SettingsTab {
@@ -8,12 +7,13 @@ interface SettingsTab {
 }
 
 const TABS: SettingsTab[] = [
-  { to: "/$workspaceId/settings/profile",   label: "Profile" },
+  { to: "/$workspaceId/settings/profile", label: "Profile" },
   { to: "/$workspaceId/settings/workspace", label: "Workspace" },
-  { to: "/$workspaceId/settings/agent",     label: "Agent voice" },
-  { to: "/$workspaceId/settings/email",     label: "Email / SMTP" },
-  { to: "/$workspaceId/settings/billing",   label: "Billing" },
-  { to: "/$workspaceId/settings/danger",    label: "Danger zone", danger: true },
+  { to: "/$workspaceId/settings/appearance", label: "Appearance" },
+  { to: "/$workspaceId/settings/agent", label: "Agent voice" },
+  { to: "/$workspaceId/settings/email", label: "Email / SMTP" },
+  { to: "/$workspaceId/settings/billing", label: "Billing" },
+  { to: "/$workspaceId/settings/danger", label: "Danger zone", danger: true },
 ];
 
 interface SettingsNavProps {
@@ -26,19 +26,29 @@ export function SettingsNav({ workspaceId }: SettingsNavProps) {
   return (
     <div className="relative flex items-end gap-0">
       {/* Track line — full width edge to edge */}
-      <div className="absolute bottom-0 left-0 right-0 h-px bg-[var(--border)]" />
+      <div className="absolute bottom-0 left-0 right-0 h-px bg-border" />
 
       {/* Left offset to align with page content */}
       <div className="w-8 shrink-0" />
 
       {TABS.map((tab) => {
-        const active = !!matchRoute({ to: tab.to, params: { workspaceId }, fuzzy: false });
+        const active = !!matchRoute({
+          to: tab.to,
+          params: { workspaceId },
+          fuzzy: false,
+        });
 
         const textColor = active
-          ? tab.danger ? "var(--destructive)" : "var(--foreground)"
-          : tab.danger ? "var(--muted-foreground)" : "var(--muted-foreground)";
+          ? tab.danger
+            ? "var(--destructive)"
+            : "var(--foreground)"
+          : tab.danger
+            ? "var(--muted-foreground)"
+            : "var(--muted-foreground)";
 
-        const indicatorColor = tab.danger ? "var(--destructive)" : "var(--accent)";
+        const indicatorColor = tab.danger
+          ? "var(--destructive)"
+          : "var(--accent)";
 
         return (
           <Link
@@ -56,7 +66,8 @@ export function SettingsNav({ workspaceId }: SettingsNavProps) {
             }}
             onMouseLeave={(e) => {
               if (!active) {
-                (e.currentTarget as HTMLElement).style.color = "var(--muted-foreground)";
+                (e.currentTarget as HTMLElement).style.color =
+                  "var(--muted-foreground)";
               }
             }}
           >

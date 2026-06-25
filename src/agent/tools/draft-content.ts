@@ -13,9 +13,8 @@ export async function generateDraftForLead(opts: {
   orgProfile: Record<string, unknown>;
 }): Promise<CampaignDraft> {
   const { campaign, lead, step, orgProfile } = opts;
-  const stepChannel = step.channel ?? (campaign.channel === "linkedin" ? "linkedin" : "email");
+  const stepChannel = step.channel ?? (campaign.channel === "linkedin" ? "linkedin" : campaign.channel === "instagram" ? "instagram" : "email");
   const isFollowUp = step.stepNumber > 1;
-  console.log(`[draft-content] generating for lead=${lead.id} company="${lead.company}" step=${step.stepNumber} channel=${stepChannel} isFollowUp=${isFollowUp}`);
 
   // Extract default signature if any
   const signatures = (orgProfile.emailSignatures ?? []) as import("~/types/signature").EmailSignature[];
@@ -43,21 +42,41 @@ export async function generateDraftForLead(opts: {
     ? `\nThis is follow-up #${step.stepNumber - 1}. They haven't replied to the previous message. Keep it short — 2-3 sentences max. Reference that you reached out before but don't be pushy. Different angle if possible.${step.context ? `\nStep context: ${step.context}` : ""}`
     : step.context ? `\nAdditional context for this step: ${step.context}` : "";
 
-  const systemPrompt = `You are a concise, direct outreach writer. Your job is to write a highly personalised cold ${stepChannel === "email" ? "email" : "LinkedIn message"} that doesn't sound like a template.
-
+  const channelRules =
+    stepChannel === "instagram"
+      ? `You are writing a casual, punchy Instagram DM for cold outreach. It must feel like a real human sent it, not a marketer.
+Rules:
+- Tone: conversational, direct, a little bold — not corporate
+- No subject line (Instagram DMs have none)
+- Maximum ${isFollowUp ? "2 sentences" : "3 sentences"} — keep it tight
+- Reference what their company actually does, but casually
+- End with a super low-friction CTA (e.g. "Worth a chat?", "Curious to hear more?")
+- Never start with "Hey!" or generic openers
+- No emojis unless they feel completely natural${followUpNote}`
+      : stepChannel === "linkedin"
+      ? `You are a concise, direct outreach writer writing a LinkedIn DM for cold outreach.
+Rules:
+- Never start with filler openers
+- Reference what their company does and why the product is relevant
+- ${isFollowUp ? "Maximum 3 sentences for follow-ups." : "Maximum 4 sentences."}
+- End with one clear, low-friction CTA
+- Write as a human, not a marketer
+- No subject line${followUpNote}`
+      : `You are a concise, direct outreach writer writing a cold email that doesn't sound like a template.
 Rules:
 - Never start with "I hope this email finds you well" or any filler opener
-- Do not mention their LinkedIn post, job title, or other superficial signals
-- Reference what their company actually does and why the product is genuinely relevant to them
+- Reference what their company actually does and why the product is genuinely relevant
 - ${isFollowUp ? "Maximum 3 sentences for follow-ups." : "Maximum 4 sentences."} Subject line under 8 words.
 - End with one clear, low-friction CTA (e.g. "Open to a quick 20-min call?")
-- Write as a human, not a marketer${followUpNote}
+- Write as a human, not a marketer${followUpNote}`;
 
-Respond with JSON only: { "subject": "...", "body": "..." }`;
+  const systemPrompt = `${channelRules}
+
+Respond with JSON only: { "subject": "...", "body": "..." }
+For non-email channels, set subject to null.`;
 
   const userPrompt = `${productContext ? `OUR PRODUCT\n${productContext}\n\n` : ""}LEAD\n${leadContext}${campaign.goal ? `\n\nCAMPAIGN GOAL\n${campaign.goal}` : ""}`;
 
-  console.log(`[draft-content] calling Claude API for lead=${lead.id}`);
   const response = await client.messages.create({
     model: "claude-sonnet-4-6",
     max_tokens: 512,
@@ -66,23 +85,14 @@ Respond with JSON only: { "subject": "...", "body": "..." }`;
   });
 
   const text = response.content.find((b) => b.type === "text")?.text ?? "";
-  console.log(`[draft-content] Claude raw response for lead=${lead.id}:`, text.slice(0, 200));
   const jsonMatch = text.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) {
-    console.error(`[draft-content] no JSON found in response for lead=${lead.id}`);
-    throw new Error("No JSON in response");
-  }
+  if (!jsonMatch) throw new Error("No JSON in response");
 
   const parsed = JSON.parse(jsonMatch[0]) as { subject?: string; body?: string };
-  if (!parsed.body) {
-    console.error(`[draft-content] no body in parsed JSON for lead=${lead.id}:`, parsed);
-    throw new Error("No body in response");
-  }
+  if (!parsed.body) throw new Error("No body in response");
 
-  const finalBody = defaultSig ? `${parsed.body}\n\n${defaultSig.content}` : parsed.body;
-  if (defaultSig) console.log(`[draft-content] appending default signature "${defaultSig.name}"`);
+  const finalBody = defaultSig && stepChannel === "email" ? `${parsed.body}\n\n${defaultSig.content}` : parsed.body;
 
-  console.log(`[draft-content] upserting draft for lead=${lead.id} subject="${parsed.subject ?? "none"}"`);
   return upsertDraft({
     campaignId: campaign.id,
     leadId: lead.id,

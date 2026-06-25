@@ -15,6 +15,10 @@ export interface CampaignDraft {
   sendAfter: string | null;
   stepNumber: number | null;
   resendMessageId: string | null;
+  openedAt: string | null;
+  clickedAt: string | null;
+  bouncedAt: string | null;
+  abVariant: "a" | "b";
   createdAt: string;
   updatedAt: string;
 }
@@ -32,6 +36,10 @@ function rowToDraft(row: Record<string, unknown>): CampaignDraft {
     sendAfter: (row.send_after as string | null) ?? null,
     stepNumber: (row.step_number as number | null) ?? null,
     resendMessageId: (row.resend_message_id as string | null) ?? null,
+    openedAt: (row.opened_at as string | null) ?? null,
+    clickedAt: (row.clicked_at as string | null) ?? null,
+    bouncedAt: (row.bounced_at as string | null) ?? null,
+    abVariant: ((row.ab_variant as string) === "b" ? "b" : "a"),
     createdAt: row.created_at as string,
     updatedAt: row.updated_at as string,
   };
@@ -91,10 +99,11 @@ export async function upsertDraft(input: {
   channel: string;
   subject: string | null;
   body: string;
+  abVariant?: "a" | "b";
 }): Promise<CampaignDraft> {
   const now = new Date().toISOString();
+  const variant = input.abVariant ?? "a";
 
-  // Check if draft already exists for this lead+campaign
   const existing = await db.execute({
     sql: "SELECT id FROM campaign_drafts WHERE campaign_id = ? AND lead_id = ?",
     args: [input.campaignId, input.leadId],
@@ -103,24 +112,24 @@ export async function upsertDraft(input: {
   if (existing.rows.length > 0) {
     const id = (existing.rows[0] as Record<string, unknown>).id as string;
     await db.execute({
-      sql: "UPDATE campaign_drafts SET subject = ?, body = ?, status = 'pending', updated_at = ? WHERE id = ?",
-      args: [input.subject, input.body, now, id],
+      sql: "UPDATE campaign_drafts SET subject = ?, body = ?, ab_variant = ?, status = 'pending', updated_at = ? WHERE id = ?",
+      args: [input.subject, input.body, variant, now, id],
     });
     return (await getDraft(id))!;
   }
 
   const id = uuidv4();
   await db.execute({
-    sql: `INSERT INTO campaign_drafts (id, campaign_id, lead_id, channel, subject, body, status, step_number, created_at, updated_at)
-          VALUES (?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?)`,
-    args: [id, input.campaignId, input.leadId, input.channel, input.subject, input.body, input.stepNumber ?? null, now, now],
+    sql: `INSERT INTO campaign_drafts (id, campaign_id, lead_id, channel, subject, body, status, step_number, ab_variant, created_at, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?)`,
+    args: [id, input.campaignId, input.leadId, input.channel, input.subject, input.body, input.stepNumber ?? null, variant, now, now],
   });
   return (await getDraft(id))!;
 }
 
 export async function updateDraft(
   id: string,
-  updates: { subject?: string; body?: string; status?: DraftStatus; sentAt?: string; sendAfter?: string; stepNumber?: number; resendMessageId?: string },
+  updates: { subject?: string; body?: string; status?: DraftStatus; sentAt?: string; sendAfter?: string; stepNumber?: number; resendMessageId?: string; openedAt?: string; clickedAt?: string; bouncedAt?: string },
 ): Promise<CampaignDraft> {
   const now = new Date().toISOString();
   const fields: string[] = ["updated_at = ?"];
@@ -133,6 +142,9 @@ export async function updateDraft(
   if (updates.sendAfter !== undefined) { fields.push("send_after = ?"); args.push(updates.sendAfter); }
   if (updates.stepNumber !== undefined) { fields.push("step_number = ?"); args.push(String(updates.stepNumber)); }
   if (updates.resendMessageId !== undefined) { fields.push("resend_message_id = ?"); args.push(updates.resendMessageId); }
+  if (updates.openedAt !== undefined) { fields.push("opened_at = ?"); args.push(updates.openedAt); }
+  if (updates.clickedAt !== undefined) { fields.push("clicked_at = ?"); args.push(updates.clickedAt); }
+  if (updates.bouncedAt !== undefined) { fields.push("bounced_at = ?"); args.push(updates.bouncedAt); }
 
   args.push(id);
   await db.execute({ sql: `UPDATE campaign_drafts SET ${fields.join(", ")} WHERE id = ?`, args });

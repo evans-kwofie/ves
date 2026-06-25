@@ -3,10 +3,79 @@ import Anthropic from "@anthropic-ai/sdk";
 import { getCampaign, getCampaignLeadsWithData } from "~/db/queries/campaigns";
 import { upsertDraft } from "~/db/queries/drafts";
 import { listSteps } from "~/db/queries/steps";
+import { getTemplate } from "~/db/queries/templates";
 import { auth } from "~/lib/auth";
 import { getRequestHeaders } from "@tanstack/react-start/server";
+import type { Lead } from "~/types/lead";
+import type { Template } from "~/db/queries/templates";
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+
+function resolveTokens(text: string, lead: Lead): string {
+  const parts = (lead.ceo ?? "").trim().split(/\s+/);
+  const firstName = parts[0] ?? "";
+  const lastName = parts.slice(1).join(" ");
+  return text
+    .replaceAll("{{firstName}}", firstName)
+    .replaceAll("{{lastName}}", lastName)
+    .replaceAll("{{fullName}}", lead.ceo ?? "")
+    .replaceAll("{{company}}", lead.company ?? "")
+    .replaceAll("{{website}}", lead.website ?? "")
+    .replaceAll("{{whatTheyDo}}", lead.whatTheyDo ?? "");
+}
+
+async function generateWithAI(opts: {
+  channel: string;
+  lead: Lead;
+  productContext: string;
+  campaignGoal: string | null | undefined;
+  stepContext: string | null | undefined;
+  isFollowUp: boolean;
+}): Promise<{ subject: string | null; body: string }> {
+  const { channel, lead, productContext, campaignGoal, stepContext, isFollowUp } = opts;
+
+  const leadContext = [
+    `Company: ${lead.company}`,
+    `CEO/Contact: ${lead.ceo}`,
+    lead.whatTheyDo ? `What they do: ${lead.whatTheyDo}` : null,
+    lead.website ? `Website: ${lead.website}` : null,
+    lead.fit ? `ICP fit: ${lead.fit}` : null,
+    lead.fitReason ? `Why they're a fit: ${lead.fitReason}` : null,
+    lead.score != null ? `Fit score: ${lead.score}/100` : null,
+    lead.notes ? `Notes: ${lead.notes}` : null,
+  ].filter(Boolean).join("\n");
+
+  const stepHint = stepContext ? `\n\nSTEP CONTEXT\n${stepContext}` : "";
+
+  const systemPrompt = `You are a concise, direct outreach writer. Write a highly personalised cold ${channel === "email" ? "email" : "LinkedIn message"} that doesn't sound like a template.${isFollowUp ? " This is a follow-up — acknowledge you've reached out before, keep it shorter and more casual." : ""}
+
+Rules:
+- Never start with "I hope this email finds you well" or any filler opener
+- Reference what their company actually does and why the product is genuinely relevant
+- Maximum 4 sentences. Subject line under 8 words.
+- End with one clear, low-friction CTA
+- Write as a human, not a marketer
+
+Respond with JSON only: { "subject": "...", "body": "..." }`;
+
+  const userPrompt = `${productContext ? `OUR PRODUCT\n${productContext}\n\n` : ""}LEAD\n${leadContext}${campaignGoal ? `\n\nCAMPAIGN GOAL\n${campaignGoal}` : ""}${stepHint}`;
+
+  const response = await client.messages.create({
+    model: "claude-sonnet-4-6",
+    max_tokens: 512,
+    system: systemPrompt,
+    messages: [{ role: "user", content: userPrompt }],
+  });
+
+  const text = response.content.find((b) => b.type === "text")?.text ?? "";
+  const jsonMatch = text.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) throw new Error("No JSON in response");
+
+  const parsed = JSON.parse(jsonMatch[0]) as { subject?: string; body?: string };
+  if (!parsed.body) throw new Error("No body in response");
+
+  return { subject: parsed.subject ?? null, body: parsed.body };
+}
 
 export const Route = createFileRoute("/api/campaigns/$id/generate-drafts")({
   server: {
@@ -14,7 +83,6 @@ export const Route = createFileRoute("/api/campaigns/$id/generate-drafts")({
       POST: async ({ params, request }) => {
         const { id } = params;
 
-        // Optional filters: generate for a specific lead+step only
         let filterLeadId: string | null = null;
         let filterStepNumber: number | null = null;
         try {
@@ -31,7 +99,7 @@ export const Route = createFileRoute("/api/campaigns/$id/generate-drafts")({
           });
         }
 
-        let allLeads = await getCampaignLeadsWithData(id);
+        const allLeads = await getCampaignLeadsWithData(id);
         if (allLeads.length === 0) {
           return new Response(JSON.stringify({ error: "no_leads" }), {
             status: 400,
@@ -43,7 +111,7 @@ export const Route = createFileRoute("/api/campaigns/$id/generate-drafts")({
         const steps = await listSteps(id);
         const stepsToRun = filterStepNumber != null
           ? steps.filter((s) => s.stepNumber === filterStepNumber)
-          : steps.length > 0 ? steps : [{ stepNumber: 1, channel: campaign.channel ?? "email", context: null, delayDays: 0 }];
+          : steps.length > 0 ? steps : [{ stepNumber: 1, channel: campaign.channel ?? "email", context: null, delayDays: 0, templateId: null }];
 
         // Load org profile from metadata
         let orgProfile: Record<string, string> = {};
@@ -67,57 +135,54 @@ export const Route = createFileRoute("/api/campaigns/$id/generate-drafts")({
 
         for (const step of stepsToRun) {
           const channel = step.channel === "linkedin" ? "linkedin" : "email";
+          const isFollowUp = step.stepNumber > 1;
 
-          for (const lead of leads) {
+          // Load template if this step has one
+          let template: Template | null = null;
+          if ("templateId" in step && step.templateId) {
+            template = await getTemplate(step.templateId).catch(() => null);
+          }
+
+          const hasVariantB = !!(template?.variantBBody);
+
+          for (let i = 0; i < leads.length; i++) {
+            const lead = leads[i];
+            // Assign variant: even-indexed → 'a', odd-indexed → 'b' (only when template has variant B)
+            const abVariant: "a" | "b" = (hasVariantB && i % 2 === 1) ? "b" : "a";
+
             try {
-              const leadContext = [
-                `Company: ${lead.company}`,
-                `CEO/Contact: ${lead.ceo}`,
-                lead.whatTheyDo ? `What they do: ${lead.whatTheyDo}` : null,
-                lead.website ? `Website: ${lead.website}` : null,
-                lead.fit ? `ICP fit: ${lead.fit}` : null,
-                lead.fitReason ? `Why they're a fit: ${lead.fitReason}` : null,
-                lead.score != null ? `Fit score: ${lead.score}/100` : null,
-                lead.notes ? `Notes: ${lead.notes}` : null,
-              ].filter(Boolean).join("\n");
+              let subject: string | null;
+              let body: string;
 
-              const stepHint = step.context ? `\n\nSTEP CONTEXT\n${step.context}` : "";
-              const isFollowUp = step.stepNumber > 1;
-
-              const systemPrompt = `You are a concise, direct outreach writer. Write a highly personalised cold ${channel === "email" ? "email" : "LinkedIn message"} that doesn't sound like a template.${isFollowUp ? " This is a follow-up — acknowledge you've reached out before, keep it shorter and more casual." : ""}
-
-Rules:
-- Never start with "I hope this email finds you well" or any filler opener
-- Reference what their company actually does and why the product is genuinely relevant
-- Maximum 4 sentences. Subject line under 8 words.
-- End with one clear, low-friction CTA
-- Write as a human, not a marketer
-
-Respond with JSON only: { "subject": "...", "body": "..." }`;
-
-              const userPrompt = `${productContext ? `OUR PRODUCT\n${productContext}\n\n` : ""}LEAD\n${leadContext}${campaign.goal ? `\n\nCAMPAIGN GOAL\n${campaign.goal}` : ""}${stepHint}`;
-
-              const response = await client.messages.create({
-                model: "claude-sonnet-4-6",
-                max_tokens: 512,
-                system: systemPrompt,
-                messages: [{ role: "user", content: userPrompt }],
-              });
-
-              const text = response.content.find((b) => b.type === "text")?.text ?? "";
-              const jsonMatch = text.match(/\{[\s\S]*\}/);
-              if (!jsonMatch) throw new Error("No JSON in response");
-
-              const parsed = JSON.parse(jsonMatch[0]) as { subject?: string; body?: string };
-              if (!parsed.body) throw new Error("No body in response");
+              if (template) {
+                // Template-based: resolve tokens, no AI generation
+                const useB = abVariant === "b" && hasVariantB;
+                const rawSubject = useB ? (template.variantBSubject ?? template.subject) : template.subject;
+                const rawBody = useB ? (template.variantBBody ?? template.body) : template.body;
+                subject = rawSubject ? resolveTokens(rawSubject, lead as Lead) : null;
+                body = resolveTokens(rawBody, lead as Lead);
+              } else {
+                // AI generation
+                const result = await generateWithAI({
+                  channel,
+                  lead: lead as Lead,
+                  productContext,
+                  campaignGoal: campaign.goal,
+                  stepContext: "context" in step ? step.context as string | null : null,
+                  isFollowUp,
+                });
+                subject = result.subject;
+                body = result.body;
+              }
 
               await upsertDraft({
                 campaignId: id,
                 leadId: lead.id,
                 channel,
-                subject: parsed.subject ?? null,
-                body: parsed.body,
+                subject,
+                body,
                 stepNumber: step.stepNumber,
+                abVariant,
               });
 
               generated.push({ leadId: lead.id, stepNumber: step.stepNumber, ok: true });

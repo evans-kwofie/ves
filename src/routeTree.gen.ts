@@ -11,29 +11,34 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SignUpRouteImport } from './routes/sign-up'
 import { Route as SignInRouteImport } from './routes/sign-in'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
+import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as WorkspaceIdRouteRouteImport } from './routes/$workspaceId/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as WorkspaceIdIndexRouteImport } from './routes/$workspaceId/index'
-import { Route as WorkspaceIdTemplatesRouteImport } from './routes/$workspaceId/templates'
 import { Route as WorkspaceIdRedditRouteImport } from './routes/$workspaceId/reddit'
 import { Route as WorkspaceIdPipelineRouteImport } from './routes/$workspaceId/pipeline'
 import { Route as WorkspaceIdLinkedinRouteImport } from './routes/$workspaceId/linkedin'
 import { Route as WorkspaceIdKeywordsRouteImport } from './routes/$workspaceId/keywords'
 import { Route as WorkspaceIdDirectoriesRouteImport } from './routes/$workspaceId/directories'
 import { Route as WorkspaceIdBlogRouteImport } from './routes/$workspaceId/blog'
+import { Route as WorkspaceIdAnalyticsRouteImport } from './routes/$workspaceId/analytics'
 import { Route as WorkspaceIdAgentRouteImport } from './routes/$workspaceId/agent'
 import { Route as WorkspaceIdSettingsRouteRouteImport } from './routes/$workspaceId/settings/route'
+import { Route as ApiTemplatesIndexRouteImport } from './routes/api/templates/index'
 import { Route as ApiSubredditsIndexRouteImport } from './routes/api/subreddits/index'
 import { Route as ApiPipelineIndexRouteImport } from './routes/api/pipeline/index'
 import { Route as ApiKeywordsIndexRouteImport } from './routes/api/keywords/index'
 import { Route as ApiCampaignsIndexRouteImport } from './routes/api/campaigns/index'
 import { Route as ApiBlogIndexRouteImport } from './routes/api/blog/index'
+import { Route as WorkspaceIdTemplatesIndexRouteImport } from './routes/$workspaceId/templates/index'
 import { Route as WorkspaceIdSettingsIndexRouteImport } from './routes/$workspaceId/settings/index'
 import { Route as WorkspaceIdCampaignsIndexRouteImport } from './routes/$workspaceId/campaigns/index'
 import { Route as ApiWorkspaceGenerateDescriptionRouteImport } from './routes/api/workspace/generate-description'
 import { Route as ApiWebhooksResendRouteImport } from './routes/api/webhooks/resend'
 import { Route as ApiWebhooksEmailInboundRouteImport } from './routes/api/webhooks/email-inbound'
+import { Route as ApiTemplatesIdRouteImport } from './routes/api/templates/$id'
 import { Route as ApiSubredditsIdRouteImport } from './routes/api/subreddits/$id'
 import { Route as ApiRedditToPipelineRouteImport } from './routes/api/reddit/to-pipeline'
 import { Route as ApiRedditSuggestRouteImport } from './routes/api/reddit/suggest'
@@ -58,15 +63,18 @@ import { Route as ApiBlogGenerateRouteImport } from './routes/api/blog/generate'
 import { Route as ApiBlogIdRouteImport } from './routes/api/blog/$id'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as ApiAgentRunRouteImport } from './routes/api/agent/run'
+import { Route as WorkspaceIdTemplatesNewRouteImport } from './routes/$workspaceId/templates/new'
+import { Route as WorkspaceIdTemplatesTemplateIdRouteImport } from './routes/$workspaceId/templates/$templateId'
 import { Route as WorkspaceIdSettingsWorkspaceRouteImport } from './routes/$workspaceId/settings/workspace'
-import { Route as WorkspaceIdSettingsTemplatesRouteImport } from './routes/$workspaceId/settings/templates'
 import { Route as WorkspaceIdSettingsProfileRouteImport } from './routes/$workspaceId/settings/profile'
 import { Route as WorkspaceIdSettingsEmailRouteImport } from './routes/$workspaceId/settings/email'
 import { Route as WorkspaceIdSettingsDangerRouteImport } from './routes/$workspaceId/settings/danger'
 import { Route as WorkspaceIdSettingsBillingRouteImport } from './routes/$workspaceId/settings/billing'
+import { Route as WorkspaceIdSettingsAppearanceRouteImport } from './routes/$workspaceId/settings/appearance'
 import { Route as WorkspaceIdSettingsAgentRouteImport } from './routes/$workspaceId/settings/agent'
 import { Route as WorkspaceIdCampaignsNewRouteImport } from './routes/$workspaceId/campaigns/new'
 import { Route as WorkspaceIdCampaignsIdIndexRouteImport } from './routes/$workspaceId/campaigns/$id/index'
+import { Route as ApiRedditPostsIdRouteImport } from './routes/api/reddit/posts.$id'
 import { Route as ApiPipelineLeadsIdRouteImport } from './routes/api/pipeline/leads.$id'
 import { Route as ApiCampaignsIdStepsRouteImport } from './routes/api/campaigns/$id/steps'
 import { Route as ApiCampaignsIdRunRouteImport } from './routes/api/campaigns/$id/run'
@@ -86,9 +94,19 @@ const SignInRoute = SignInRouteImport.update({
   path: '/sign-in',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OnboardingRoute = OnboardingRouteImport.update({
   id: '/onboarding',
   path: '/onboarding',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
+  id: '/forgot-password',
+  path: '/forgot-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const WorkspaceIdRouteRoute = WorkspaceIdRouteRouteImport.update({
@@ -104,11 +122,6 @@ const IndexRoute = IndexRouteImport.update({
 const WorkspaceIdIndexRoute = WorkspaceIdIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => WorkspaceIdRouteRoute,
-} as any)
-const WorkspaceIdTemplatesRoute = WorkspaceIdTemplatesRouteImport.update({
-  id: '/templates',
-  path: '/templates',
   getParentRoute: () => WorkspaceIdRouteRoute,
 } as any)
 const WorkspaceIdRedditRoute = WorkspaceIdRedditRouteImport.update({
@@ -141,6 +154,11 @@ const WorkspaceIdBlogRoute = WorkspaceIdBlogRouteImport.update({
   path: '/blog',
   getParentRoute: () => WorkspaceIdRouteRoute,
 } as any)
+const WorkspaceIdAnalyticsRoute = WorkspaceIdAnalyticsRouteImport.update({
+  id: '/analytics',
+  path: '/analytics',
+  getParentRoute: () => WorkspaceIdRouteRoute,
+} as any)
 const WorkspaceIdAgentRoute = WorkspaceIdAgentRouteImport.update({
   id: '/agent',
   path: '/agent',
@@ -152,6 +170,11 @@ const WorkspaceIdSettingsRouteRoute =
     path: '/settings',
     getParentRoute: () => WorkspaceIdRouteRoute,
   } as any)
+const ApiTemplatesIndexRoute = ApiTemplatesIndexRouteImport.update({
+  id: '/api/templates/',
+  path: '/api/templates/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiSubredditsIndexRoute = ApiSubredditsIndexRouteImport.update({
   id: '/api/subreddits/',
   path: '/api/subreddits/',
@@ -177,6 +200,12 @@ const ApiBlogIndexRoute = ApiBlogIndexRouteImport.update({
   path: '/api/blog/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const WorkspaceIdTemplatesIndexRoute =
+  WorkspaceIdTemplatesIndexRouteImport.update({
+    id: '/templates/',
+    path: '/templates/',
+    getParentRoute: () => WorkspaceIdRouteRoute,
+  } as any)
 const WorkspaceIdSettingsIndexRoute =
   WorkspaceIdSettingsIndexRouteImport.update({
     id: '/',
@@ -203,6 +232,11 @@ const ApiWebhooksResendRoute = ApiWebhooksResendRouteImport.update({
 const ApiWebhooksEmailInboundRoute = ApiWebhooksEmailInboundRouteImport.update({
   id: '/api/webhooks/email-inbound',
   path: '/api/webhooks/email-inbound',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiTemplatesIdRoute = ApiTemplatesIdRouteImport.update({
+  id: '/api/templates/$id',
+  path: '/api/templates/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiSubredditsIdRoute = ApiSubredditsIdRouteImport.update({
@@ -326,16 +360,21 @@ const ApiAgentRunRoute = ApiAgentRunRouteImport.update({
   path: '/api/agent/run',
   getParentRoute: () => rootRouteImport,
 } as any)
+const WorkspaceIdTemplatesNewRoute = WorkspaceIdTemplatesNewRouteImport.update({
+  id: '/templates/new',
+  path: '/templates/new',
+  getParentRoute: () => WorkspaceIdRouteRoute,
+} as any)
+const WorkspaceIdTemplatesTemplateIdRoute =
+  WorkspaceIdTemplatesTemplateIdRouteImport.update({
+    id: '/templates/$templateId',
+    path: '/templates/$templateId',
+    getParentRoute: () => WorkspaceIdRouteRoute,
+  } as any)
 const WorkspaceIdSettingsWorkspaceRoute =
   WorkspaceIdSettingsWorkspaceRouteImport.update({
     id: '/workspace',
     path: '/workspace',
-    getParentRoute: () => WorkspaceIdSettingsRouteRoute,
-  } as any)
-const WorkspaceIdSettingsTemplatesRoute =
-  WorkspaceIdSettingsTemplatesRouteImport.update({
-    id: '/templates',
-    path: '/templates',
     getParentRoute: () => WorkspaceIdSettingsRouteRoute,
   } as any)
 const WorkspaceIdSettingsProfileRoute =
@@ -362,6 +401,12 @@ const WorkspaceIdSettingsBillingRoute =
     path: '/billing',
     getParentRoute: () => WorkspaceIdSettingsRouteRoute,
   } as any)
+const WorkspaceIdSettingsAppearanceRoute =
+  WorkspaceIdSettingsAppearanceRouteImport.update({
+    id: '/appearance',
+    path: '/appearance',
+    getParentRoute: () => WorkspaceIdSettingsRouteRoute,
+  } as any)
 const WorkspaceIdSettingsAgentRoute =
   WorkspaceIdSettingsAgentRouteImport.update({
     id: '/agent',
@@ -379,6 +424,11 @@ const WorkspaceIdCampaignsIdIndexRoute =
     path: '/campaigns/$id/',
     getParentRoute: () => WorkspaceIdRouteRoute,
   } as any)
+const ApiRedditPostsIdRoute = ApiRedditPostsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => ApiRedditPostsRoute,
+} as any)
 const ApiPipelineLeadsIdRoute = ApiPipelineLeadsIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -426,27 +476,31 @@ const ApiCampaignsIdDraftsDraftIdRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/$workspaceId': typeof WorkspaceIdRouteRouteWithChildren
+  '/forgot-password': typeof ForgotPasswordRoute
   '/onboarding': typeof OnboardingRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
   '/$workspaceId/settings': typeof WorkspaceIdSettingsRouteRouteWithChildren
   '/$workspaceId/agent': typeof WorkspaceIdAgentRoute
+  '/$workspaceId/analytics': typeof WorkspaceIdAnalyticsRoute
   '/$workspaceId/blog': typeof WorkspaceIdBlogRoute
   '/$workspaceId/directories': typeof WorkspaceIdDirectoriesRoute
   '/$workspaceId/keywords': typeof WorkspaceIdKeywordsRoute
   '/$workspaceId/linkedin': typeof WorkspaceIdLinkedinRoute
   '/$workspaceId/pipeline': typeof WorkspaceIdPipelineRoute
   '/$workspaceId/reddit': typeof WorkspaceIdRedditRoute
-  '/$workspaceId/templates': typeof WorkspaceIdTemplatesRoute
   '/$workspaceId/': typeof WorkspaceIdIndexRoute
   '/$workspaceId/campaigns/new': typeof WorkspaceIdCampaignsNewRoute
   '/$workspaceId/settings/agent': typeof WorkspaceIdSettingsAgentRoute
+  '/$workspaceId/settings/appearance': typeof WorkspaceIdSettingsAppearanceRoute
   '/$workspaceId/settings/billing': typeof WorkspaceIdSettingsBillingRoute
   '/$workspaceId/settings/danger': typeof WorkspaceIdSettingsDangerRoute
   '/$workspaceId/settings/email': typeof WorkspaceIdSettingsEmailRoute
   '/$workspaceId/settings/profile': typeof WorkspaceIdSettingsProfileRoute
-  '/$workspaceId/settings/templates': typeof WorkspaceIdSettingsTemplatesRoute
   '/$workspaceId/settings/workspace': typeof WorkspaceIdSettingsWorkspaceRoute
+  '/$workspaceId/templates/$templateId': typeof WorkspaceIdTemplatesTemplateIdRoute
+  '/$workspaceId/templates/new': typeof WorkspaceIdTemplatesNewRoute
   '/api/agent/run': typeof ApiAgentRunRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/blog/$id': typeof ApiBlogIdRoute
@@ -466,53 +520,61 @@ export interface FileRoutesByFullPath {
   '/api/pipeline/enrich': typeof ApiPipelineEnrichRoute
   '/api/pipeline/import': typeof ApiPipelineImportRoute
   '/api/pipeline/leads': typeof ApiPipelineLeadsRouteWithChildren
-  '/api/reddit/posts': typeof ApiRedditPostsRoute
+  '/api/reddit/posts': typeof ApiRedditPostsRouteWithChildren
   '/api/reddit/search': typeof ApiRedditSearchRoute
   '/api/reddit/suggest': typeof ApiRedditSuggestRoute
   '/api/reddit/to-pipeline': typeof ApiRedditToPipelineRoute
   '/api/subreddits/$id': typeof ApiSubredditsIdRoute
+  '/api/templates/$id': typeof ApiTemplatesIdRoute
   '/api/webhooks/email-inbound': typeof ApiWebhooksEmailInboundRoute
   '/api/webhooks/resend': typeof ApiWebhooksResendRoute
   '/api/workspace/generate-description': typeof ApiWorkspaceGenerateDescriptionRoute
   '/$workspaceId/campaigns/': typeof WorkspaceIdCampaignsIndexRoute
   '/$workspaceId/settings/': typeof WorkspaceIdSettingsIndexRoute
+  '/$workspaceId/templates/': typeof WorkspaceIdTemplatesIndexRoute
   '/api/blog/': typeof ApiBlogIndexRoute
   '/api/campaigns/': typeof ApiCampaignsIndexRoute
   '/api/keywords/': typeof ApiKeywordsIndexRoute
   '/api/pipeline/': typeof ApiPipelineIndexRoute
   '/api/subreddits/': typeof ApiSubredditsIndexRoute
+  '/api/templates/': typeof ApiTemplatesIndexRoute
   '/api/campaigns/$id/drafts': typeof ApiCampaignsIdDraftsRouteWithChildren
   '/api/campaigns/$id/generate-drafts': typeof ApiCampaignsIdGenerateDraftsRoute
   '/api/campaigns/$id/leads': typeof ApiCampaignsIdLeadsRoute
   '/api/campaigns/$id/run': typeof ApiCampaignsIdRunRoute
   '/api/campaigns/$id/steps': typeof ApiCampaignsIdStepsRouteWithChildren
   '/api/pipeline/leads/$id': typeof ApiPipelineLeadsIdRoute
+  '/api/reddit/posts/$id': typeof ApiRedditPostsIdRoute
   '/$workspaceId/campaigns/$id/': typeof WorkspaceIdCampaignsIdIndexRoute
   '/api/campaigns/$id/drafts/$draftId': typeof ApiCampaignsIdDraftsDraftIdRoute
   '/api/campaigns/$id/steps/$stepId': typeof ApiCampaignsIdStepsStepIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/onboarding': typeof OnboardingRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
   '/$workspaceId/agent': typeof WorkspaceIdAgentRoute
+  '/$workspaceId/analytics': typeof WorkspaceIdAnalyticsRoute
   '/$workspaceId/blog': typeof WorkspaceIdBlogRoute
   '/$workspaceId/directories': typeof WorkspaceIdDirectoriesRoute
   '/$workspaceId/keywords': typeof WorkspaceIdKeywordsRoute
   '/$workspaceId/linkedin': typeof WorkspaceIdLinkedinRoute
   '/$workspaceId/pipeline': typeof WorkspaceIdPipelineRoute
   '/$workspaceId/reddit': typeof WorkspaceIdRedditRoute
-  '/$workspaceId/templates': typeof WorkspaceIdTemplatesRoute
   '/$workspaceId': typeof WorkspaceIdIndexRoute
   '/$workspaceId/campaigns/new': typeof WorkspaceIdCampaignsNewRoute
   '/$workspaceId/settings/agent': typeof WorkspaceIdSettingsAgentRoute
+  '/$workspaceId/settings/appearance': typeof WorkspaceIdSettingsAppearanceRoute
   '/$workspaceId/settings/billing': typeof WorkspaceIdSettingsBillingRoute
   '/$workspaceId/settings/danger': typeof WorkspaceIdSettingsDangerRoute
   '/$workspaceId/settings/email': typeof WorkspaceIdSettingsEmailRoute
   '/$workspaceId/settings/profile': typeof WorkspaceIdSettingsProfileRoute
-  '/$workspaceId/settings/templates': typeof WorkspaceIdSettingsTemplatesRoute
   '/$workspaceId/settings/workspace': typeof WorkspaceIdSettingsWorkspaceRoute
+  '/$workspaceId/templates/$templateId': typeof WorkspaceIdTemplatesTemplateIdRoute
+  '/$workspaceId/templates/new': typeof WorkspaceIdTemplatesNewRoute
   '/api/agent/run': typeof ApiAgentRunRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/blog/$id': typeof ApiBlogIdRoute
@@ -532,27 +594,31 @@ export interface FileRoutesByTo {
   '/api/pipeline/enrich': typeof ApiPipelineEnrichRoute
   '/api/pipeline/import': typeof ApiPipelineImportRoute
   '/api/pipeline/leads': typeof ApiPipelineLeadsRouteWithChildren
-  '/api/reddit/posts': typeof ApiRedditPostsRoute
+  '/api/reddit/posts': typeof ApiRedditPostsRouteWithChildren
   '/api/reddit/search': typeof ApiRedditSearchRoute
   '/api/reddit/suggest': typeof ApiRedditSuggestRoute
   '/api/reddit/to-pipeline': typeof ApiRedditToPipelineRoute
   '/api/subreddits/$id': typeof ApiSubredditsIdRoute
+  '/api/templates/$id': typeof ApiTemplatesIdRoute
   '/api/webhooks/email-inbound': typeof ApiWebhooksEmailInboundRoute
   '/api/webhooks/resend': typeof ApiWebhooksResendRoute
   '/api/workspace/generate-description': typeof ApiWorkspaceGenerateDescriptionRoute
   '/$workspaceId/campaigns': typeof WorkspaceIdCampaignsIndexRoute
   '/$workspaceId/settings': typeof WorkspaceIdSettingsIndexRoute
+  '/$workspaceId/templates': typeof WorkspaceIdTemplatesIndexRoute
   '/api/blog': typeof ApiBlogIndexRoute
   '/api/campaigns': typeof ApiCampaignsIndexRoute
   '/api/keywords': typeof ApiKeywordsIndexRoute
   '/api/pipeline': typeof ApiPipelineIndexRoute
   '/api/subreddits': typeof ApiSubredditsIndexRoute
+  '/api/templates': typeof ApiTemplatesIndexRoute
   '/api/campaigns/$id/drafts': typeof ApiCampaignsIdDraftsRouteWithChildren
   '/api/campaigns/$id/generate-drafts': typeof ApiCampaignsIdGenerateDraftsRoute
   '/api/campaigns/$id/leads': typeof ApiCampaignsIdLeadsRoute
   '/api/campaigns/$id/run': typeof ApiCampaignsIdRunRoute
   '/api/campaigns/$id/steps': typeof ApiCampaignsIdStepsRouteWithChildren
   '/api/pipeline/leads/$id': typeof ApiPipelineLeadsIdRoute
+  '/api/reddit/posts/$id': typeof ApiRedditPostsIdRoute
   '/$workspaceId/campaigns/$id': typeof WorkspaceIdCampaignsIdIndexRoute
   '/api/campaigns/$id/drafts/$draftId': typeof ApiCampaignsIdDraftsDraftIdRoute
   '/api/campaigns/$id/steps/$stepId': typeof ApiCampaignsIdStepsStepIdRoute
@@ -561,27 +627,31 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/$workspaceId': typeof WorkspaceIdRouteRouteWithChildren
+  '/forgot-password': typeof ForgotPasswordRoute
   '/onboarding': typeof OnboardingRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
   '/$workspaceId/settings': typeof WorkspaceIdSettingsRouteRouteWithChildren
   '/$workspaceId/agent': typeof WorkspaceIdAgentRoute
+  '/$workspaceId/analytics': typeof WorkspaceIdAnalyticsRoute
   '/$workspaceId/blog': typeof WorkspaceIdBlogRoute
   '/$workspaceId/directories': typeof WorkspaceIdDirectoriesRoute
   '/$workspaceId/keywords': typeof WorkspaceIdKeywordsRoute
   '/$workspaceId/linkedin': typeof WorkspaceIdLinkedinRoute
   '/$workspaceId/pipeline': typeof WorkspaceIdPipelineRoute
   '/$workspaceId/reddit': typeof WorkspaceIdRedditRoute
-  '/$workspaceId/templates': typeof WorkspaceIdTemplatesRoute
   '/$workspaceId/': typeof WorkspaceIdIndexRoute
   '/$workspaceId/campaigns/new': typeof WorkspaceIdCampaignsNewRoute
   '/$workspaceId/settings/agent': typeof WorkspaceIdSettingsAgentRoute
+  '/$workspaceId/settings/appearance': typeof WorkspaceIdSettingsAppearanceRoute
   '/$workspaceId/settings/billing': typeof WorkspaceIdSettingsBillingRoute
   '/$workspaceId/settings/danger': typeof WorkspaceIdSettingsDangerRoute
   '/$workspaceId/settings/email': typeof WorkspaceIdSettingsEmailRoute
   '/$workspaceId/settings/profile': typeof WorkspaceIdSettingsProfileRoute
-  '/$workspaceId/settings/templates': typeof WorkspaceIdSettingsTemplatesRoute
   '/$workspaceId/settings/workspace': typeof WorkspaceIdSettingsWorkspaceRoute
+  '/$workspaceId/templates/$templateId': typeof WorkspaceIdTemplatesTemplateIdRoute
+  '/$workspaceId/templates/new': typeof WorkspaceIdTemplatesNewRoute
   '/api/agent/run': typeof ApiAgentRunRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/blog/$id': typeof ApiBlogIdRoute
@@ -601,27 +671,31 @@ export interface FileRoutesById {
   '/api/pipeline/enrich': typeof ApiPipelineEnrichRoute
   '/api/pipeline/import': typeof ApiPipelineImportRoute
   '/api/pipeline/leads': typeof ApiPipelineLeadsRouteWithChildren
-  '/api/reddit/posts': typeof ApiRedditPostsRoute
+  '/api/reddit/posts': typeof ApiRedditPostsRouteWithChildren
   '/api/reddit/search': typeof ApiRedditSearchRoute
   '/api/reddit/suggest': typeof ApiRedditSuggestRoute
   '/api/reddit/to-pipeline': typeof ApiRedditToPipelineRoute
   '/api/subreddits/$id': typeof ApiSubredditsIdRoute
+  '/api/templates/$id': typeof ApiTemplatesIdRoute
   '/api/webhooks/email-inbound': typeof ApiWebhooksEmailInboundRoute
   '/api/webhooks/resend': typeof ApiWebhooksResendRoute
   '/api/workspace/generate-description': typeof ApiWorkspaceGenerateDescriptionRoute
   '/$workspaceId/campaigns/': typeof WorkspaceIdCampaignsIndexRoute
   '/$workspaceId/settings/': typeof WorkspaceIdSettingsIndexRoute
+  '/$workspaceId/templates/': typeof WorkspaceIdTemplatesIndexRoute
   '/api/blog/': typeof ApiBlogIndexRoute
   '/api/campaigns/': typeof ApiCampaignsIndexRoute
   '/api/keywords/': typeof ApiKeywordsIndexRoute
   '/api/pipeline/': typeof ApiPipelineIndexRoute
   '/api/subreddits/': typeof ApiSubredditsIndexRoute
+  '/api/templates/': typeof ApiTemplatesIndexRoute
   '/api/campaigns/$id/drafts': typeof ApiCampaignsIdDraftsRouteWithChildren
   '/api/campaigns/$id/generate-drafts': typeof ApiCampaignsIdGenerateDraftsRoute
   '/api/campaigns/$id/leads': typeof ApiCampaignsIdLeadsRoute
   '/api/campaigns/$id/run': typeof ApiCampaignsIdRunRoute
   '/api/campaigns/$id/steps': typeof ApiCampaignsIdStepsRouteWithChildren
   '/api/pipeline/leads/$id': typeof ApiPipelineLeadsIdRoute
+  '/api/reddit/posts/$id': typeof ApiRedditPostsIdRoute
   '/$workspaceId/campaigns/$id/': typeof WorkspaceIdCampaignsIdIndexRoute
   '/api/campaigns/$id/drafts/$draftId': typeof ApiCampaignsIdDraftsDraftIdRoute
   '/api/campaigns/$id/steps/$stepId': typeof ApiCampaignsIdStepsStepIdRoute
@@ -631,27 +705,31 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/$workspaceId'
+    | '/forgot-password'
     | '/onboarding'
+    | '/reset-password'
     | '/sign-in'
     | '/sign-up'
     | '/$workspaceId/settings'
     | '/$workspaceId/agent'
+    | '/$workspaceId/analytics'
     | '/$workspaceId/blog'
     | '/$workspaceId/directories'
     | '/$workspaceId/keywords'
     | '/$workspaceId/linkedin'
     | '/$workspaceId/pipeline'
     | '/$workspaceId/reddit'
-    | '/$workspaceId/templates'
     | '/$workspaceId/'
     | '/$workspaceId/campaigns/new'
     | '/$workspaceId/settings/agent'
+    | '/$workspaceId/settings/appearance'
     | '/$workspaceId/settings/billing'
     | '/$workspaceId/settings/danger'
     | '/$workspaceId/settings/email'
     | '/$workspaceId/settings/profile'
-    | '/$workspaceId/settings/templates'
     | '/$workspaceId/settings/workspace'
+    | '/$workspaceId/templates/$templateId'
+    | '/$workspaceId/templates/new'
     | '/api/agent/run'
     | '/api/auth/$'
     | '/api/blog/$id'
@@ -676,48 +754,56 @@ export interface FileRouteTypes {
     | '/api/reddit/suggest'
     | '/api/reddit/to-pipeline'
     | '/api/subreddits/$id'
+    | '/api/templates/$id'
     | '/api/webhooks/email-inbound'
     | '/api/webhooks/resend'
     | '/api/workspace/generate-description'
     | '/$workspaceId/campaigns/'
     | '/$workspaceId/settings/'
+    | '/$workspaceId/templates/'
     | '/api/blog/'
     | '/api/campaigns/'
     | '/api/keywords/'
     | '/api/pipeline/'
     | '/api/subreddits/'
+    | '/api/templates/'
     | '/api/campaigns/$id/drafts'
     | '/api/campaigns/$id/generate-drafts'
     | '/api/campaigns/$id/leads'
     | '/api/campaigns/$id/run'
     | '/api/campaigns/$id/steps'
     | '/api/pipeline/leads/$id'
+    | '/api/reddit/posts/$id'
     | '/$workspaceId/campaigns/$id/'
     | '/api/campaigns/$id/drafts/$draftId'
     | '/api/campaigns/$id/steps/$stepId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/forgot-password'
     | '/onboarding'
+    | '/reset-password'
     | '/sign-in'
     | '/sign-up'
     | '/$workspaceId/agent'
+    | '/$workspaceId/analytics'
     | '/$workspaceId/blog'
     | '/$workspaceId/directories'
     | '/$workspaceId/keywords'
     | '/$workspaceId/linkedin'
     | '/$workspaceId/pipeline'
     | '/$workspaceId/reddit'
-    | '/$workspaceId/templates'
     | '/$workspaceId'
     | '/$workspaceId/campaigns/new'
     | '/$workspaceId/settings/agent'
+    | '/$workspaceId/settings/appearance'
     | '/$workspaceId/settings/billing'
     | '/$workspaceId/settings/danger'
     | '/$workspaceId/settings/email'
     | '/$workspaceId/settings/profile'
-    | '/$workspaceId/settings/templates'
     | '/$workspaceId/settings/workspace'
+    | '/$workspaceId/templates/$templateId'
+    | '/$workspaceId/templates/new'
     | '/api/agent/run'
     | '/api/auth/$'
     | '/api/blog/$id'
@@ -742,22 +828,26 @@ export interface FileRouteTypes {
     | '/api/reddit/suggest'
     | '/api/reddit/to-pipeline'
     | '/api/subreddits/$id'
+    | '/api/templates/$id'
     | '/api/webhooks/email-inbound'
     | '/api/webhooks/resend'
     | '/api/workspace/generate-description'
     | '/$workspaceId/campaigns'
     | '/$workspaceId/settings'
+    | '/$workspaceId/templates'
     | '/api/blog'
     | '/api/campaigns'
     | '/api/keywords'
     | '/api/pipeline'
     | '/api/subreddits'
+    | '/api/templates'
     | '/api/campaigns/$id/drafts'
     | '/api/campaigns/$id/generate-drafts'
     | '/api/campaigns/$id/leads'
     | '/api/campaigns/$id/run'
     | '/api/campaigns/$id/steps'
     | '/api/pipeline/leads/$id'
+    | '/api/reddit/posts/$id'
     | '/$workspaceId/campaigns/$id'
     | '/api/campaigns/$id/drafts/$draftId'
     | '/api/campaigns/$id/steps/$stepId'
@@ -765,27 +855,31 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/$workspaceId'
+    | '/forgot-password'
     | '/onboarding'
+    | '/reset-password'
     | '/sign-in'
     | '/sign-up'
     | '/$workspaceId/settings'
     | '/$workspaceId/agent'
+    | '/$workspaceId/analytics'
     | '/$workspaceId/blog'
     | '/$workspaceId/directories'
     | '/$workspaceId/keywords'
     | '/$workspaceId/linkedin'
     | '/$workspaceId/pipeline'
     | '/$workspaceId/reddit'
-    | '/$workspaceId/templates'
     | '/$workspaceId/'
     | '/$workspaceId/campaigns/new'
     | '/$workspaceId/settings/agent'
+    | '/$workspaceId/settings/appearance'
     | '/$workspaceId/settings/billing'
     | '/$workspaceId/settings/danger'
     | '/$workspaceId/settings/email'
     | '/$workspaceId/settings/profile'
-    | '/$workspaceId/settings/templates'
     | '/$workspaceId/settings/workspace'
+    | '/$workspaceId/templates/$templateId'
+    | '/$workspaceId/templates/new'
     | '/api/agent/run'
     | '/api/auth/$'
     | '/api/blog/$id'
@@ -810,22 +904,26 @@ export interface FileRouteTypes {
     | '/api/reddit/suggest'
     | '/api/reddit/to-pipeline'
     | '/api/subreddits/$id'
+    | '/api/templates/$id'
     | '/api/webhooks/email-inbound'
     | '/api/webhooks/resend'
     | '/api/workspace/generate-description'
     | '/$workspaceId/campaigns/'
     | '/$workspaceId/settings/'
+    | '/$workspaceId/templates/'
     | '/api/blog/'
     | '/api/campaigns/'
     | '/api/keywords/'
     | '/api/pipeline/'
     | '/api/subreddits/'
+    | '/api/templates/'
     | '/api/campaigns/$id/drafts'
     | '/api/campaigns/$id/generate-drafts'
     | '/api/campaigns/$id/leads'
     | '/api/campaigns/$id/run'
     | '/api/campaigns/$id/steps'
     | '/api/pipeline/leads/$id'
+    | '/api/reddit/posts/$id'
     | '/$workspaceId/campaigns/$id/'
     | '/api/campaigns/$id/drafts/$draftId'
     | '/api/campaigns/$id/steps/$stepId'
@@ -834,7 +932,9 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   WorkspaceIdRouteRoute: typeof WorkspaceIdRouteRouteWithChildren
+  ForgotPasswordRoute: typeof ForgotPasswordRoute
   OnboardingRoute: typeof OnboardingRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
   SignInRoute: typeof SignInRoute
   SignUpRoute: typeof SignUpRoute
   ApiAgentRunRoute: typeof ApiAgentRunRoute
@@ -856,11 +956,12 @@ export interface RootRouteChildren {
   ApiPipelineEnrichRoute: typeof ApiPipelineEnrichRoute
   ApiPipelineImportRoute: typeof ApiPipelineImportRoute
   ApiPipelineLeadsRoute: typeof ApiPipelineLeadsRouteWithChildren
-  ApiRedditPostsRoute: typeof ApiRedditPostsRoute
+  ApiRedditPostsRoute: typeof ApiRedditPostsRouteWithChildren
   ApiRedditSearchRoute: typeof ApiRedditSearchRoute
   ApiRedditSuggestRoute: typeof ApiRedditSuggestRoute
   ApiRedditToPipelineRoute: typeof ApiRedditToPipelineRoute
   ApiSubredditsIdRoute: typeof ApiSubredditsIdRoute
+  ApiTemplatesIdRoute: typeof ApiTemplatesIdRoute
   ApiWebhooksEmailInboundRoute: typeof ApiWebhooksEmailInboundRoute
   ApiWebhooksResendRoute: typeof ApiWebhooksResendRoute
   ApiWorkspaceGenerateDescriptionRoute: typeof ApiWorkspaceGenerateDescriptionRoute
@@ -869,6 +970,7 @@ export interface RootRouteChildren {
   ApiKeywordsIndexRoute: typeof ApiKeywordsIndexRoute
   ApiPipelineIndexRoute: typeof ApiPipelineIndexRoute
   ApiSubredditsIndexRoute: typeof ApiSubredditsIndexRoute
+  ApiTemplatesIndexRoute: typeof ApiTemplatesIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -887,11 +989,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SignInRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/onboarding': {
       id: '/onboarding'
       path: '/onboarding'
       fullPath: '/onboarding'
       preLoaderRoute: typeof OnboardingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/forgot-password': {
+      id: '/forgot-password'
+      path: '/forgot-password'
+      fullPath: '/forgot-password'
+      preLoaderRoute: typeof ForgotPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/$workspaceId': {
@@ -913,13 +1029,6 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/$workspaceId/'
       preLoaderRoute: typeof WorkspaceIdIndexRouteImport
-      parentRoute: typeof WorkspaceIdRouteRoute
-    }
-    '/$workspaceId/templates': {
-      id: '/$workspaceId/templates'
-      path: '/templates'
-      fullPath: '/$workspaceId/templates'
-      preLoaderRoute: typeof WorkspaceIdTemplatesRouteImport
       parentRoute: typeof WorkspaceIdRouteRoute
     }
     '/$workspaceId/reddit': {
@@ -964,6 +1073,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkspaceIdBlogRouteImport
       parentRoute: typeof WorkspaceIdRouteRoute
     }
+    '/$workspaceId/analytics': {
+      id: '/$workspaceId/analytics'
+      path: '/analytics'
+      fullPath: '/$workspaceId/analytics'
+      preLoaderRoute: typeof WorkspaceIdAnalyticsRouteImport
+      parentRoute: typeof WorkspaceIdRouteRoute
+    }
     '/$workspaceId/agent': {
       id: '/$workspaceId/agent'
       path: '/agent'
@@ -977,6 +1093,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/$workspaceId/settings'
       preLoaderRoute: typeof WorkspaceIdSettingsRouteRouteImport
       parentRoute: typeof WorkspaceIdRouteRoute
+    }
+    '/api/templates/': {
+      id: '/api/templates/'
+      path: '/api/templates'
+      fullPath: '/api/templates/'
+      preLoaderRoute: typeof ApiTemplatesIndexRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/subreddits/': {
       id: '/api/subreddits/'
@@ -1013,6 +1136,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiBlogIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/$workspaceId/templates/': {
+      id: '/$workspaceId/templates/'
+      path: '/templates'
+      fullPath: '/$workspaceId/templates/'
+      preLoaderRoute: typeof WorkspaceIdTemplatesIndexRouteImport
+      parentRoute: typeof WorkspaceIdRouteRoute
+    }
     '/$workspaceId/settings/': {
       id: '/$workspaceId/settings/'
       path: '/'
@@ -1046,6 +1176,13 @@ declare module '@tanstack/react-router' {
       path: '/api/webhooks/email-inbound'
       fullPath: '/api/webhooks/email-inbound'
       preLoaderRoute: typeof ApiWebhooksEmailInboundRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/templates/$id': {
+      id: '/api/templates/$id'
+      path: '/api/templates/$id'
+      fullPath: '/api/templates/$id'
+      preLoaderRoute: typeof ApiTemplatesIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/subreddits/$id': {
@@ -1216,18 +1353,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAgentRunRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/$workspaceId/templates/new': {
+      id: '/$workspaceId/templates/new'
+      path: '/templates/new'
+      fullPath: '/$workspaceId/templates/new'
+      preLoaderRoute: typeof WorkspaceIdTemplatesNewRouteImport
+      parentRoute: typeof WorkspaceIdRouteRoute
+    }
+    '/$workspaceId/templates/$templateId': {
+      id: '/$workspaceId/templates/$templateId'
+      path: '/templates/$templateId'
+      fullPath: '/$workspaceId/templates/$templateId'
+      preLoaderRoute: typeof WorkspaceIdTemplatesTemplateIdRouteImport
+      parentRoute: typeof WorkspaceIdRouteRoute
+    }
     '/$workspaceId/settings/workspace': {
       id: '/$workspaceId/settings/workspace'
       path: '/workspace'
       fullPath: '/$workspaceId/settings/workspace'
       preLoaderRoute: typeof WorkspaceIdSettingsWorkspaceRouteImport
-      parentRoute: typeof WorkspaceIdSettingsRouteRoute
-    }
-    '/$workspaceId/settings/templates': {
-      id: '/$workspaceId/settings/templates'
-      path: '/templates'
-      fullPath: '/$workspaceId/settings/templates'
-      preLoaderRoute: typeof WorkspaceIdSettingsTemplatesRouteImport
       parentRoute: typeof WorkspaceIdSettingsRouteRoute
     }
     '/$workspaceId/settings/profile': {
@@ -1258,6 +1402,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkspaceIdSettingsBillingRouteImport
       parentRoute: typeof WorkspaceIdSettingsRouteRoute
     }
+    '/$workspaceId/settings/appearance': {
+      id: '/$workspaceId/settings/appearance'
+      path: '/appearance'
+      fullPath: '/$workspaceId/settings/appearance'
+      preLoaderRoute: typeof WorkspaceIdSettingsAppearanceRouteImport
+      parentRoute: typeof WorkspaceIdSettingsRouteRoute
+    }
     '/$workspaceId/settings/agent': {
       id: '/$workspaceId/settings/agent'
       path: '/agent'
@@ -1278,6 +1429,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/$workspaceId/campaigns/$id/'
       preLoaderRoute: typeof WorkspaceIdCampaignsIdIndexRouteImport
       parentRoute: typeof WorkspaceIdRouteRoute
+    }
+    '/api/reddit/posts/$id': {
+      id: '/api/reddit/posts/$id'
+      path: '/$id'
+      fullPath: '/api/reddit/posts/$id'
+      preLoaderRoute: typeof ApiRedditPostsIdRouteImport
+      parentRoute: typeof ApiRedditPostsRoute
     }
     '/api/pipeline/leads/$id': {
       id: '/api/pipeline/leads/$id'
@@ -1340,11 +1498,11 @@ declare module '@tanstack/react-router' {
 
 interface WorkspaceIdSettingsRouteRouteChildren {
   WorkspaceIdSettingsAgentRoute: typeof WorkspaceIdSettingsAgentRoute
+  WorkspaceIdSettingsAppearanceRoute: typeof WorkspaceIdSettingsAppearanceRoute
   WorkspaceIdSettingsBillingRoute: typeof WorkspaceIdSettingsBillingRoute
   WorkspaceIdSettingsDangerRoute: typeof WorkspaceIdSettingsDangerRoute
   WorkspaceIdSettingsEmailRoute: typeof WorkspaceIdSettingsEmailRoute
   WorkspaceIdSettingsProfileRoute: typeof WorkspaceIdSettingsProfileRoute
-  WorkspaceIdSettingsTemplatesRoute: typeof WorkspaceIdSettingsTemplatesRoute
   WorkspaceIdSettingsWorkspaceRoute: typeof WorkspaceIdSettingsWorkspaceRoute
   WorkspaceIdSettingsIndexRoute: typeof WorkspaceIdSettingsIndexRoute
 }
@@ -1352,11 +1510,11 @@ interface WorkspaceIdSettingsRouteRouteChildren {
 const WorkspaceIdSettingsRouteRouteChildren: WorkspaceIdSettingsRouteRouteChildren =
   {
     WorkspaceIdSettingsAgentRoute: WorkspaceIdSettingsAgentRoute,
+    WorkspaceIdSettingsAppearanceRoute: WorkspaceIdSettingsAppearanceRoute,
     WorkspaceIdSettingsBillingRoute: WorkspaceIdSettingsBillingRoute,
     WorkspaceIdSettingsDangerRoute: WorkspaceIdSettingsDangerRoute,
     WorkspaceIdSettingsEmailRoute: WorkspaceIdSettingsEmailRoute,
     WorkspaceIdSettingsProfileRoute: WorkspaceIdSettingsProfileRoute,
-    WorkspaceIdSettingsTemplatesRoute: WorkspaceIdSettingsTemplatesRoute,
     WorkspaceIdSettingsWorkspaceRoute: WorkspaceIdSettingsWorkspaceRoute,
     WorkspaceIdSettingsIndexRoute: WorkspaceIdSettingsIndexRoute,
   }
@@ -1369,32 +1527,38 @@ const WorkspaceIdSettingsRouteRouteWithChildren =
 interface WorkspaceIdRouteRouteChildren {
   WorkspaceIdSettingsRouteRoute: typeof WorkspaceIdSettingsRouteRouteWithChildren
   WorkspaceIdAgentRoute: typeof WorkspaceIdAgentRoute
+  WorkspaceIdAnalyticsRoute: typeof WorkspaceIdAnalyticsRoute
   WorkspaceIdBlogRoute: typeof WorkspaceIdBlogRoute
   WorkspaceIdDirectoriesRoute: typeof WorkspaceIdDirectoriesRoute
   WorkspaceIdKeywordsRoute: typeof WorkspaceIdKeywordsRoute
   WorkspaceIdLinkedinRoute: typeof WorkspaceIdLinkedinRoute
   WorkspaceIdPipelineRoute: typeof WorkspaceIdPipelineRoute
   WorkspaceIdRedditRoute: typeof WorkspaceIdRedditRoute
-  WorkspaceIdTemplatesRoute: typeof WorkspaceIdTemplatesRoute
   WorkspaceIdIndexRoute: typeof WorkspaceIdIndexRoute
   WorkspaceIdCampaignsNewRoute: typeof WorkspaceIdCampaignsNewRoute
+  WorkspaceIdTemplatesTemplateIdRoute: typeof WorkspaceIdTemplatesTemplateIdRoute
+  WorkspaceIdTemplatesNewRoute: typeof WorkspaceIdTemplatesNewRoute
   WorkspaceIdCampaignsIndexRoute: typeof WorkspaceIdCampaignsIndexRoute
+  WorkspaceIdTemplatesIndexRoute: typeof WorkspaceIdTemplatesIndexRoute
   WorkspaceIdCampaignsIdIndexRoute: typeof WorkspaceIdCampaignsIdIndexRoute
 }
 
 const WorkspaceIdRouteRouteChildren: WorkspaceIdRouteRouteChildren = {
   WorkspaceIdSettingsRouteRoute: WorkspaceIdSettingsRouteRouteWithChildren,
   WorkspaceIdAgentRoute: WorkspaceIdAgentRoute,
+  WorkspaceIdAnalyticsRoute: WorkspaceIdAnalyticsRoute,
   WorkspaceIdBlogRoute: WorkspaceIdBlogRoute,
   WorkspaceIdDirectoriesRoute: WorkspaceIdDirectoriesRoute,
   WorkspaceIdKeywordsRoute: WorkspaceIdKeywordsRoute,
   WorkspaceIdLinkedinRoute: WorkspaceIdLinkedinRoute,
   WorkspaceIdPipelineRoute: WorkspaceIdPipelineRoute,
   WorkspaceIdRedditRoute: WorkspaceIdRedditRoute,
-  WorkspaceIdTemplatesRoute: WorkspaceIdTemplatesRoute,
   WorkspaceIdIndexRoute: WorkspaceIdIndexRoute,
   WorkspaceIdCampaignsNewRoute: WorkspaceIdCampaignsNewRoute,
+  WorkspaceIdTemplatesTemplateIdRoute: WorkspaceIdTemplatesTemplateIdRoute,
+  WorkspaceIdTemplatesNewRoute: WorkspaceIdTemplatesNewRoute,
   WorkspaceIdCampaignsIndexRoute: WorkspaceIdCampaignsIndexRoute,
+  WorkspaceIdTemplatesIndexRoute: WorkspaceIdTemplatesIndexRoute,
   WorkspaceIdCampaignsIdIndexRoute: WorkspaceIdCampaignsIdIndexRoute,
 }
 
@@ -1454,10 +1618,24 @@ const ApiPipelineLeadsRouteChildren: ApiPipelineLeadsRouteChildren = {
 const ApiPipelineLeadsRouteWithChildren =
   ApiPipelineLeadsRoute._addFileChildren(ApiPipelineLeadsRouteChildren)
 
+interface ApiRedditPostsRouteChildren {
+  ApiRedditPostsIdRoute: typeof ApiRedditPostsIdRoute
+}
+
+const ApiRedditPostsRouteChildren: ApiRedditPostsRouteChildren = {
+  ApiRedditPostsIdRoute: ApiRedditPostsIdRoute,
+}
+
+const ApiRedditPostsRouteWithChildren = ApiRedditPostsRoute._addFileChildren(
+  ApiRedditPostsRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   WorkspaceIdRouteRoute: WorkspaceIdRouteRouteWithChildren,
+  ForgotPasswordRoute: ForgotPasswordRoute,
   OnboardingRoute: OnboardingRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
   SignInRoute: SignInRoute,
   SignUpRoute: SignUpRoute,
   ApiAgentRunRoute: ApiAgentRunRoute,
@@ -1479,11 +1657,12 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPipelineEnrichRoute: ApiPipelineEnrichRoute,
   ApiPipelineImportRoute: ApiPipelineImportRoute,
   ApiPipelineLeadsRoute: ApiPipelineLeadsRouteWithChildren,
-  ApiRedditPostsRoute: ApiRedditPostsRoute,
+  ApiRedditPostsRoute: ApiRedditPostsRouteWithChildren,
   ApiRedditSearchRoute: ApiRedditSearchRoute,
   ApiRedditSuggestRoute: ApiRedditSuggestRoute,
   ApiRedditToPipelineRoute: ApiRedditToPipelineRoute,
   ApiSubredditsIdRoute: ApiSubredditsIdRoute,
+  ApiTemplatesIdRoute: ApiTemplatesIdRoute,
   ApiWebhooksEmailInboundRoute: ApiWebhooksEmailInboundRoute,
   ApiWebhooksResendRoute: ApiWebhooksResendRoute,
   ApiWorkspaceGenerateDescriptionRoute: ApiWorkspaceGenerateDescriptionRoute,
@@ -1492,6 +1671,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiKeywordsIndexRoute: ApiKeywordsIndexRoute,
   ApiPipelineIndexRoute: ApiPipelineIndexRoute,
   ApiSubredditsIndexRoute: ApiSubredditsIndexRoute,
+  ApiTemplatesIndexRoute: ApiTemplatesIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

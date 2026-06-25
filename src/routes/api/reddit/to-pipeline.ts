@@ -44,7 +44,8 @@ export const Route = createFileRoute("/api/reddit/to-pipeline")({
           args: [organizationId, `https://reddit.com/user/${author}`],
         });
         if (existing.rows.length > 0) {
-          return Response.json({ error: "duplicate" }, { status: 409 });
+          const existingId = (existing.rows[0] as Record<string, unknown>).id as string;
+          return Response.json({ error: "duplicate", leadId: existingId }, { status: 409 });
         }
 
         const placeholderEmail = `reddit-${uuidv4()}@placeholder.vesper`;

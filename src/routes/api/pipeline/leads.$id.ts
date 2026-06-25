@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { getLead, updateLead, createOutreachEvent, getOutreachEvents } from "~/db/queries/leads";
+import { getLead, updateLead, deleteLead, createOutreachEvent, getOutreachEvents } from "~/db/queries/leads";
 import { z } from "zod";
 
 const updateSchema = z.object({
@@ -67,6 +67,18 @@ export const Route = createFileRoute("/api/pipeline/leads/$id")({
           const message = err instanceof Error ? err.message : "unknown_error";
           return new Response(JSON.stringify({ error: message }), {
             status: 404,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+      },
+      DELETE: async ({ params }) => {
+        try {
+          await deleteLead(params.id);
+          return new Response(null, { status: 204 });
+        } catch (err) {
+          const message = err instanceof Error ? err.message : "unknown_error";
+          return new Response(JSON.stringify({ error: message }), {
+            status: 500,
             headers: { "Content-Type": "application/json" },
           });
         }

@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { saveReplySuggestion } from "~/db/queries/reddit";
-import Anthropic from "@anthropic-ai/sdk";
+import { mistralComplete } from "~/agent/tools/mistral";
 import { z } from "zod";
 
 const requestSchema = z.object({
@@ -17,8 +17,6 @@ const ENGAGEMENT_INSTRUCTION: Record<string, string> = {
   authority: "Establish expertise. Share a data point, case study, or insight that builds credibility.",
   question: "Ask a thoughtful follow-up question that shows you deeply understand their problem.",
 };
-
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, maxRetries: 2 });
 
 export const Route = createFileRoute("/api/reddit/suggest")({
   server: {
@@ -55,18 +53,14 @@ Post body: ${postBody || "(no body)"}
 
 Write only the reply text, nothing else.`;
 
-        const response = await client.messages.create({
-          model: "claude-haiku-4-5-20251001",
-          max_tokens: 300,
-          messages: [{ role: "user", content: prompt }],
+        const suggestion = await mistralComplete(prompt, {
+          model: "mistral-small-latest",
+          maxTokens: 300,
         });
 
-        const suggestion =
-          response.content[0]?.type === "text" ? response.content[0].text.trim() : "";
+        await saveReplySuggestion(postId, suggestion.trim());
 
-        await saveReplySuggestion(postId, suggestion);
-
-        return Response.json({ suggestion });
+        return Response.json({ suggestion: suggestion.trim() });
       },
     },
   },

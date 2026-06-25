@@ -15,7 +15,7 @@ export function AddStepPopover({
   onAdd: (step: CampaignStep) => void;
 }) {
   const lastDelay = steps[steps.length - 1]?.delayDays ?? -1;
-  const [channel, setChannel] = React.useState<"email" | "linkedin">("email");
+  const [channel, setChannel] = React.useState<"email" | "linkedin" | "instagram">("email");
   const [delay, setDelay] = React.useState(lastDelay < 0 ? 0 : lastDelay + 3);
   const [context, setContext] = React.useState("");
   const [open, setOpen] = React.useState(false);
@@ -56,9 +56,10 @@ export function AddStepPopover({
 
         <div className="flex flex-col gap-1">
           <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Channel</label>
-          <select className="input text-[12px]" value={channel} onChange={(e) => setChannel(e.target.value as "email" | "linkedin")}>
+          <select className="input text-[12px]" value={channel} onChange={(e) => setChannel(e.target.value as "email" | "linkedin" | "instagram")}>
             <option value="email">Email</option>
             <option value="linkedin">LinkedIn</option>
+            <option value="instagram">Instagram</option>
           </select>
         </div>
 

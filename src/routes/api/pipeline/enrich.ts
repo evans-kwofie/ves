@@ -3,13 +3,16 @@ import { auth } from "~/lib/auth";
 import { listLeads, updateLead } from "~/db/queries/leads";
 import Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
+import { findEmail, splitName } from "~/agent/tools/find-email";
 
 const requestSchema = z.object({
   organizationId: z.string().min(1),
-  leadId: z.string().optional(), // single lead, or omit to enrich all discovered
+  leadId: z.string().optional(),
 });
 
 const enrichSchema = z.object({
+  realName: z.string().optional(),
+  company: z.string().optional(),
   website: z.string().optional(),
   whatTheyDo: z.string().optional(),
   email: z.string().optional(),
@@ -21,18 +24,30 @@ const enrichSchema = z.object({
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-async function enrichAndScore(
-  lead: { id: string; company: string; ceo: string; website: string; whatTheyDo: string; email: string },
+async function fetchRedditProfile(username: string): Promise<string> {
+  try {
+    const res = await fetch(`https://www.reddit.com/user/${username}/about.json`, {
+      headers: { "User-Agent": process.env.REDDIT_USER_AGENT ?? "vesper/1.0" },
+    });
+    if (!res.ok) return "";
+    const data = (await res.json()) as { data?: { subreddit?: { public_description?: string }; icon_img?: string } };
+    return data?.data?.subreddit?.public_description ?? "";
+  } catch {
+    return "";
+  }
+}
+
+async function enrichRedditLead(
+  lead: { id: string; ceo: string; notes: string },
   orgContext: { name: string; description: string; industry: string; focusAreas: string[] },
 ): Promise<z.infer<typeof enrichSchema> | null> {
-  const prompt = `You are enriching a B2B sales lead and scoring it against an ICP.
+  const username = lead.ceo.replace(/^u\//, "");
+  const profileBio = await fetchRedditProfile(username);
 
-Lead:
-- Company: ${lead.company}
-- Contact: ${lead.ceo}
-- Current website: ${lead.website || "unknown"}
-- Current description: ${lead.whatTheyDo || "unknown"}
-- Current email: ${lead.email || "unknown"}
+  const prompt = `You are enriching a lead discovered from Reddit. The Reddit username is u/${username}.
+
+${profileBio ? `Their Reddit profile bio:\n${profileBio}\n` : ""}
+Context from their post:\n${lead.notes.slice(0, 600)}
 
 Selling org context:
 - Company: ${orgContext.name}
@@ -41,19 +56,23 @@ Selling org context:
 - Focus areas: ${orgContext.focusAreas.join(", ") || "not provided"}
 
 Tasks:
-1. Search for the company to verify/enrich their website, description, and find a real email for ${lead.ceo}
-2. Score this lead against the selling org's ICP
+1. Search for "u/${username}" or "${username}" on Reddit, LinkedIn, Twitter/X, and personal websites to find who this person really is
+2. Find their real name, company, role, website, and LinkedIn profile
+3. If you find their real name and company domain, infer a likely email
+4. Score this lead against the selling org's ICP based on what you know about them
 
-Return ONLY a JSON object with:
-- website: verified company website (https://...)
-- whatTheyDo: one clear sentence about what the company does
-- email: best email guess for the contact (firstname@domain.com format)
-- linkedin: LinkedIn profile URL if found, else empty string
-- fit: "HIGH", "MEDIUM", or "LOW" — how well this lead matches the ICP
-- score: 0-100 integer representing ICP match strength
-- fitReason: one sentence explaining the fit score
-
-JSON only, no markdown.`;
+Return ONLY JSON:
+{
+  "realName": "First Last or null",
+  "company": "Company name or null",
+  "website": "https://... or null",
+  "whatTheyDo": "One sentence about the company",
+  "email": "email or null — only include if highly confident, never guess",
+  "linkedin": "https://linkedin.com/in/... or null",
+  "fit": "HIGH | MEDIUM | LOW",
+  "score": 0-100,
+  "fitReason": "One sentence"
+}`;
 
   try {
     const response = await client.messages.create({
@@ -77,19 +96,78 @@ JSON only, no markdown.`;
   }
 }
 
+async function enrichStandardLead(
+  lead: { id: string; company: string; ceo: string; website: string; whatTheyDo: string; email: string },
+  orgContext: { name: string; description: string; industry: string; focusAreas: string[] },
+): Promise<z.infer<typeof enrichSchema> | null> {
+  const prompt = `You are enriching a B2B sales lead and scoring it against an ICP.
+
+Lead:
+- Company: ${lead.company}
+- CEO/Contact: ${lead.ceo}
+- Current website: ${lead.website || "unknown"}
+- Current description: ${lead.whatTheyDo || "unknown"}
+
+Selling org context:
+- Company: ${orgContext.name}
+- What they do: ${orgContext.description || "not provided"}
+- Industry: ${orgContext.industry || "not provided"}
+- Focus areas: ${orgContext.focusAreas.join(", ") || "not provided"}
+
+Tasks:
+1. Search for the company to verify their website and description
+2. Find the real LinkedIn profile URL for ${lead.ceo} at ${lead.company}
+3. Score this lead against the selling org's ICP
+
+Return ONLY JSON:
+{
+  "company": "verified company name",
+  "website": "https://...",
+  "whatTheyDo": "one sentence",
+  "linkedin": "https://linkedin.com/in/... or null",
+  "fit": "HIGH | MEDIUM | LOW",
+  "score": 0-100,
+  "fitReason": "one sentence"
+}`;
+
+  try {
+    const response = await client.messages.create({
+      model: "claude-sonnet-4-6",
+      max_tokens: 500,
+      tools: [{ type: "web_search_20260209" as const, name: "web_search" as const }],
+      messages: [{ role: "user", content: prompt }],
+    } as unknown as Anthropic.MessageCreateParamsNonStreaming);
+
+    let text = "";
+    for (const block of response.content) {
+      if (block.type === "text") text += block.text;
+    }
+
+    const match = text.match(/\{[\s\S]*\}/);
+    if (!match) return null;
+    const parsed = enrichSchema.safeParse(JSON.parse(match[0]));
+    return parsed.success ? parsed.data : null;
+  } catch {
+    return null;
+  }
+}
+
 export const Route = createFileRoute("/api/pipeline/enrich")({
   server: {
     handlers: {
       POST: async ({ request }) => {
         let body: unknown;
-        try { body = await request.json(); } catch { return new Response(JSON.stringify({ error: "invalid_json" }), { status: 400, headers: { "Content-Type": "application/json" } }); }
+        try { body = await request.json(); } catch {
+          return new Response(JSON.stringify({ error: "invalid_json" }), { status: 400, headers: { "Content-Type": "application/json" } });
+        }
 
         const parsed = requestSchema.safeParse(body);
-        if (!parsed.success) return new Response(JSON.stringify({ error: "organizationId required" }), { status: 400, headers: { "Content-Type": "application/json" } });
+        if (!parsed.success) {
+          return new Response(JSON.stringify({ error: "organizationId required" }), { status: 400, headers: { "Content-Type": "application/json" } });
+        }
 
         const { organizationId, leadId } = parsed.data;
 
-        // Get org context
         const orgs = await auth.api.listOrganizations({ headers: request.headers });
         const org = orgs?.find((o: { id: string }) => o.id === organizationId) ?? orgs?.[0];
         let metadata: Record<string, string> = {};
@@ -105,7 +183,6 @@ export const Route = createFileRoute("/api/pipeline/enrich")({
           focusAreas,
         };
 
-        // Get leads to enrich
         const allLeads = await listLeads(organizationId);
         const toEnrich = leadId
           ? allLeads.filter((l) => l.id === leadId)
@@ -115,33 +192,44 @@ export const Route = createFileRoute("/api/pipeline/enrich")({
         let failed = 0;
 
         for (const lead of toEnrich) {
-          // Mark as enriching
           await updateLead(lead.id, { pipelineStage: "enriching", enrichmentAttempts: lead.enrichmentAttempts + 1 });
 
-          const result = await enrichAndScore(
-            { id: lead.id, company: lead.company, ceo: lead.ceo, website: lead.website, whatTheyDo: lead.whatTheyDo, email: lead.email },
-            orgContext,
-          );
+          const isRedditLead = lead.source === "reddit" || lead.website?.includes("reddit.com/user/");
 
-          if (result) {
+          const result = isRedditLead
+            ? await enrichRedditLead({ id: lead.id, ceo: lead.ceo, notes: lead.notes }, orgContext)
+            : await enrichStandardLead({ id: lead.id, company: lead.company, ceo: lead.ceo, website: lead.website, whatTheyDo: lead.whatTheyDo, email: lead.email }, orgContext);
+
+          if (!result) {
             await updateLead(lead.id, {
-              pipelineStage: "enriched",
-              website: result.website || lead.website,
-              whatTheyDo: result.whatTheyDo || lead.whatTheyDo,
-              linkedin: result.linkedin || lead.linkedin,
-              fit: result.fit,
-              score: result.score,
-              fitReason: result.fitReason,
-            });
-            enriched++;
-          } else {
-            const newAttempts = lead.enrichmentAttempts + 1;
-            await updateLead(lead.id, {
-              pipelineStage: newAttempts >= 3 ? "failed" : "discovered",
-              enrichmentAttempts: newAttempts,
+              pipelineStage: lead.enrichmentAttempts + 1 >= 3 ? "failed" : "discovered",
             });
             failed++;
+            continue;
           }
+
+          // Use Hunter.io to find a verified email
+          const nameForHunter = result.realName ?? lead.ceo;
+          const domainForHunter = result.website ?? lead.website;
+          const { firstName, lastName } = splitName(nameForHunter);
+          const hunterResult = await findEmail(firstName, lastName, domainForHunter);
+
+          const finalEmail = hunterResult.email ?? (result.email && !result.email.includes("placeholder") ? result.email : null);
+
+          await updateLead(lead.id, {
+            pipelineStage: "enriched",
+            ...(isRedditLead && result.realName ? { ceo: result.realName } : {}),
+            ...(isRedditLead && result.company ? { company: result.company } : {}),
+            website: result.website || lead.website,
+            whatTheyDo: result.whatTheyDo || lead.whatTheyDo,
+            linkedin: result.linkedin || lead.linkedin,
+            fit: result.fit,
+            score: result.score,
+            fitReason: result.fitReason,
+            ...(finalEmail ? { email: finalEmail } : {}),
+          });
+
+          enriched++;
         }
 
         return Response.json({ ok: true, enriched, failed, total: toEnrich.length });

@@ -4,16 +4,9 @@ import { createServerFn } from "@tanstack/react-start";
 import * as z from "zod";
 import { Header } from "~/components/templates/Header";
 import { Button } from "~/components/ui/button";
-import {
-  Add01Icon,
-  Mail01Icon,
-  Linkedin01Icon,
-  Delete02Icon,
-  ArrowRight01Icon,
-  Target01Icon,
-} from "hugeicons-react";
+import { Add01Icon } from "hugeicons-react";
 import { listCampaigns } from "~/db/queries/campaigns";
-import { toast } from "sonner";
+import { CampaignRow } from "~/components/modules/campaign/CampaignRow";
 import type { Campaign, CampaignStatus } from "~/types/campaign";
 
 const getCampaignsData = createServerFn({ method: "GET" })
@@ -33,150 +26,6 @@ const STATUS_TABS: { label: string; value: CampaignStatus | "all" }[] = [
   { label: "Completed", value: "completed" },
 ];
 
-const STATUS_BADGE: Record<CampaignStatus, { label: string; cls: string }> = {
-  draft: { label: "Draft", cls: "badge badge-gray" },
-  active: { label: "Active", cls: "badge badge-green" },
-  scheduled: { label: "Scheduled", cls: "badge badge-blue" },
-  completed: { label: "Completed", cls: "badge badge-purple" },
-};
-
-const CHANNEL_ICON: Record<string, React.ReactNode> = {
-  email: <Mail01Icon size={13} />,
-  linkedin: <Linkedin01Icon size={13} />,
-  both: (
-    <span className="flex gap-1">
-      <Mail01Icon size={13} />
-      <Linkedin01Icon size={13} />
-    </span>
-  ),
-};
-
-function replyRate(sent: number, replies: number) {
-  if (sent === 0) return "—";
-  return `${Math.round((replies / sent) * 100)}%`;
-}
-
-// ─── Campaign card ────────────────────────────────────────────────────────────
-function CampaignCard({
-  campaign,
-  workspaceId,
-  onDelete,
-  onStatusChange,
-}: {
-  campaign: Campaign;
-  workspaceId: string;
-  onDelete: (id: string) => void;
-  onStatusChange: (id: string, status: CampaignStatus) => void;
-}) {
-  const [deleting, setDeleting] = React.useState(false);
-  const badge = STATUS_BADGE[campaign.status];
-
-  async function handleDelete() {
-    if (!confirm(`Delete campaign "${campaign.name}"?`)) return;
-    setDeleting(true);
-    try {
-      await fetch(`/api/campaigns/${campaign.id}`, { method: "DELETE" });
-      onDelete(campaign.id);
-      toast.success("Campaign deleted");
-    } catch {
-      toast.error("Failed to delete campaign");
-    } finally {
-      setDeleting(false);
-    }
-  }
-
-  async function handleActivate() {
-    const next: CampaignStatus = campaign.status === "active" ? "draft" : "active";
-    try {
-      await fetch(`/api/campaigns/${campaign.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: next }),
-      });
-      onStatusChange(campaign.id, next);
-    } catch {
-      toast.error("Failed to update campaign");
-    }
-  }
-
-  return (
-    <div className="card" style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-      {/* Top row */}
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8 }}>
-        <div style={{ minWidth: 0 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 4 }}>
-            <Link
-              to="/$workspaceId/campaigns/$id"
-              params={{ workspaceId, id: campaign.id }}
-              style={{ fontSize: 14, fontWeight: 600, color: "var(--foreground)", textDecoration: "none" }}
-            >
-              {campaign.name}
-            </Link>
-            <span className={badge.cls}>{badge.label}</span>
-            {campaign.channel && (
-              <span className="badge badge-gray" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
-                {CHANNEL_ICON[campaign.channel]}
-                {campaign.channel}
-              </span>
-            )}
-          </div>
-          {campaign.goal && (
-            <p style={{ fontSize: 12, color: "var(--muted-foreground)", margin: 0, lineHeight: 1.5 }}>
-              {campaign.goal}
-            </p>
-          )}
-        </div>
-        <div style={{ display: "flex", gap: 6, flexShrink: 0, alignItems: "center" }}>
-          <button className="btn btn-ghost btn-sm" onClick={handleActivate}>
-            {campaign.status === "active" ? "Pause" : "Activate"}
-          </button>
-          <Link to="/$workspaceId/campaigns/$id" params={{ workspaceId, id: campaign.id }}>
-            <Button>
-              <ArrowRight01Icon size={13} />
-              Open
-            </Button>
-          </Link>
-          <button className="btn btn-ghost btn-sm" onClick={handleDelete} disabled={deleting} title="Delete">
-            <Delete02Icon size={13} />
-          </button>
-        </div>
-      </div>
-
-      {/* Stats row */}
-      <div style={{ display: "flex", gap: 20, borderTop: "1px solid var(--border)", paddingTop: 12, flexWrap: "wrap" }}>
-        <div>
-          <div className="stat-label">Leads</div>
-          <div style={{ fontSize: 20, fontWeight: 700, letterSpacing: "-0.02em", marginTop: 2 }}>{campaign.leadCount}</div>
-        </div>
-        <div>
-          <div className="stat-label">Sent</div>
-          <div style={{ fontSize: 20, fontWeight: 700, letterSpacing: "-0.02em", marginTop: 2 }}>{campaign.sentCount}</div>
-        </div>
-        <div>
-          <div className="stat-label">Replies</div>
-          <div style={{ fontSize: 20, fontWeight: 700, letterSpacing: "-0.02em", marginTop: 2 }}>{campaign.replyCount}</div>
-        </div>
-        <div>
-          <div className="stat-label">Reply Rate</div>
-          <div
-            style={{
-              fontSize: 20,
-              fontWeight: 700,
-              letterSpacing: "-0.02em",
-              marginTop: 2,
-              color: campaign.replyCount > 0 ? "var(--accent)" : undefined,
-            }}
-          >
-            {replyRate(campaign.sentCount, campaign.replyCount)}
-          </div>
-        </div>
-
-      </div>
-    </div>
-  );
-}
-
-// ─── Page ─────────────────────────────────────────────────────────────────────
 function CampaignsPage() {
   const initial = Route.useLoaderData();
   const { workspaceId } = Route.useParams();
@@ -184,10 +33,6 @@ function CampaignsPage() {
   const [tab, setTab] = React.useState<CampaignStatus | "all">("all");
 
   const filtered = tab === "all" ? campaigns : campaigns.filter((c) => c.status === tab);
-
-  const totalSent = campaigns.reduce((s, c) => s + c.sentCount, 0);
-  const totalReplies = campaigns.reduce((s, c) => s + c.replyCount, 0);
-  const activeCampaigns = campaigns.filter((c) => c.status === "active").length;
 
   function handleDelete(id: string) {
     setCampaigns((prev) => prev.filter((c) => c.id !== id));
@@ -212,27 +57,7 @@ function CampaignsPage() {
         }
       />
       <div className="page-content">
-        {/* Aggregate stats */}
-        <div className="flex items-center gap-6 pb-5 mb-6 border-b border-border flex-wrap">
-          {[
-            { label: "Campaigns", value: campaigns.length },
-            { label: "Active", value: activeCampaigns },
-            { label: "Total Sent", value: totalSent },
-            { label: "Total Replies", value: totalReplies, accent: true },
-            { label: "Avg Reply Rate", value: replyRate(totalSent, totalReplies), accent: totalReplies > 0 },
-          ].map((s, i) => (
-            <React.Fragment key={s.label}>
-              {i > 0 && <div className="h-7 w-px bg-border shrink-0" />}
-              <div>
-                <div className={`text-[26px] font-bold tracking-tight leading-none${s.accent ? " text-accent" : ""}`}>{s.value}</div>
-                <div className="text-[11px] text-muted-foreground uppercase tracking-wider mt-1">{s.label}</div>
-              </div>
-            </React.Fragment>
-          ))}
-        </div>
-
-        {/* Tabs */}
-        <div className="tab-list">
+        <div className="tab-list mb-4">
           {STATUS_TABS.map((t) => {
             const count = t.value === "all" ? campaigns.length : campaigns.filter((c) => c.status === t.value).length;
             return (
@@ -244,7 +69,7 @@ function CampaignsPage() {
               >
                 {t.label}
                 {count > 0 && (
-                  <span style={{ marginLeft: 6, fontSize: 10, fontWeight: 600, background: "var(--muted)", color: "var(--muted-foreground)", borderRadius: 4, padding: "1px 5px" }}>
+                  <span className="ml-1.5 text-[10px] font-semibold bg-muted text-muted-foreground rounded px-1 py-px">
                     {count}
                   </span>
                 )}
@@ -253,57 +78,52 @@ function CampaignsPage() {
           })}
         </div>
 
-        {/* Campaign cards */}
         {filtered.length === 0 ? (
           <div className="empty-state">
-            <div style={{ marginBottom: 16 }}>
+            <div className="mb-4">
               {tab === "all"
                 ? "No campaigns yet. Create your first campaign to start tracking outreach sequences."
                 : `No ${tab} campaigns.`}
             </div>
             {tab === "all" && (
               <Link to="/$workspaceId/campaigns/new" params={{ workspaceId }}>
-                <button className="btn btn-primary btn-sm">
+                <Button size="sm">
                   <Add01Icon size={13} />
                   New Campaign
-                </button>
+                </Button>
               </Link>
             )}
           </div>
         ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            {filtered.map((c) => (
-              <CampaignCard
-                key={c.id}
-                campaign={c}
-                workspaceId={workspaceId}
-                onDelete={handleDelete}
-                onStatusChange={handleStatusChange}
-              />
-            ))}
-          </div>
-        )}
-
-        {/* AI insights panel */}
-        {campaigns.length > 0 && totalSent > 0 && (
-          <div className="card" style={{ marginTop: 24 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
-              <Target01Icon size={15} style={{ color: "var(--accent)" }} />
-              <span className="card-title" style={{ margin: 0 }}>AI Insights</span>
-            </div>
-            <p style={{ fontSize: 13, color: "var(--muted-foreground)", margin: 0 }}>
-              {totalReplies === 0
-                ? "No replies yet. Keep sending — the first reply usually comes within 3–5 days of initial outreach."
-                : `Your campaigns are averaging a ${replyRate(totalSent, totalReplies)} reply rate across ${totalSent} sent messages. ${
-                    totalReplies / totalSent > 0.1
-                      ? "That's above average — keep using the same tone and timing."
-                      : "Try personalising the opening line with something specific to each lead's company."
-                  }`}
-            </p>
+          <div className="rounded-lg border border-border overflow-hidden">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border bg-muted/30">
+                  {["Campaign", "Status", "Channel", "Leads", "Sent", "Replies", "Reply Rate", ""].map((h) => (
+                    <th
+                      key={h}
+                      className="py-2.5 px-4 text-left text-[11px] font-medium text-muted-foreground uppercase tracking-wider last:w-10"
+                    >
+                      {h}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((c) => (
+                  <CampaignRow
+                    key={c.id}
+                    campaign={c}
+                    workspaceId={workspaceId}
+                    onDelete={handleDelete}
+                    onStatusChange={handleStatusChange}
+                  />
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
       </div>
-
     </>
   );
 }

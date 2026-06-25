@@ -19,6 +19,7 @@ function rowToPost(row: Record<string, unknown>): RedditPost {
     engagementType: (row.engagement_type as EngagementType | null) ?? null,
     engagementScore: (row.engagement_score as number | null) ?? null,
     fetchedAt: row.fetched_at as string,
+    postedAt: (row.posted_at as string | null) ?? null,
   };
 }
 
@@ -47,6 +48,7 @@ export async function upsertRedditPost(post: {
   score: number;
   body: string;
   keywordId: string | null;
+  postedAt?: string | null;
 }): Promise<{ id: string; isNew: boolean }> {
   const now = new Date().toISOString();
   const existing = await db.execute({
@@ -64,9 +66,9 @@ export async function upsertRedditPost(post: {
   } else {
     const id = uuidv4();
     await db.execute({
-      sql: `INSERT INTO reddit_posts (id, organization_id, reddit_id, subreddit, title, url, author, score, body, keyword_id, fetched_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      args: [id, post.orgId, post.redditId, post.subreddit, post.title, post.url, post.author, post.score, post.body, post.keywordId, now],
+      sql: `INSERT INTO reddit_posts (id, organization_id, reddit_id, subreddit, title, url, author, score, body, keyword_id, fetched_at, posted_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      args: [id, post.orgId, post.redditId, post.subreddit, post.title, post.url, post.author, post.score, post.body, post.keywordId, now, post.postedAt ?? null],
     });
     return { id, isNew: true };
   }
@@ -85,6 +87,26 @@ export async function saveClassification(
     sql: "UPDATE reddit_posts SET intent_type = ?, intent_score = ?, engagement_type = ?, engagement_score = ? WHERE id = ?",
     args: [classification.intentType, classification.intentScore, classification.engagementType, classification.engagementScore, id],
   });
+}
+
+export async function deleteRedditPost(id: string): Promise<void> {
+  await db.execute({ sql: "DELETE FROM reddit_posts WHERE id = ?", args: [id] });
+}
+
+export async function clearRedditPosts(orgId: string, keywordId?: string): Promise<number> {
+  let result;
+  if (keywordId) {
+    result = await db.execute({
+      sql: "DELETE FROM reddit_posts WHERE organization_id = ? AND keyword_id = ?",
+      args: [orgId, keywordId],
+    });
+  } else {
+    result = await db.execute({
+      sql: "DELETE FROM reddit_posts WHERE organization_id = ?",
+      args: [orgId],
+    });
+  }
+  return (result as unknown as { rowsAffected?: number }).rowsAffected ?? 0;
 }
 
 export async function saveReplySuggestion(id: string, suggestion: string): Promise<void> {

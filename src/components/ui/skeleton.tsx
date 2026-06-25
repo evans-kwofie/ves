@@ -1,22 +1,13 @@
-import * as React from "react";
-import { twMerge } from "tailwind-merge";
+import { cn } from "~/lib/utils"
 
-interface SkeletonProps extends React.HTMLAttributes<HTMLDivElement> {}
-
-function Skeleton({ className, ...props }: SkeletonProps) {
+function Skeleton({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
-      className={twMerge("", className)}
-      style={{
-        background: "linear-gradient(90deg, #1a1a1a 25%, #222 50%, #1a1a1a 75%)",
-        backgroundSize: "200% 100%",
-        animation: "shimmer 1.5s infinite",
-        borderRadius: "var(--radius)",
-        height: 16,
-      }}
+      data-slot="skeleton"
+      className={cn("animate-pulse rounded-md bg-muted", className)}
       {...props}
     />
-  );
+  )
 }
 
-export { Skeleton };
+export { Skeleton }

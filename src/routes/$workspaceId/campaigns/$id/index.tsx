@@ -1,14 +1,14 @@
 import * as React from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import * as z from "zod";
 import { Header } from "~/components/templates/Header";
-import { Button } from "~/components/ui/button";
-import { ArrowLeft01Icon, Linkedin01Icon, Mail01Icon } from "hugeicons-react";
 import { getCampaign, getCampaignLeadsWithData } from "~/db/queries/campaigns";
 import { listDrafts } from "~/db/queries/drafts";
 import { listSteps } from "~/db/queries/steps";
 import type { CampaignStep } from "~/db/queries/steps";
+import { listTemplates } from "~/db/queries/templates";
+import type { Template } from "~/db/queries/templates";
 import { auth } from "~/lib/auth";
 import { getRequestHeaders } from "@tanstack/react-start/server";
 import { ComposeDraftPanel } from "~/components/modules/campaign/ComposeDraftPanel";
@@ -20,8 +20,7 @@ import type { EmailSignature } from "~/types/signature";
 import type { Campaign } from "~/types/campaign";
 import type { Lead } from "~/types/lead";
 import type { CampaignDraft } from "~/db/queries/drafts";
-
-// ─── Server ──────────────────────────────────────────────────────────────────
+import CampaignDropdownMenu from "~/components/modules/campaign/molecules/CampaignDropdown";
 
 const getCampaignDetail = createServerFn({ method: "GET" })
   .inputValidator(z.string())
@@ -36,12 +35,13 @@ const getCampaignDetail = createServerFn({ method: "GET" })
     ]);
     if (!campaign) return null;
     let signatures: EmailSignature[] = [];
+    const org = orgs?.[0];
     try {
-      const org = orgs?.[0];
       const meta = org?.metadata ? JSON.parse(org.metadata as string) : {};
       signatures = (meta.emailSignatures as EmailSignature[]) ?? [];
     } catch {}
-    return { campaign, leads, drafts, steps, signatures };
+    const templates = org ? await listTemplates(org.id) : [];
+    return { campaign, leads, drafts, steps, signatures, templates };
   });
 
 export const Route = createFileRoute("/$workspaceId/campaigns/$id/")({
@@ -57,14 +57,15 @@ function CampaignDetailPage() {
   const initial = Route.useLoaderData();
   const { workspaceId, id } = Route.useParams();
 
-  const [campaign] = React.useState<Campaign | null>(initial?.campaign ?? null);
-  const [leads] = React.useState<Lead[]>(initial?.leads ?? []);
+  const [campaign, setCampaign] = React.useState<Campaign | null>(initial?.campaign ?? null);
+  const [leads, setLeads] = React.useState<Lead[]>(initial?.leads ?? []);
   const [drafts, setDrafts] = React.useState<CampaignDraft[]>(
     initial?.drafts ?? [],
   );
   const [steps, setSteps] = React.useState<CampaignStep[]>(
     initial?.steps ?? [],
   );
+  const [templates] = React.useState<Template[]>(initial?.templates ?? []);
   const [tab, setTab] = React.useState<Tab>("sequence");
 
   if (!campaign) {
@@ -93,21 +94,11 @@ function CampaignDetailPage() {
     setTab("queue");
   }
 
-  const statusBadge =
-    (
-      {
-        draft: "badge badge-gray",
-        active: "badge badge-green",
-        scheduled: "badge badge-blue",
-        completed: "badge badge-purple",
-      } as Record<string, string>
-    )[campaign.status] ?? "badge badge-gray";
-
   const tabs: { value: Tab; label: string; count: number }[] = [
-    { value: "sequence", label: "Sequence", count: steps.length },
-    { value: "queue", label: "Review Queue", count: pending.length },
-    { value: "leads", label: "Leads", count: leads.length },
-    { value: "results", label: "Results", count: sent.length },
+    { value: "sequence", label: "Sequence",     count: steps.length },
+    { value: "queue",    label: "Review Queue", count: drafts.length },
+    { value: "leads",    label: "Contacts",     count: leads.length },
+    { value: "results",  label: "Results",      count: sent.length },
   ];
 
   return (
@@ -116,12 +107,17 @@ function CampaignDetailPage() {
         title={campaign.name}
         subtitle={campaign.goal ?? "Outreach campaign"}
         actions={
-          <Link to="/$workspaceId/campaigns" params={{ workspaceId }}>
-            <Button variant="ghost">
-              <ArrowLeft01Icon size={14} />
-              Campaigns
-            </Button>
-          </Link>
+          campaign && (
+            <CampaignDropdownMenu
+              workspaceId={workspaceId}
+              campaignId={id as string}
+              status={campaign.status}
+              existingLeadIds={leads.map((l) => l.id)}
+              onDelete={() => window.history.back()}
+              onStatusChange={(_, status) => setCampaign((c) => c ? { ...c, status } : c)}
+              onLeadAdded={(lead) => setLeads((prev) => prev.some((l) => l.id === lead.id) ? prev : [...prev, lead])}
+            />
+          )
         }
       />
 
@@ -145,7 +141,7 @@ function CampaignDetailPage() {
         </div>
 
         {tab === "sequence" && (
-          <SequenceTab campaignId={id} steps={steps} onStepsChange={setSteps} />
+          <SequenceTab campaignId={id} steps={steps} templates={templates} onStepsChange={setSteps} />
         )}
         {tab === "queue" && (
           <ReviewQueue
