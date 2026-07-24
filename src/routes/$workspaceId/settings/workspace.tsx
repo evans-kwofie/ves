@@ -2,6 +2,7 @@ import * as React from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { getRequestHeaders } from "@tanstack/react-start/server";
+import * as z from "zod";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
 import { Button } from "~/components/ui/button";
@@ -13,12 +14,14 @@ import { AiGenerativeIcon } from "hugeicons-react";
 
 // ─── Server ──────────────────────────────────────────────────────────────────
 
-const getWorkspaceDetails = createServerFn({ method: "GET" }).handler(async () => {
+const getWorkspaceDetails = createServerFn({ method: "GET" })
+  .inputValidator(z.string())
+  .handler(async ({ data: workspaceId }) => {
   const session = await getSessionFn();
   if (!session) return null;
   const headers = getRequestHeaders();
   const orgs = await auth.api.listOrganizations({ headers });
-  const org = orgs?.[0];
+  const org = orgs?.find((o) => o.id === workspaceId);
   if (!org) return null;
 
   let metadata: Record<string, string> = {};
@@ -50,8 +53,8 @@ const getWorkspaceDetails = createServerFn({ method: "GET" }).handler(async () =
 // ─── Route ───────────────────────────────────────────────────────────────────
 
 export const Route = createFileRoute("/$workspaceId/settings/workspace")({
-  loader: async () => {
-    const workspace = await getWorkspaceDetails();
+  loader: async ({ params }) => {
+    const workspace = await getWorkspaceDetails({ data: params.workspaceId });
     return { workspace };
   },
   component: WorkspacePage,

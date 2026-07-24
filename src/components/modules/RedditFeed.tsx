@@ -6,6 +6,7 @@ import {
   Delete02Icon,
 } from "hugeicons-react";
 import { Button } from "~/components/ui/button";
+import { EmptyState } from "~/components/ui/empty-state";
 import {
   Select,
   SelectTrigger,
@@ -289,27 +290,15 @@ export function RedditFeed({
 
       {/* Post list */}
       {displayed.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 text-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
-            {posts.length === 0 ? (
-              <BubbleChatIcon size={18} className="text-muted-foreground" />
-            ) : (
-              <FilterIcon size={18} className="text-muted-foreground" />
-            )}
-          </div>
-          <div className="flex flex-col gap-1">
-            <p className="text-[13px] font-semibold">
-              {posts.length === 0
-                ? "No posts yet"
-                : "Nothing matches this filter"}
-            </p>
-            <p className="text-[12px] text-muted-foreground max-w-xs">
-              {posts.length === 0
-                ? "Hit Refresh to pull in the latest posts from your subreddits."
-                : "Try a different intent type or sort order."}
-            </p>
-          </div>
-        </div>
+        <EmptyState
+          icon={posts.length === 0 ? <BubbleChatIcon /> : <FilterIcon />}
+          title={posts.length === 0 ? "No posts yet" : "Nothing matches this filter"}
+          description={
+            posts.length === 0
+              ? "Hit Refresh to pull in the latest posts from your subreddits."
+              : "Try a different intent type or sort order."
+          }
+        />
       ) : (
         <div className="flex flex-col gap-3">
           {displayed.map((post) => (

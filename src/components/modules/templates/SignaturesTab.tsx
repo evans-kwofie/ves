@@ -12,6 +12,7 @@ import {
   PopoverTrigger,
 } from "~/components/ui/popover";
 import { Button, buttonVariants } from "~/components/ui/button";
+import { EmptyState } from "~/components/ui/empty-state";
 import { Textarea } from "~/components/ui/textarea";
 import { authClient } from "~/lib/auth-client";
 import { toast } from "sonner";
@@ -148,15 +149,11 @@ export function SignaturesTab({
       </div>
 
       {signatures.length === 0 ? (
-        <div className="empty-state">
-          <div className="empty-state-icon">
-            <SignatureIcon size={28} />
-          </div>
-          <p>No signatures yet.</p>
-          <p className="text-[12px]">
-            Signatures are auto-appended to your outreach emails.
-          </p>
-        </div>
+        <EmptyState
+          icon={<SignatureIcon />}
+          title="No signatures yet"
+          description="Signatures are auto-appended to your outreach emails."
+        />
       ) : (
         <div className="flex flex-col gap-3">
           {signatures.map((sig) => (

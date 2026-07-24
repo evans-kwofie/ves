@@ -13,7 +13,7 @@ function DirectoriesPage() {
     <>
       <Header
         title="Directories"
-        subtitle="Find founders from Product Hunt, G2, Capterra, and more — then add them to your pipeline."
+        subtitle="Find founders from Product Hunt, G2, Capterra etc and add them to your pipeline."
       />
       <div className="page-content">
         <DirectorySearchPanel orgId={workspaceId} />

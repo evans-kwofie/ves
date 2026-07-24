@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { AddStepPopover } from "./molecules/AddStepPopover";
 import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
 import { Button } from "~/components/ui/button";
+import { EmptyState } from "~/components/ui/empty-state";
 import { ConfirmDialog } from "~/components/ui/confirm-dialog";
 import type { CampaignStep } from "~/db/queries/steps";
 import type { Template } from "~/db/queries/templates";
@@ -71,13 +72,11 @@ export function SequenceTab({
   return (
     <div className="flex flex-col max-w-xl">
       {steps.length === 0 && (
-        <div className="flex flex-col items-center gap-2 pt-9 pb-6 text-center">
-          <InformationCircleIcon size={26} className="text-muted-foreground opacity-35" />
-          <p className="text-[13px] font-semibold">No steps yet</p>
-          <p className="text-[12px] text-muted-foreground max-w-sm leading-relaxed mb-5">
-            A sequence controls when and how each outreach is sent. Start with an email on Day 0, then add follow-ups spaced a few days apart.
-          </p>
-        </div>
+        <EmptyState
+          icon={<InformationCircleIcon />}
+          title="No steps yet"
+          description="A sequence controls when and how each outreach is sent. Start with an email on Day 0, then add follow-ups spaced a few days apart."
+        />
       )}
 
       {steps.map((step, i) => {

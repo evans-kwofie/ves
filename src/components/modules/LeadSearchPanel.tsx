@@ -1,6 +1,7 @@
 import * as React from "react";
 import { Search01Icon, FlashIcon, ArrowDiagonalIcon, CheckmarkCircle01Icon } from "hugeicons-react";
 import { Button } from "~/components/ui/button";
+import { EmptyState } from "~/components/ui/empty-state";
 import { toast } from "sonner";
 import type { Keyword } from "~/types/keyword";
 
@@ -117,12 +118,11 @@ export function LeadSearchPanel({ orgId, keywords }: LeadSearchPanelProps) {
 
       {/* Empty state */}
       {!loading && results.length === 0 && (
-        <div className="flex flex-col items-center justify-center py-16 text-center gap-3">
-          <p className="text-[13px] font-semibold text-[var(--foreground)]">No results yet</p>
-          <p className="text-[12px] text-[var(--muted-foreground)] max-w-xs">
-            Pick a keyword and hit "Find leads" — Claude will search for real companies and founders to add to your pipeline.
-          </p>
-        </div>
+        <EmptyState
+          icon={<Search01Icon />}
+          title="No results yet"
+          description='Pick a keyword and hit "Find leads" to surface real companies and founders.'
+        />
       )}
 
       {/* Results */}

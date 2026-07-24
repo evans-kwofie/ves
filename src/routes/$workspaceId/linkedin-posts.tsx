@@ -2,30 +2,30 @@ import { createFileRoute } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import * as z from "zod";
 import { Header } from "~/components/templates/Header";
-import { LeadSearchPanel } from "~/components/modules/LeadSearchPanel";
+import { LinkedInPostGenerator } from "~/components/modules/LinkedInPostGenerator";
 import { listKeywords } from "~/db/queries/keywords";
 
 const getKeywords = createServerFn({ method: "GET" })
   .inputValidator(z.string())
   .handler(async ({ data: orgId }) => listKeywords(orgId));
 
-export const Route = createFileRoute("/$workspaceId/linkedin")({
+export const Route = createFileRoute("/$workspaceId/linkedin-posts")({
   loader: ({ params }) => getKeywords({ data: params.workspaceId }),
-  component: LinkedInPage,
+  component: LinkedInPostsPage,
 });
 
-function LinkedInPage() {
+function LinkedInPostsPage() {
   const keywords = Route.useLoaderData();
   const { workspaceId } = Route.useParams();
 
   return (
     <>
       <Header
-        title="LinkedIn"
-        subtitle="Find and add leads from LinkedIn to your pipeline."
+        title="Post Generator"
+        subtitle="Generate LinkedIn posts based on your keywords and topics."
       />
       <div className="page-content">
-        <LeadSearchPanel orgId={workspaceId} keywords={keywords} />
+        <LinkedInPostGenerator orgId={workspaceId} keywords={keywords} />
       </div>
     </>
   );

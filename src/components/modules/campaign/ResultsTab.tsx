@@ -1,3 +1,5 @@
+import { Mail01Icon } from "hugeicons-react";
+import { EmptyState } from "~/components/ui/empty-state";
 import type { CampaignDraft } from "~/db/queries/drafts";
 import type { CampaignStep } from "~/db/queries/steps";
 import type { Lead } from "~/types/lead";
@@ -24,9 +26,11 @@ export function ResultsTab({
 }) {
   if (sent.length === 0 && skipped.length === 0) {
     return (
-      <div className="empty-state">
-        No messages sent yet. Approve drafts in the Review Queue to start sending.
-      </div>
+      <EmptyState
+        icon={<Mail01Icon />}
+        title="No messages sent yet"
+        description="Approve drafts in the Review Queue to start sending."
+      />
     );
   }
 

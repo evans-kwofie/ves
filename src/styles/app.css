@@ -900,6 +900,98 @@ select.input {
   to { transform: rotate(360deg); }
 }
 
+/* ── Entrance animations ── */
+@keyframes cardEnter {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: none; }
+}
+
+@keyframes statusEnter {
+  from { opacity: 0; transform: scale(0.75); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: none; }
+}
+
+@keyframes fadeInOnly {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.card-enter {
+  animation-name: cardEnter;
+  animation-duration: 220ms;
+  animation-timing-function: cubic-bezier(0.23, 1, 0.32, 1);
+  animation-fill-mode: both;
+  animation-delay: calc(var(--card-i, 0) * 35ms);
+}
+
+.step-card-enter {
+  animation-name: cardEnter;
+  animation-duration: 250ms;
+  animation-timing-function: cubic-bezier(0.23, 1, 0.32, 1);
+  animation-fill-mode: both;
+  animation-delay: calc(100ms + var(--card-i, 0) * 40ms);
+}
+
+.content-reveal {
+  animation-name: fadeInUp;
+  animation-duration: 240ms;
+  animation-timing-function: cubic-bezier(0.23, 1, 0.32, 1);
+  animation-fill-mode: both;
+}
+
+.status-enter {
+  animation-name: statusEnter;
+  animation-duration: 160ms;
+  animation-timing-function: cubic-bezier(0.23, 1, 0.32, 1);
+  animation-fill-mode: both;
+}
+
+.tab-reveal {
+  animation-name: fadeInOnly;
+  animation-duration: 150ms;
+  animation-timing-function: cubic-bezier(0.23, 1, 0.32, 1);
+  animation-fill-mode: both;
+}
+
+.funnel-fill {
+  transition: width 500ms cubic-bezier(0.23, 1, 0.32, 1);
+  @starting-style {
+    width: 0% !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card-enter {
+    animation-name: fadeInOnly;
+    animation-duration: 150ms;
+    animation-delay: 0ms;
+  }
+  .step-card-enter {
+    animation-name: fadeInOnly;
+    animation-duration: 200ms;
+    animation-delay: 0ms;
+  }
+  .content-reveal {
+    animation-name: fadeInOnly;
+    animation-duration: 150ms;
+  }
+  .status-enter {
+    animation-name: fadeInOnly;
+    animation-duration: 100ms;
+  }
+  .tab-reveal {
+    animation-duration: 100ms;
+  }
+  .funnel-fill {
+    transition-duration: 0ms;
+  }
+}
+
 .spinner {
   width: 14px;
   height: 14px;

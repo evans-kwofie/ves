@@ -1,8 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
-import Anthropic from "@anthropic-ai/sdk";
+import { Mistral } from "@mistralai/mistralai";
 import { z } from "zod";
 
-export type DirectoryKey = "producthunt" | "g2" | "capterra" | "indiehackers" | "betalist" | "appsumo";
+export type DirectoryKey =
+  | "producthunt"
+  | "g2"
+  | "capterra"
+  | "indiehackers"
+  | "betalist"
+  | "appsumo";
 
 export interface DirectoryResult {
   company: string;
@@ -15,22 +21,29 @@ export interface DirectoryResult {
   launchedAt: string | null;
 }
 
-const DIRECTORIES: Record<DirectoryKey, { label: string; searchUrl: (q: string) => string }> = {
+const DIRECTORIES: Record<
+  DirectoryKey,
+  { label: string; searchUrl: (q: string) => string }
+> = {
   producthunt: {
     label: "Product Hunt",
-    searchUrl: (q) => `https://www.producthunt.com/search?q=${encodeURIComponent(q)}`,
+    searchUrl: (q) =>
+      `https://www.producthunt.com/search?q=${encodeURIComponent(q)}`,
   },
   g2: {
     label: "G2",
-    searchUrl: (q) => `https://www.g2.com/search#query=${encodeURIComponent(q)}`,
+    searchUrl: (q) =>
+      `https://www.g2.com/search#query=${encodeURIComponent(q)}`,
   },
   capterra: {
     label: "Capterra",
-    searchUrl: (q) => `https://www.capterra.com/search/?query=${encodeURIComponent(q)}`,
+    searchUrl: (q) =>
+      `https://www.capterra.com/search/?query=${encodeURIComponent(q)}`,
   },
   indiehackers: {
     label: "Indie Hackers",
-    searchUrl: (q) => `https://www.indiehackers.com/products?query=${encodeURIComponent(q)}`,
+    searchUrl: (q) =>
+      `https://www.indiehackers.com/products?query=${encodeURIComponent(q)}`,
   },
   betalist: {
     label: "BetaList",
@@ -38,7 +51,8 @@ const DIRECTORIES: Record<DirectoryKey, { label: string; searchUrl: (q: string) 
   },
   appsumo: {
     label: "AppSumo",
-    searchUrl: (q) => `https://appsumo.com/search/?query=${encodeURIComponent(q)}`,
+    searchUrl: (q) =>
+      `https://appsumo.com/search/?query=${encodeURIComponent(q)}`,
   },
 };
 
@@ -50,17 +64,171 @@ const RECENCY_CLAUSES: Record<string, string> = {
 
 const requestSchema = z.object({
   organizationId: z.string().min(1),
-  directory: z.enum(["producthunt", "g2", "capterra", "indiehackers", "betalist", "appsumo"]),
+  directory: z.enum([
+    "producthunt",
+    "g2",
+    "capterra",
+    "indiehackers",
+    "betalist",
+    "appsumo",
+  ]),
   query: z.string().min(1).max(200),
   recency: z.enum(["week", "month", "year"]).optional(),
 });
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, maxRetries: 2 });
+const PH_GRAPHQL = "https://api.producthunt.com/v2/api/graphql";
 
-async function searchDirectory(
+const RECENCY_CUTOFFS: Record<string, number> = {
+  week: 7,
+  month: 30,
+  year: 365,
+};
+
+interface PHPost {
+  id: string;
+  name: string;
+  tagline: string;
+  website: string | null;
+  url: string;
+  votesCount: number;
+  createdAt: string;
+  makers: Array<{ name: string; twitterUsername: string | null }>;
+}
+
+async function searchProductHunt(
+  query: string,
+  recency?: string,
+): Promise<DirectoryResult[]> {
+  const token = process.env.PRODUCT_HUNT_ACCESS_TOKEN;
+  if (!token) throw new Error("PRODUCT_HUNT_ACCESS_TOKEN not configured");
+
+  // PH GraphQL introspection — find what args posts accepts
+  const introspectGql = `
+    query {
+      __type(name: "PostsConnection") { name }
+      __schema {
+        queryType {
+          fields(includeDeprecated: true) {
+            name
+            args { name type { name kind ofType { name } } }
+          }
+        }
+      }
+    }
+  `;
+
+  const introspectRes = await fetch(PH_GRAPHQL, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ query: introspectGql }),
+  });
+  const introspectData = await introspectRes.json();
+  const postsField = (introspectData?.data?.__schema?.queryType?.fields ?? []).find(
+    (f: { name: string }) => f.name === "posts",
+  );
+  console.log("[PH] posts field args:", JSON.stringify(postsField?.args, null, 2));
+
+  const gql = `
+    query Search($first: Int!) {
+      posts(first: $first, order: VOTES) {
+        edges {
+          node {
+            id
+            name
+            tagline
+            website
+            url
+            votesCount
+            createdAt
+            makers {
+              name
+              twitterUsername
+            }
+          }
+        }
+      }
+    }
+  `;
+
+  const res = await fetch(PH_GRAPHQL, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ query: gql, variables: { first: 50 } }),
+  });
+
+  console.log("[PH] response status:", res.status);
+  if (!res.ok) {
+    const errText = await res.text();
+    console.error("[PH] API error body:", errText);
+    throw new Error(`Product Hunt API error: ${res.status}`);
+  }
+
+  const data = (await res.json()) as {
+    data?: { posts?: { edges?: Array<{ node: PHPost }> } };
+    errors?: unknown;
+  };
+
+  console.log("[PH] raw response:", JSON.stringify(data, null, 2));
+
+  let edges = data?.data?.posts?.edges ?? [];
+  console.log("[PH] edges before keyword filter:", edges.length);
+
+  // Keyword filter — match query terms against name + tagline
+  const terms = query.toLowerCase().split(/\s+/).filter(Boolean);
+  edges = edges.filter(({ node }) => {
+    const text = `${node.name} ${node.tagline}`.toLowerCase();
+    return terms.some((t) => text.includes(t));
+  });
+  console.log("[PH] edges after keyword filter:", edges.length);
+
+  // Client-side recency filter
+  if (recency && RECENCY_CUTOFFS[recency]) {
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - RECENCY_CUTOFFS[recency]);
+    edges = edges.filter(
+      ({ node }) => new Date(node.createdAt) >= cutoff,
+    );
+    console.log("[PH] edges after recency filter:", edges.length);
+  }
+
+  console.log("[PH] returning", Math.min(edges.length, 10), "results");
+  return edges.slice(0, 10).map(({ node }) => {
+    const maker = node.makers?.[0] ?? null;
+    const launchedAt = node.createdAt
+      ? new Date(node.createdAt).toLocaleDateString("en-US", {
+          month: "long",
+          year: "numeric",
+        })
+      : null;
+
+    return {
+      company: node.name,
+      founderName:
+        maker?.name && maker.name !== "[REDACTED]" ? maker.name : null,
+      whatTheyDo: node.tagline,
+      website: node.website ?? "",
+      email: null,
+      linkedinHint: maker?.twitterUsername
+        ? `https://twitter.com/${maker.twitterUsername}`
+        : null,
+      directoryUrl: node.url,
+      launchedAt,
+    };
+  });
+}
+
+const mistralClient = new Mistral({ apiKey: process.env.MISTRAL_API_KEY });
+
+async function searchWithAgent(
   directoryKey: DirectoryKey,
   query: string,
-  recency?: string
+  recency?: string,
 ): Promise<DirectoryResult[]> {
   const dir = DIRECTORIES[directoryKey];
   const searchUrl = dir.searchUrl(query);
@@ -69,34 +237,41 @@ async function searchDirectory(
   const prompt = `You are a B2B sales researcher. Search ${dir.label} for companies matching "${query}".
 ${recencyClause}
 
-Use web_search to browse ${searchUrl} and find 8 real product listings.
+Use web search to browse ${searchUrl} and find 8 real product listings.
 
 For each product return a JSON object with these fields:
 - company: company or product name
 - founderName: founder or CEO full name — null if not found
 - whatTheyDo: one sentence describing what it does and who it's for
 - website: the company's own domain (NOT the directory URL) — empty string if not found
-- email: founder or contact email ONLY if explicitly visible on their listing or website. Set to null if not found. NEVER guess, construct, or infer an email address.
-- linkedinHint: founder LinkedIn profile URL or slug ONLY if explicitly shown on their listing or profile. Set to null if not found. Never construct one.
+- email: null — never guess or construct
+- linkedinHint: null — never guess or construct
 - directoryUrl: the full URL of their listing on ${dir.label}
-- launchedAt: approximate launch date if shown on the listing (e.g. "March 2026"), or null
+- launchedAt: approximate launch date if shown (e.g. "March 2026"), or null
 
-Critical rules:
-- Only return information you can actually see on the page — never infer, guess, or construct emails or LinkedIn URLs
-- Only real verified products with real listings
-- No duplicates
-- Return a JSON array only, no markdown, no explanation outside the JSON`;
+Rules: only real listings visible on the page, no duplicates, return a JSON array only.`;
 
-  const response = await client.messages.create({
-    model: "claude-sonnet-4-6",
-    max_tokens: 2000,
-    tools: [{ type: "web_search_20260209" as const, name: "web_search" as const }],
+  const response = await mistralClient.agents.complete({
+    agentId: process.env.MISTRAL_AGENT_ID!,
     messages: [{ role: "user", content: prompt }],
-  } as unknown as Anthropic.MessageCreateParamsNonStreaming);
+  });
 
+  const messageContent = response.choices?.[0]?.message?.content;
   let rawText = "";
-  for (const block of response.content) {
-    if (block.type === "text") rawText += block.text;
+  if (typeof messageContent === "string") {
+    rawText = messageContent;
+  } else if (Array.isArray(messageContent)) {
+    for (const chunk of messageContent) {
+      if (
+        typeof chunk === "object" &&
+        chunk !== null &&
+        "type" in chunk &&
+        chunk.type === "text" &&
+        "text" in chunk
+      ) {
+        rawText += String(chunk.text);
+      }
+    }
   }
 
   try {
@@ -104,14 +279,17 @@ Critical rules:
     if (!match) return [];
     const parsed = JSON.parse(match[0]) as unknown[];
     return parsed
-      .filter((item): item is Record<string, unknown> => typeof item === "object" && item !== null && "company" in item)
+      .filter(
+        (item): item is Record<string, unknown> =>
+          typeof item === "object" && item !== null && "company" in item,
+      )
       .map((item) => ({
         company: String(item.company ?? ""),
         founderName: item.founderName ? String(item.founderName) : null,
         whatTheyDo: String(item.whatTheyDo ?? ""),
         website: String(item.website ?? ""),
-        email: item.email ? String(item.email) : null,
-        linkedinHint: item.linkedinHint ? String(item.linkedinHint) : null,
+        email: null,
+        linkedinHint: null,
         directoryUrl: String(item.directoryUrl ?? ""),
         launchedAt: item.launchedAt ? String(item.launchedAt) : null,
       }));
@@ -136,15 +314,26 @@ export const Route = createFileRoute("/api/directories/search")({
 
         const parsed = requestSchema.safeParse(body);
         if (!parsed.success) {
-          return new Response(JSON.stringify({ error: parsed.error.flatten() }), {
-            status: 422,
-            headers: { "Content-Type": "application/json" },
-          });
+          return new Response(
+            JSON.stringify({ error: parsed.error.flatten() }),
+            {
+              status: 422,
+              headers: { "Content-Type": "application/json" },
+            },
+          );
         }
 
         const { directory, query, recency } = parsed.data;
-        const results = await searchDirectory(directory, query, recency);
-        return Response.json({ results, directory, directoryLabel: DIRECTORIES[directory].label });
+
+        const results =
+          directory === "producthunt"
+            ? await searchProductHunt(query, recency)
+            : await searchWithAgent(directory, query, recency);
+        return Response.json({
+          results,
+          directory,
+          directoryLabel: DIRECTORIES[directory].label,
+        });
       },
     },
   },

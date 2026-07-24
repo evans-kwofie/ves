@@ -1,15 +1,15 @@
 import * as React from "react";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "~/components/ui/dialog";
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+  SheetBody,
+  SheetFooter,
+} from "~/components/ui/sheet";
 import { Button } from "~/components/ui/button";
-import { AiMagicIcon } from "hugeicons-react";
-import { AiBrain02Icon } from "hugeicons-react";
+import { FlashIcon, AiBrain02Icon, CheckmarkCircle01Icon } from "hugeicons-react";
 import { toast } from "sonner";
 import type { Keyword } from "~/types/keyword";
 
@@ -38,7 +38,6 @@ export function GenerateKeywordsDialog({
   const [suggestions, setSuggestions] = React.useState<Suggestion[]>([]);
   const [selected, setSelected] = React.useState<Set<number>>(new Set());
 
-  // Generate on open
   React.useEffect(() => {
     if (!open) return;
     setSuggestions([]);
@@ -116,160 +115,107 @@ export function GenerateKeywordsDialog({
   const selectedCount = selected.size;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent style={{ maxWidth: 560 }}>
-        <DialogHeader>
-          <DialogTitle style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <AiMagicIcon size={15} style={{ color: "var(--accent)" }} />
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent className="sm:min-w-xl">
+        <SheetHeader>
+          <SheetTitle className="flex items-center gap-2">
+            <FlashIcon size={15} style={{ color: "var(--accent)" }} />
             Generate keywords
-          </DialogTitle>
-          <DialogDescription>
+          </SheetTitle>
+          <SheetDescription>
             AI-suggested keywords based on your workspace context. Select the ones you want to add.
-          </DialogDescription>
-        </DialogHeader>
+          </SheetDescription>
+        </SheetHeader>
 
-        <div style={{ minHeight: 120 }}>
+        <SheetBody>
           {loading ? (
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 10,
-                padding: "32px 0",
-                color: "var(--muted-foreground)",
-                fontSize: 13,
-              }}
-            >
+            <div className="flex flex-col items-center justify-center gap-3 py-16 text-muted-foreground">
               <span className="spinner" style={{ width: 18, height: 18 }} />
-              Analysing your workspace and generating suggestions…
+              <p className="text-[13px]">Analysing your workspace and generating suggestions…</p>
             </div>
           ) : failed ? (
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 12,
-                padding: "36px 0",
-                textAlign: "center",
-              }}
-            >
+            <div className="flex flex-col items-center justify-center gap-4 py-16 text-center">
               <AiBrain02Icon
                 size={44}
                 primaryColor="var(--muted-foreground)"
                 secondaryColor="var(--accent)"
               />
-              <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                <p style={{ fontSize: 13, fontWeight: 600, color: "var(--foreground)" }}>
-                  Couldn't generate suggestions
-                </p>
-                <p style={{ fontSize: 12, color: "var(--muted-foreground)", maxWidth: 300 }}>
+              <div className="flex flex-col gap-1.5">
+                <p className="text-[13px] font-semibold">Couldn't generate suggestions</p>
+                <p className="text-[12px] text-muted-foreground max-w-65">
                   This usually means your workspace description is empty. Add some context in{" "}
-                  <a
-                    href="settings/workspace"
-                    style={{ color: "var(--accent)", textDecoration: "none" }}
-                  >
+                  <a href="settings/workspace" className="text-accent no-underline">
                     Settings → Workspace
                   </a>{" "}
                   and try again.
                 </p>
               </div>
             </div>
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 4 }}>
-              {suggestions.map((s, i) => {
-                const isSelected = selected.has(i);
-                return (
-                  <button
-                    key={i}
-                    type="button"
-                    onClick={() => toggleSelect(i)}
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: 4,
-                      padding: "10px 12px",
-                      borderRadius: "var(--radius)",
-                      border: `1px solid ${isSelected ? "var(--accent)" : "var(--border)"}`,
-                      background: isSelected ? "var(--accent-subtle)" : "var(--card)",
-                      cursor: "pointer",
-                      textAlign: "left",
-                      transition: "border-color 0.15s, background 0.15s",
-                    }}
-                  >
-                    <div
+          ) : suggestions.length > 0 ? (
+            <div className="flex flex-col gap-3">
+              {/* Select-all bar */}
+              <div className="flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setSelected(
+                      selectedCount === suggestions.length
+                        ? new Set()
+                        : new Set(suggestions.map((_, i) => i)),
+                    )
+                  }
+                  className="text-[12px] text-muted-foreground hover:text-foreground transition-colors bg-transparent border-none cursor-pointer p-0"
+                >
+                  {selectedCount === suggestions.length ? "Deselect all" : "Select all"}
+                </button>
+                <span className="text-[12px] text-muted-foreground">
+                  {selectedCount} of {suggestions.length} selected
+                </span>
+              </div>
+
+              {/* Suggestion list */}
+              <div className="flex flex-col gap-2">
+                {suggestions.map((s, i) => {
+                  const isSelected = selected.has(i);
+                  return (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => toggleSelect(i)}
+                      className="flex flex-col gap-1.5 p-3 rounded-(--radius) text-left transition-colors cursor-pointer border border-border card-enter"
                       style={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        gap: 8,
-                      }}
+                        "--card-i": i,
+                        background: isSelected ? "var(--muted)" : "var(--card)",
+                        opacity: isSelected ? 1 : 0.75,
+                      } as React.CSSProperties}
                     >
-                      <span
-                        style={{
-                          fontSize: 13,
-                          fontWeight: 600,
-                          color: isSelected ? "var(--accent)" : "var(--foreground)",
-                          fontFamily: "var(--font-mono, monospace)",
-                        }}
-                      >
-                        {s.keyword}
-                      </span>
-                      {s.subreddits.length > 0 && (
-                        <span style={{ fontSize: 11, color: "var(--muted-foreground)" }}>
-                          r/{s.subreddits.join(", r/")}
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-[13px] font-semibold font-mono text-foreground">
+                          {s.keyword}
                         </span>
-                      )}
-                    </div>
-                    <span style={{ fontSize: 11, color: "var(--muted-foreground)", lineHeight: 1.5 }}>
-                      {s.reason}
-                    </span>
-                  </button>
-                );
-              })}
+                        <div className="flex items-center gap-2 shrink-0">
+                          {s.subreddits.length > 0 && (
+                            <span className="text-[11px] text-muted-foreground">
+                              r/{s.subreddits.join(", r/")}
+                            </span>
+                          )}
+                          {isSelected && (
+                            <CheckmarkCircle01Icon size={14} className="text-accent shrink-0" />
+                          )}
+                        </div>
+                      </div>
+                      <span className="text-[11px] text-muted-foreground leading-relaxed">
+                        {s.reason}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-          )}
-        </div>
+          ) : null}
+        </SheetBody>
 
-        {!loading && suggestions.length > 0 && (
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              paddingTop: 4,
-            }}
-          >
-            <button
-              type="button"
-              onClick={() =>
-                setSelected(
-                  selectedCount === suggestions.length
-                    ? new Set()
-                    : new Set(suggestions.map((_, i) => i)),
-                )
-              }
-              style={{
-                fontSize: 12,
-                color: "var(--muted-foreground)",
-                background: "none",
-                border: "none",
-                cursor: "pointer",
-                padding: 0,
-              }}
-            >
-              {selectedCount === suggestions.length ? "Deselect all" : "Select all"}
-            </button>
-            <span style={{ fontSize: 12, color: "var(--muted-foreground)" }}>
-              {selectedCount} of {suggestions.length} selected
-            </span>
-          </div>
-        )}
-
-        <DialogFooter>
+        <SheetFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={adding}>
             Cancel
           </Button>
@@ -280,11 +226,13 @@ export function GenerateKeywordsDialog({
           )}
           {!failed && (
             <Button onClick={handleAdd} disabled={adding || selectedCount === 0 || loading}>
-              {adding ? "Adding…" : `Add ${selectedCount > 0 ? selectedCount : ""} keyword${selectedCount !== 1 ? "s" : ""}`}
+              {adding
+                ? "Adding…"
+                : `Add ${selectedCount > 0 ? selectedCount : ""} keyword${selectedCount !== 1 ? "s" : ""}`}
             </Button>
           )}
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </SheetFooter>
+      </SheetContent>
+    </Sheet>
   );
 }

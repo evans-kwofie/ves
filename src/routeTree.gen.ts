@@ -19,6 +19,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as WorkspaceIdIndexRouteImport } from './routes/$workspaceId/index'
 import { Route as WorkspaceIdRedditRouteImport } from './routes/$workspaceId/reddit'
 import { Route as WorkspaceIdPipelineRouteImport } from './routes/$workspaceId/pipeline'
+import { Route as WorkspaceIdLinkedinPostsRouteImport } from './routes/$workspaceId/linkedin-posts'
 import { Route as WorkspaceIdLinkedinRouteImport } from './routes/$workspaceId/linkedin'
 import { Route as WorkspaceIdKeywordsRouteImport } from './routes/$workspaceId/keywords'
 import { Route as WorkspaceIdDirectoriesRouteImport } from './routes/$workspaceId/directories'
@@ -54,6 +55,7 @@ import { Route as ApiKeywordsIdRouteImport } from './routes/api/keywords/$id'
 import { Route as ApiEmailTestSmtpRouteImport } from './routes/api/email/test-smtp'
 import { Route as ApiEmailSendRouteImport } from './routes/api/email/send'
 import { Route as ApiDirectoriesSearchRouteImport } from './routes/api/directories/search'
+import { Route as ApiDirectoriesEnrichRouteImport } from './routes/api/directories/enrich'
 import { Route as ApiDirectoriesAddRouteImport } from './routes/api/directories/add'
 import { Route as ApiDashboardStatsRouteImport } from './routes/api/dashboard/stats'
 import { Route as ApiCampaignsSchedulerRouteImport } from './routes/api/campaigns/scheduler'
@@ -134,6 +136,12 @@ const WorkspaceIdPipelineRoute = WorkspaceIdPipelineRouteImport.update({
   path: '/pipeline',
   getParentRoute: () => WorkspaceIdRouteRoute,
 } as any)
+const WorkspaceIdLinkedinPostsRoute =
+  WorkspaceIdLinkedinPostsRouteImport.update({
+    id: '/linkedin-posts',
+    path: '/linkedin-posts',
+    getParentRoute: () => WorkspaceIdRouteRoute,
+  } as any)
 const WorkspaceIdLinkedinRoute = WorkspaceIdLinkedinRouteImport.update({
   id: '/linkedin',
   path: '/linkedin',
@@ -314,6 +322,11 @@ const ApiDirectoriesSearchRoute = ApiDirectoriesSearchRouteImport.update({
   path: '/api/directories/search',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiDirectoriesEnrichRoute = ApiDirectoriesEnrichRouteImport.update({
+  id: '/api/directories/enrich',
+  path: '/api/directories/enrich',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiDirectoriesAddRoute = ApiDirectoriesAddRouteImport.update({
   id: '/api/directories/add',
   path: '/api/directories/add',
@@ -488,6 +501,7 @@ export interface FileRoutesByFullPath {
   '/$workspaceId/directories': typeof WorkspaceIdDirectoriesRoute
   '/$workspaceId/keywords': typeof WorkspaceIdKeywordsRoute
   '/$workspaceId/linkedin': typeof WorkspaceIdLinkedinRoute
+  '/$workspaceId/linkedin-posts': typeof WorkspaceIdLinkedinPostsRoute
   '/$workspaceId/pipeline': typeof WorkspaceIdPipelineRoute
   '/$workspaceId/reddit': typeof WorkspaceIdRedditRoute
   '/$workspaceId/': typeof WorkspaceIdIndexRoute
@@ -510,6 +524,7 @@ export interface FileRoutesByFullPath {
   '/api/campaigns/scheduler': typeof ApiCampaignsSchedulerRoute
   '/api/dashboard/stats': typeof ApiDashboardStatsRoute
   '/api/directories/add': typeof ApiDirectoriesAddRoute
+  '/api/directories/enrich': typeof ApiDirectoriesEnrichRoute
   '/api/directories/search': typeof ApiDirectoriesSearchRoute
   '/api/email/send': typeof ApiEmailSendRoute
   '/api/email/test-smtp': typeof ApiEmailTestSmtpRoute
@@ -562,6 +577,7 @@ export interface FileRoutesByTo {
   '/$workspaceId/directories': typeof WorkspaceIdDirectoriesRoute
   '/$workspaceId/keywords': typeof WorkspaceIdKeywordsRoute
   '/$workspaceId/linkedin': typeof WorkspaceIdLinkedinRoute
+  '/$workspaceId/linkedin-posts': typeof WorkspaceIdLinkedinPostsRoute
   '/$workspaceId/pipeline': typeof WorkspaceIdPipelineRoute
   '/$workspaceId/reddit': typeof WorkspaceIdRedditRoute
   '/$workspaceId': typeof WorkspaceIdIndexRoute
@@ -584,6 +600,7 @@ export interface FileRoutesByTo {
   '/api/campaigns/scheduler': typeof ApiCampaignsSchedulerRoute
   '/api/dashboard/stats': typeof ApiDashboardStatsRoute
   '/api/directories/add': typeof ApiDirectoriesAddRoute
+  '/api/directories/enrich': typeof ApiDirectoriesEnrichRoute
   '/api/directories/search': typeof ApiDirectoriesSearchRoute
   '/api/email/send': typeof ApiEmailSendRoute
   '/api/email/test-smtp': typeof ApiEmailTestSmtpRoute
@@ -639,6 +656,7 @@ export interface FileRoutesById {
   '/$workspaceId/directories': typeof WorkspaceIdDirectoriesRoute
   '/$workspaceId/keywords': typeof WorkspaceIdKeywordsRoute
   '/$workspaceId/linkedin': typeof WorkspaceIdLinkedinRoute
+  '/$workspaceId/linkedin-posts': typeof WorkspaceIdLinkedinPostsRoute
   '/$workspaceId/pipeline': typeof WorkspaceIdPipelineRoute
   '/$workspaceId/reddit': typeof WorkspaceIdRedditRoute
   '/$workspaceId/': typeof WorkspaceIdIndexRoute
@@ -661,6 +679,7 @@ export interface FileRoutesById {
   '/api/campaigns/scheduler': typeof ApiCampaignsSchedulerRoute
   '/api/dashboard/stats': typeof ApiDashboardStatsRoute
   '/api/directories/add': typeof ApiDirectoriesAddRoute
+  '/api/directories/enrich': typeof ApiDirectoriesEnrichRoute
   '/api/directories/search': typeof ApiDirectoriesSearchRoute
   '/api/email/send': typeof ApiEmailSendRoute
   '/api/email/test-smtp': typeof ApiEmailTestSmtpRoute
@@ -717,6 +736,7 @@ export interface FileRouteTypes {
     | '/$workspaceId/directories'
     | '/$workspaceId/keywords'
     | '/$workspaceId/linkedin'
+    | '/$workspaceId/linkedin-posts'
     | '/$workspaceId/pipeline'
     | '/$workspaceId/reddit'
     | '/$workspaceId/'
@@ -739,6 +759,7 @@ export interface FileRouteTypes {
     | '/api/campaigns/scheduler'
     | '/api/dashboard/stats'
     | '/api/directories/add'
+    | '/api/directories/enrich'
     | '/api/directories/search'
     | '/api/email/send'
     | '/api/email/test-smtp'
@@ -791,6 +812,7 @@ export interface FileRouteTypes {
     | '/$workspaceId/directories'
     | '/$workspaceId/keywords'
     | '/$workspaceId/linkedin'
+    | '/$workspaceId/linkedin-posts'
     | '/$workspaceId/pipeline'
     | '/$workspaceId/reddit'
     | '/$workspaceId'
@@ -813,6 +835,7 @@ export interface FileRouteTypes {
     | '/api/campaigns/scheduler'
     | '/api/dashboard/stats'
     | '/api/directories/add'
+    | '/api/directories/enrich'
     | '/api/directories/search'
     | '/api/email/send'
     | '/api/email/test-smtp'
@@ -867,6 +890,7 @@ export interface FileRouteTypes {
     | '/$workspaceId/directories'
     | '/$workspaceId/keywords'
     | '/$workspaceId/linkedin'
+    | '/$workspaceId/linkedin-posts'
     | '/$workspaceId/pipeline'
     | '/$workspaceId/reddit'
     | '/$workspaceId/'
@@ -889,6 +913,7 @@ export interface FileRouteTypes {
     | '/api/campaigns/scheduler'
     | '/api/dashboard/stats'
     | '/api/directories/add'
+    | '/api/directories/enrich'
     | '/api/directories/search'
     | '/api/email/send'
     | '/api/email/test-smtp'
@@ -946,6 +971,7 @@ export interface RootRouteChildren {
   ApiCampaignsSchedulerRoute: typeof ApiCampaignsSchedulerRoute
   ApiDashboardStatsRoute: typeof ApiDashboardStatsRoute
   ApiDirectoriesAddRoute: typeof ApiDirectoriesAddRoute
+  ApiDirectoriesEnrichRoute: typeof ApiDirectoriesEnrichRoute
   ApiDirectoriesSearchRoute: typeof ApiDirectoriesSearchRoute
   ApiEmailSendRoute: typeof ApiEmailSendRoute
   ApiEmailTestSmtpRoute: typeof ApiEmailTestSmtpRoute
@@ -1043,6 +1069,13 @@ declare module '@tanstack/react-router' {
       path: '/pipeline'
       fullPath: '/$workspaceId/pipeline'
       preLoaderRoute: typeof WorkspaceIdPipelineRouteImport
+      parentRoute: typeof WorkspaceIdRouteRoute
+    }
+    '/$workspaceId/linkedin-posts': {
+      id: '/$workspaceId/linkedin-posts'
+      path: '/linkedin-posts'
+      fullPath: '/$workspaceId/linkedin-posts'
+      preLoaderRoute: typeof WorkspaceIdLinkedinPostsRouteImport
       parentRoute: typeof WorkspaceIdRouteRoute
     }
     '/$workspaceId/linkedin': {
@@ -1290,6 +1323,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiDirectoriesSearchRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/directories/enrich': {
+      id: '/api/directories/enrich'
+      path: '/api/directories/enrich'
+      fullPath: '/api/directories/enrich'
+      preLoaderRoute: typeof ApiDirectoriesEnrichRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/directories/add': {
       id: '/api/directories/add'
       path: '/api/directories/add'
@@ -1532,6 +1572,7 @@ interface WorkspaceIdRouteRouteChildren {
   WorkspaceIdDirectoriesRoute: typeof WorkspaceIdDirectoriesRoute
   WorkspaceIdKeywordsRoute: typeof WorkspaceIdKeywordsRoute
   WorkspaceIdLinkedinRoute: typeof WorkspaceIdLinkedinRoute
+  WorkspaceIdLinkedinPostsRoute: typeof WorkspaceIdLinkedinPostsRoute
   WorkspaceIdPipelineRoute: typeof WorkspaceIdPipelineRoute
   WorkspaceIdRedditRoute: typeof WorkspaceIdRedditRoute
   WorkspaceIdIndexRoute: typeof WorkspaceIdIndexRoute
@@ -1551,6 +1592,7 @@ const WorkspaceIdRouteRouteChildren: WorkspaceIdRouteRouteChildren = {
   WorkspaceIdDirectoriesRoute: WorkspaceIdDirectoriesRoute,
   WorkspaceIdKeywordsRoute: WorkspaceIdKeywordsRoute,
   WorkspaceIdLinkedinRoute: WorkspaceIdLinkedinRoute,
+  WorkspaceIdLinkedinPostsRoute: WorkspaceIdLinkedinPostsRoute,
   WorkspaceIdPipelineRoute: WorkspaceIdPipelineRoute,
   WorkspaceIdRedditRoute: WorkspaceIdRedditRoute,
   WorkspaceIdIndexRoute: WorkspaceIdIndexRoute,
@@ -1647,6 +1689,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiCampaignsSchedulerRoute: ApiCampaignsSchedulerRoute,
   ApiDashboardStatsRoute: ApiDashboardStatsRoute,
   ApiDirectoriesAddRoute: ApiDirectoriesAddRoute,
+  ApiDirectoriesEnrichRoute: ApiDirectoriesEnrichRoute,
   ApiDirectoriesSearchRoute: ApiDirectoriesSearchRoute,
   ApiEmailSendRoute: ApiEmailSendRoute,
   ApiEmailTestSmtpRoute: ApiEmailTestSmtpRoute,

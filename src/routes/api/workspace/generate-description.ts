@@ -30,7 +30,7 @@ export const Route = createFileRoute("/api/workspace/generate-description")({
         const { organizationId, website, name, industry } = parsed.data;
 
         const orgs = await auth.api.listOrganizations({ headers: request.headers });
-        const org = orgs?.find((o: { id: string }) => o.id === organizationId) ?? orgs?.[0];
+        const org = orgs?.find((o: { id: string }) => o.id === organizationId);
         if (!org) {
           return new Response(JSON.stringify({ error: "Organization not found" }), {
             status: 404,
@@ -51,19 +51,19 @@ export const Route = createFileRoute("/api/workspace/generate-description")({
           .filter(Boolean)
           .join("\n");
 
-        const prompt = `You are helping a B2B company write a concise business description for their sales tool profile.
+        const companyName = name || org.name;
+        const prompt = `Write a 2-3 sentence business description for the company called "${companyName}".
 
-Context:
 ${context}
 
-Write a 2-3 sentence business description that covers:
-1. What the company does (product/service)
-2. Who their ideal customer is
-3. The core problem they solve or value they deliver
+The description must be about ${companyName} itself — what they do, who their customers are, and the core value they deliver. Do not describe any outreach tool, sales platform, or software they might use.
 
-Be specific and direct. No fluff, no buzzwords. Write in third person. Keep it under 80 words.
+Guidelines:
+- Third person ("${companyName} helps…" or "${companyName} is…")
+- Specific and direct — no buzzwords or filler
+- Under 80 words
 
-Return only the description text, no quotes, no labels.`;
+Return only the description text. No quotes, no labels.`;
 
         try {
           const description = await mistralComplete(prompt, {

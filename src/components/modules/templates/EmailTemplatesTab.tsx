@@ -13,6 +13,7 @@ import {
 import { useNavigate, useParams } from "@tanstack/react-router";
 import { Button } from "~/components/ui/button";
 import { ConfirmDialog } from "~/components/ui/confirm-dialog";
+import { EmptyState } from "~/components/ui/empty-state";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -79,11 +80,11 @@ export function EmailTemplatesTab({ initialTemplates }: EmailTemplatesTabProps) 
       </div>
 
       {templates.length === 0 ? (
-        <div className="empty-state">
-          <div className="empty-state-icon"><FileEditIcon size={28} /></div>
-          <p>No templates yet.</p>
-          <p className="text-[12px]">Create reusable message structures for cold intros, follow-ups, and more.</p>
-        </div>
+        <EmptyState
+          icon={<FileEditIcon />}
+          title="No templates yet"
+          description="Create reusable message structures for cold intros, follow-ups, and more."
+        />
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {templates.map((t) => (

@@ -4,7 +4,8 @@ import { createServerFn } from "@tanstack/react-start";
 import * as z from "zod";
 import { Header } from "~/components/templates/Header";
 import { Button } from "~/components/ui/button";
-import { ArrowLeft01Icon, CheckmarkCircle01Icon, Mail01Icon, Linkedin01Icon, GlobalIcon } from "hugeicons-react";
+import { ArrowLeft01Icon, CheckmarkCircle01Icon, Mail01Icon, Linkedin01Icon, GlobalIcon, UserGroupIcon, FilterIcon } from "hugeicons-react";
+import { EmptyState } from "~/components/ui/empty-state";
 import { listLeads } from "~/db/queries/leads";
 import { toast } from "sonner";
 import type { Lead } from "~/types/lead";
@@ -251,9 +252,11 @@ function NewCampaignPage() {
 
             <div style={{ maxHeight: 360, overflowY: "auto", display: "flex", flexDirection: "column", gap: 1 }}>
               {filteredLeads.length === 0 && (
-                <div className="empty-state" style={{ padding: "24px 16px" }}>
-                  {search ? "No leads match your search." : "No leads in pipeline yet."}
-                </div>
+                <EmptyState
+                  icon={search ? <FilterIcon /> : <UserGroupIcon />}
+                  title={search ? "No leads match your search" : "No leads in pipeline yet"}
+                  size="sm"
+                />
               )}
               {filteredLeads.map((lead) => {
                 const checked = selectedLeads.has(lead.id);

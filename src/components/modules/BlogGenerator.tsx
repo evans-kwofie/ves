@@ -1,5 +1,5 @@
 import * as React from "react";
-import { AiMagicIcon } from "hugeicons-react";
+import { FlashIcon } from "hugeicons-react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetBody, SheetFooter } from "~/components/ui/sheet";
@@ -140,7 +140,7 @@ export function BlogGenerator({ open, onOpenChange, orgId, keywords, onGenerated
             {generating ? (
               <><span className="spinner" />Generating...</>
             ) : (
-              <><AiMagicIcon size={13} />Generate & Save</>
+              <><FlashIcon size={13} />Generate & Save</>
             )}
           </Button>
         </SheetFooter>

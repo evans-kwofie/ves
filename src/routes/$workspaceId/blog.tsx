@@ -7,7 +7,8 @@ import { BlogGenerator } from "~/components/modules/BlogGenerator";
 import { BlogList } from "~/components/modules/BlogList";
 import { BlogViewer } from "~/components/modules/BlogViewer";
 import { Button } from "~/components/ui/button";
-import { AiMagicIcon } from "hugeicons-react";
+import { EmptyState } from "~/components/ui/empty-state";
+import { FlashIcon, File01Icon } from "hugeicons-react";
 import { listBlogPosts } from "~/db/queries/blog";
 import { listKeywords } from "~/db/queries/keywords";
 import type { BlogPost } from "~/types/blog";
@@ -53,7 +54,7 @@ function BlogPage() {
         subtitle="AI-written posts based on your keywords and ICP."
         actions={
           <Button onClick={() => setDrawerOpen(true)}>
-            <AiMagicIcon size={14} />
+            <FlashIcon size={14} />
             Generate Post
           </Button>
         }
@@ -61,13 +62,17 @@ function BlogPage() {
 
       <div className="page-content">
         {posts.length === 0 ? (
-          <div className="empty-state">
-            <div style={{ marginBottom: 16 }}>No posts yet — generate your first one.</div>
-            <button className="btn btn-primary btn-sm" onClick={() => setDrawerOpen(true)}>
-              <AiMagicIcon size={13} />
-              Generate Post
-            </button>
-          </div>
+          <EmptyState
+            icon={<File01Icon />}
+            title="No posts yet"
+            description="Generate your first post using your keywords and business context."
+            action={
+              <button className="btn btn-primary btn-sm" onClick={() => setDrawerOpen(true)}>
+                <FlashIcon size={13} />
+                Generate Post
+              </button>
+            }
+          />
         ) : (
           <div className="grid gap-5 min-h-[400px]" style={{ gridTemplateColumns: "220px 1fr" }}>
             {/* Post list */}
@@ -88,7 +93,7 @@ function BlogPage() {
               {selectedPost ? (
                 <BlogViewer post={selectedPost} />
               ) : (
-                <div className="empty-state">Select a post to read it.</div>
+                <EmptyState title="Select a post" description="Choose a post from the list to read it." size="sm" />
               )}
             </div>
           </div>

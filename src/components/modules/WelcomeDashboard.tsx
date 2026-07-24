@@ -205,18 +205,19 @@ export function WelcomeDashboard({
 
       {/* Step cards */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12 }}>
-        {steps.map((step) => (
+        {steps.map((step, i) => (
           <div
             key={step.number}
-            className="card"
+            className={`card${!step.done ? " step-card-enter" : ""}`}
             style={{
+              "--card-i": i,
               display: "flex",
               flexDirection: "column",
               gap: 16,
               opacity: step.done ? 0.5 : 1,
               position: "relative",
               overflow: "hidden",
-            }}
+            } as React.CSSProperties}
           >
             {/* Done tick */}
             {step.done && (

@@ -27,6 +27,7 @@ import {
   ArrowUpRight01Icon,
 } from "hugeicons-react";
 import { InsightsDrawer } from "~/components/modules/analytics/InsightsDrawer";
+import { EmptyState } from "~/components/ui/empty-state";
 
 // ─── Server fn ────────────────────────────────────────────────────────────────
 
@@ -156,7 +157,7 @@ function FunnelBar({ label, value, total, color = "var(--accent)" }: { label: st
       </div>
       <div className="h-2 bg-muted rounded-full overflow-hidden">
         <div
-          className="h-full rounded-full transition-all duration-500"
+          className="h-full rounded-full funnel-fill"
           style={{ width: `${Math.max(pct, value > 0 ? 2 : 0)}%`, background: color }}
         />
       </div>
@@ -173,7 +174,7 @@ function AnalyticsPage() {
   if (!data) {
     return (
       <div className="page-content">
-        <div className="empty-state">Failed to load analytics data.</div>
+        <EmptyState title="Failed to load analytics data" />
       </div>
     );
   }
@@ -219,12 +220,14 @@ function AnalyticsPage() {
       {/* ── Hero metric strip ─────────────────────────────────────────── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <MetricCard
+          index={0}
           label="Emails Sent"
           value={fmt(stats.emailSent)}
           sub={totalSent > stats.emailSent ? `+${fmt(stats.linkedinSent + stats.instagramSent)} social` : "across all campaigns"}
           icon={<Mail01Icon size={13} className="text-accent" />}
         />
         <MetricCard
+          index={1}
           label="Delivery Rate"
           value={stats.emailSent > 0 ? pctStr(stats.deliveryRate) : "—"}
           sub={stats.emailSent > 0 ? `${fmt(stats.emailDelivered)} delivered` : "no emails sent yet"}
@@ -232,6 +235,7 @@ function AnalyticsPage() {
           benchmark="98%+ target"
         />
         <MetricCard
+          index={2}
           label="Open Rate"
           value={pctStr(stats.openRate)}
           sub={stats.emailOpened > 0 ? `${fmt(stats.emailOpened)} emails opened` : "no data yet"}
@@ -239,6 +243,7 @@ function AnalyticsPage() {
           benchmark="20% avg"
         />
         <MetricCard
+          index={3}
           label="Click Rate"
           value={pctStr(stats.clickRate)}
           sub={stats.emailClicked > 0 ? `${fmt(stats.emailClicked)} clicks` : "no data yet"}
@@ -246,6 +251,7 @@ function AnalyticsPage() {
           benchmark="3% avg"
         />
         <MetricCard
+          index={4}
           label="Reply Rate"
           value={pctStr(stats.replyRate)}
           sub={`${fmt(stats.totalReplied)} of ${fmt(stats.totalContacted)} replied`}
@@ -253,6 +259,7 @@ function AnalyticsPage() {
           benchmark="2% avg"
         />
         <MetricCard
+          index={5}
           label="Conversion %"
           value={stats.totalContacted > 0 ? pctStr(stats.conversionRate) : "—"}
           sub={`${fmt(stats.convertedLeads)} leads converted`}
@@ -260,6 +267,7 @@ function AnalyticsPage() {
           icon={<Target01Icon size={13} className="text-accent" />}
         />
         <MetricCard
+          index={6}
           label="Bounce Rate"
           value={stats.emailBounced > 0 ? pctStr(stats.bounceRate) : "—"}
           sub={stats.emailBounced > 0 ? `${fmt(stats.emailBounced)} bounced` : "tracking via webhook"}
@@ -267,6 +275,7 @@ function AnalyticsPage() {
           benchmark="< 2% target"
         />
         <MetricCard
+          index={7}
           label="LinkedIn Sent"
           value={fmt(stats.linkedinSent)}
           sub={stats.instagramSent > 0 ? `+${fmt(stats.instagramSent)} Instagram` : "manual queue"}
@@ -357,7 +366,7 @@ function AnalyticsPage() {
         </div>
 
         {campaigns.length === 0 ? (
-          <div className="empty-state text-[12px]">No campaigns yet.</div>
+          <EmptyState title="No campaigns yet" size="sm" />
         ) : (
           <table className="w-full border-collapse">
             <thead>
@@ -472,7 +481,7 @@ function AnalyticsPage() {
           <p className="text-[13px] font-semibold mb-0.5">Top Subject Lines</p>
           <p className="text-[11px] text-muted-foreground mb-4">Ranked by open rate — email campaigns only</p>
           {topSubjects.length === 0 ? (
-            <div className="empty-state text-[12px]">No email subject data yet.</div>
+            <EmptyState title="No email subject data yet" size="sm" />
           ) : (
             <div className="flex flex-col divide-y divide-border">
               {topSubjects.map((s, i) => (
@@ -490,7 +499,7 @@ function AnalyticsPage() {
                   </div>
                   <div className="h-1 bg-muted rounded-full overflow-hidden">
                     <div
-                      className="h-full rounded-full"
+                      className="h-full rounded-full funnel-fill"
                       style={{ width: `${Math.max(s.openRate, s.openRate > 0 ? 2 : 0)}%`, background: "var(--accent)", opacity: 0.8 }}
                     />
                   </div>
@@ -505,7 +514,7 @@ function AnalyticsPage() {
           <p className="text-[13px] font-semibold mb-0.5">Lead Source Performance</p>
           <p className="text-[11px] text-muted-foreground mb-4">Reply rate by where leads came from</p>
           {sourcePerformance.length === 0 ? (
-            <div className="empty-state text-[12px]">No lead source data yet.</div>
+            <EmptyState title="No lead source data yet" size="sm" />
           ) : (
             <div className="flex flex-col divide-y divide-border">
               {sourcePerformance.map((s, i) => (
@@ -523,7 +532,7 @@ function AnalyticsPage() {
                   </div>
                   <div className="h-1 bg-muted rounded-full overflow-hidden">
                     <div
-                      className="h-full rounded-full"
+                      className="h-full rounded-full funnel-fill"
                       style={{ width: `${Math.max(s.replyRate, s.replyRate > 0 ? 2 : 0)}%`, background: "var(--accent)", opacity: 0.8 }}
                     />
                   </div>
@@ -541,7 +550,7 @@ function AnalyticsPage() {
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
 function MetricCard({
-  label, value, sub, icon, valueClass, benchmark,
+  label, value, sub, icon, valueClass, benchmark, index,
 }: {
   label: string;
   value: string;
@@ -549,9 +558,10 @@ function MetricCard({
   icon?: React.ReactNode;
   valueClass?: string;
   benchmark?: string;
+  index?: number;
 }) {
   return (
-    <div className="card p-4 flex flex-col gap-2">
+    <div className="card p-4 flex flex-col gap-2 card-enter" style={{ "--card-i": index } as React.CSSProperties}>
       <div className="flex items-center justify-between">
         <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{label}</p>
         {icon}

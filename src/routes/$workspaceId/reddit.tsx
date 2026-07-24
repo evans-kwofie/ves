@@ -6,8 +6,9 @@ import { Header } from "~/components/templates/Header";
 import { RedditFeed } from "~/components/modules/RedditFeed";
 import { SubredditPanel } from "~/components/modules/SubredditPanel";
 import { KeywordSuggestions } from "~/components/modules/reddit/KeywordSuggestions";
+import { GenerateKeywordsDialog } from "~/components/modules/GenerateKeywordsDialog";
 import { Button } from "~/components/ui/button";
-import { Settings01Icon, AiMagicIcon } from "hugeicons-react";
+import { Settings01Icon, FlashIcon } from "hugeicons-react";
 import { listKeywords } from "~/db/queries/keywords";
 import { listRedditPosts } from "~/db/queries/reddit";
 import type { RedditPost } from "~/types/reddit";
@@ -35,7 +36,7 @@ function RedditPage() {
   const { workspaceId } = Route.useParams();
   const [keywords, setKeywords] = React.useState<Keyword[]>(initial.keywords);
   const [posts, setPosts] = React.useState<RedditPost[]>(initial.posts);
-  const [suggestOpen, setSuggestOpen] = React.useState(false);
+  const [generateOpen, setGenerateOpen] = React.useState(false);
   const [subDrawerOpen, setSubDrawerOpen] = React.useState(false);
 
   const searchParams = Route.useSearch();
@@ -69,8 +70,8 @@ function RedditPage() {
         actions={
           <div className="flex items-center gap-2">
             {!noKeywords && (
-              <Button variant="ghost" onClick={() => setSuggestOpen((v) => !v)}>
-                <AiMagicIcon size={14} />
+              <Button variant="ghost" onClick={() => setGenerateOpen(true)}>
+                <FlashIcon size={14} />
                 Suggest keywords
               </Button>
             )}
@@ -84,7 +85,7 @@ function RedditPage() {
 
       <div className="flex overflow-hidden" style={{ height: CONTENT_HEIGHT }}>
         {/* Keyword sidebar */}
-        {!noKeywords && !suggestOpen && (
+        {!noKeywords && (
           <aside className="w-52 shrink-0 flex flex-col border-r border-border overflow-hidden">
             <div className="px-4 py-3 border-b border-border shrink-0">
               <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
@@ -114,14 +115,11 @@ function RedditPage() {
 
         {/* Main content */}
         <div className="flex-1 min-w-0 overflow-y-auto p-6">
-          {noKeywords || suggestOpen ? (
+          {noKeywords ? (
             <KeywordSuggestions
               orgId={workspaceId}
               existingKeywords={keywords}
-              onKeywordsChange={(updated) => {
-                setKeywords(updated);
-                if (suggestOpen && updated.length > keywords.length) setSuggestOpen(false);
-              }}
+              onKeywordsChange={setKeywords}
             />
           ) : (
             <RedditFeed
@@ -139,6 +137,13 @@ function RedditPage() {
         onOpenChange={setSubDrawerOpen}
         keywords={keywords}
         onKeywordsChange={setKeywords}
+      />
+
+      <GenerateKeywordsDialog
+        open={generateOpen}
+        onOpenChange={setGenerateOpen}
+        orgId={workspaceId}
+        onSuccess={(newKws) => setKeywords((prev) => [...newKws, ...prev])}
       />
     </>
   );

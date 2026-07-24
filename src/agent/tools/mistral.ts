@@ -5,7 +5,6 @@ const client = new Mistral({ apiKey: process.env.MISTRAL_API_KEY });
 /**
  * Lightweight utility wrapper around Mistral for fast, cheap tasks —
  * classifications, scoring, short extractions, copy tweaks.
- * Use Claude for anything that needs reasoning or tool calls.
  *
  * Models:
  *   "mistral-small-latest"  — fastest, cheapest, good for classification

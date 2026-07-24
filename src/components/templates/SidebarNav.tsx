@@ -11,6 +11,7 @@ import {
   Setting07Icon,
   FileEditIcon,
   BarChartIcon,
+  PencilEdit01Icon,
 } from "hugeicons-react";
 
 interface NavItem {
@@ -48,10 +49,11 @@ const NAV_SECTIONS: NavSection[] = [
     ],
   },
   {
-    label: "Discover",
+    label: "Lead Gen",
     items: [
       { to: "/$workspaceId/directories", label: "Directories", icon: <CompassIcon size={14} /> },
       { to: "/$workspaceId/linkedin", label: "LinkedIn", icon: <Linkedin01Icon size={14} /> },
+      { to: "/$workspaceId/linkedin-posts", label: "Post Generator", icon: <PencilEdit01Icon size={14} /> },
     ],
   },
 ];

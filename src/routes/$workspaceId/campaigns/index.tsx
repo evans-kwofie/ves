@@ -4,7 +4,8 @@ import { createServerFn } from "@tanstack/react-start";
 import * as z from "zod";
 import { Header } from "~/components/templates/Header";
 import { Button } from "~/components/ui/button";
-import { Add01Icon } from "hugeicons-react";
+import { Add01Icon, Target01Icon } from "hugeicons-react";
+import { EmptyState } from "~/components/ui/empty-state";
 import { listCampaigns } from "~/db/queries/campaigns";
 import { CampaignRow } from "~/components/modules/campaign/CampaignRow";
 import type { Campaign, CampaignStatus } from "~/types/campaign";
@@ -79,21 +80,21 @@ function CampaignsPage() {
         </div>
 
         {filtered.length === 0 ? (
-          <div className="empty-state">
-            <div className="mb-4">
-              {tab === "all"
-                ? "No campaigns yet. Create your first campaign to start tracking outreach sequences."
-                : `No ${tab} campaigns.`}
-            </div>
-            {tab === "all" && (
-              <Link to="/$workspaceId/campaigns/new" params={{ workspaceId }}>
-                <Button size="sm">
-                  <Add01Icon size={13} />
-                  New Campaign
-                </Button>
-              </Link>
-            )}
-          </div>
+          <EmptyState
+            icon={<Target01Icon />}
+            title={tab === "all" ? "No campaigns yet" : `No ${tab} campaigns`}
+            description={tab === "all" ? "Create your first campaign to start tracking outreach sequences." : undefined}
+            action={
+              tab === "all" ? (
+                <Link to="/$workspaceId/campaigns/new" params={{ workspaceId }}>
+                  <Button size="sm">
+                    <Add01Icon size={13} />
+                    New Campaign
+                  </Button>
+                </Link>
+              ) : undefined
+            }
+          />
         ) : (
           <div className="rounded-lg border border-border overflow-hidden">
             <table className="w-full text-sm">

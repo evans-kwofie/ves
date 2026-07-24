@@ -4,7 +4,7 @@ import {
   Mail01Icon,
   ArrowDiagonalIcon,
   PencilEdit01Icon,
-  AiMagicIcon,
+  FlashIcon,
 } from "hugeicons-react";
 import {
   DropdownMenu,
@@ -189,7 +189,7 @@ export function LeadActionsMenu({ lead, onChange, orgId }: LeadActionsMenuProps)
           )}
           {lead.pipelineStage === "discovered" && (
             <DropdownMenuItem onClick={enrichLead} disabled={enriching}>
-              <AiMagicIcon size={13} />
+              <FlashIcon size={13} />
               {enriching ? "Enriching..." : "Enrich lead"}
             </DropdownMenuItem>
           )}

@@ -1,7 +1,8 @@
 import * as React from "react";
-import { Add01Icon, Delete01Icon } from "hugeicons-react";
+import { Add01Icon, Delete01Icon, HashtagIcon, ViewIcon } from "hugeicons-react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
+import { EmptyState } from "~/components/ui/empty-state";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetBody, SheetFooter } from "~/components/ui/sheet";
 import { toast } from "sonner";
 import type { Keyword, Subreddit } from "~/types/keyword";
@@ -78,9 +79,12 @@ export function SubredditPanel({ open, onOpenChange, keywords, onKeywordsChange 
 
         <SheetBody>
           {keywords.length === 0 ? (
-            <p style={{ fontSize: 13, color: "var(--muted-foreground)" }}>
-              Add keywords first to manage subreddits.
-            </p>
+            <EmptyState
+              icon={<HashtagIcon />}
+              title="No keywords yet"
+              description="Add a keyword first, then come back here to assign subreddits to monitor."
+              size="sm"
+            />
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
               {/* Keyword selector */}
@@ -106,9 +110,12 @@ export function SubredditPanel({ open, onOpenChange, keywords, onKeywordsChange 
                       Watching ({(selectedKeyword.subreddits ?? []).length})
                     </p>
                     {(selectedKeyword.subreddits ?? []).length === 0 ? (
-                      <p style={{ fontSize: 12, color: "var(--muted-foreground)" }}>
-                        No subreddits yet for this keyword.
-                      </p>
+                      <EmptyState
+                        icon={<ViewIcon />}
+                        title="Not watching any subreddits"
+                        description="Reddit posts won't be monitored for this keyword until you add at least one subreddit below."
+                        size="sm"
+                      />
                     ) : (
                       <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                         {(selectedKeyword.subreddits ?? []).map((sub) => (

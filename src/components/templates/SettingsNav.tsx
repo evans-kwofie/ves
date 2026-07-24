@@ -9,10 +9,10 @@ interface SettingsTab {
 const TABS: SettingsTab[] = [
   { to: "/$workspaceId/settings/profile", label: "Profile" },
   { to: "/$workspaceId/settings/workspace", label: "Workspace" },
-  { to: "/$workspaceId/settings/appearance", label: "Appearance" },
   { to: "/$workspaceId/settings/agent", label: "Agent voice" },
   { to: "/$workspaceId/settings/email", label: "Email / SMTP" },
   { to: "/$workspaceId/settings/billing", label: "Billing" },
+  { to: "/$workspaceId/settings/appearance", label: "Appearance" },
   { to: "/$workspaceId/settings/danger", label: "Danger zone", danger: true },
 ];
 

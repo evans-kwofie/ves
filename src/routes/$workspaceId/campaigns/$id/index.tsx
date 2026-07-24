@@ -140,28 +140,30 @@ function CampaignDetailPage() {
           ))}
         </div>
 
-        {tab === "sequence" && (
-          <SequenceTab campaignId={id} steps={steps} templates={templates} onStepsChange={setSteps} />
-        )}
-        {tab === "queue" && (
-          <ReviewQueue
-            drafts={drafts}
-            leads={leads}
-            steps={steps}
-            campaignId={id}
-            signatures={initial?.signatures ?? []}
-            onUpdate={handleDraftUpdate}
-          />
-        )}
-        {tab === "leads" && <LeadsTab leads={leads} drafts={drafts} />}
-        {tab === "results" && (
-          <ResultsTab
-            sent={sent}
-            skipped={skipped}
-            leads={leads}
-            steps={steps}
-          />
-        )}
+        <div key={tab} className="tab-reveal">
+          {tab === "sequence" && (
+            <SequenceTab campaignId={id} steps={steps} templates={templates} onStepsChange={setSteps} />
+          )}
+          {tab === "queue" && (
+            <ReviewQueue
+              drafts={drafts}
+              leads={leads}
+              steps={steps}
+              campaignId={id}
+              signatures={initial?.signatures ?? []}
+              onUpdate={handleDraftUpdate}
+            />
+          )}
+          {tab === "leads" && <LeadsTab leads={leads} drafts={drafts} />}
+          {tab === "results" && (
+            <ResultsTab
+              sent={sent}
+              skipped={skipped}
+              leads={leads}
+              steps={steps}
+            />
+          )}
+        </div>
       </div>
 
       <ComposeDraftPanel onDraftAdded={handleDraftAdded} />

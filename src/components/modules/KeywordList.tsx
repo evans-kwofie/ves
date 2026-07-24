@@ -2,6 +2,7 @@ import * as React from "react";
 import { Delete01Icon, HashtagIcon } from "hugeicons-react";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
+import { EmptyState } from "~/components/ui/empty-state";
 import { toast } from "sonner";
 import type { Keyword } from "~/types/keyword";
 
@@ -43,12 +44,11 @@ export function KeywordList({ keywords, onChange }: KeywordListProps) {
 
   if (keywords.length === 0) {
     return (
-      <div className="empty-state">
-        <div className="empty-state-icon">
-          <HashtagIcon size={32} />
-        </div>
-        <div>No keywords yet. Add your first keyword to get started.</div>
-      </div>
+      <EmptyState
+        icon={<HashtagIcon />}
+        title="No keywords yet"
+        description="Add your first keyword to start tracking mentions across Reddit."
+      />
     );
   }
 

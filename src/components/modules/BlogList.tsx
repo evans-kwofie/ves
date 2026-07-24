@@ -1,6 +1,7 @@
 import * as React from "react";
 import { File01Icon, Delete01Icon } from "hugeicons-react";
 import { Button } from "~/components/ui/button";
+import { EmptyState } from "~/components/ui/empty-state";
 import { ConfirmDialog } from "~/components/ui/confirm-dialog";
 import { toast } from "sonner";
 import type { BlogPost } from "~/types/blog";
@@ -32,7 +33,14 @@ export function BlogList({ posts, selectedId, onSelect, onDelete }: BlogListProp
   }
 
   if (posts.length === 0) {
-    return <p className="text-[12px] text-muted-foreground py-3">No posts yet. Generate your first one.</p>;
+    return (
+      <EmptyState
+        icon={<File01Icon />}
+        title="No posts yet"
+        description="Generate your first post to get started."
+        size="sm"
+      />
+    );
   }
 
   return (

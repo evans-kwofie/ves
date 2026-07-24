@@ -3,13 +3,15 @@ import { LeadRow } from "../molecules/LeadRow";
 import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
 import { ConfirmDialog } from "~/components/ui/confirm-dialog";
+import { EmptyState } from "~/components/ui/empty-state";
 import {
   UserGroupIcon,
-  AiMagicIcon,
+  FlashIcon,
   Target01Icon,
   Cancel01Icon,
   Delete02Icon,
   Loading03Icon,
+  FilterIcon,
 } from "hugeicons-react";
 import { toast } from "sonner";
 import type { Lead, LeadStatus, FitRating, PipelineStage } from "~/types/lead";
@@ -162,10 +164,11 @@ export function LeadTable({ leads, onChange, orgId, onBulkCampaign }: LeadTableP
       </div>
 
       {filtered.length === 0 ? (
-        <div className="empty-state">
-          <div className="empty-state-icon"><UserGroupIcon size={32} /></div>
-          <div>{leads.length === 0 ? "No leads yet." : "No leads match your filters."}</div>
-        </div>
+        <EmptyState
+          icon={leads.length === 0 ? <UserGroupIcon /> : <FilterIcon />}
+          title={leads.length === 0 ? "No leads yet" : "No leads match your filters"}
+          description={leads.length === 0 ? "Add your first lead to start building your pipeline." : "Try adjusting your filters."}
+        />
       ) : (
         <div className="card" style={{ padding: 0, overflow: "hidden" }}>
           <table className="data-table">
@@ -216,7 +219,7 @@ export function LeadTable({ leads, onChange, orgId, onBulkCampaign }: LeadTableP
               <Button size="sm" variant="ghost" onClick={handleBulkEnrich} disabled={enriching}>
                 {enriching
                   ? <Loading03Icon size={13} className="animate-spin" />
-                  : <AiMagicIcon size={13} />}
+                  : <FlashIcon size={13} />}
                 Enrich {enrichableIds.length}
               </Button>
             )}

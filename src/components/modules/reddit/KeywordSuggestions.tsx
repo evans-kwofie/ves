@@ -1,6 +1,7 @@
 import * as React from "react";
-import { AiMagicIcon, Add01Icon, CheckmarkCircle01Icon, ArrowReloadHorizontalIcon } from "hugeicons-react";
+import { FlashIcon, Add01Icon, CheckmarkCircle01Icon, ArrowReloadHorizontalIcon } from "hugeicons-react";
 import { Button } from "~/components/ui/button";
+import { EmptyState } from "~/components/ui/empty-state";
 import { toast } from "sonner";
 import type { Keyword } from "~/types/keyword";
 
@@ -124,56 +125,53 @@ export function KeywordSuggestions({ orgId, existingKeywords, onKeywordsChange }
     }
   }
 
-  if (suggestions.length === 0) {
+  // Nothing generated yet — just show the prompt, no section header
+  if (!loading && suggestions.length === 0) {
+    return (
+      <EmptyState
+        icon={<FlashIcon />}
+        title="No keywords yet"
+        description="Get AI-powered keyword and subreddit recommendations based on your organisation profile."
+        action={
+          <button
+            onClick={generate}
+            className="flex items-center gap-2 px-4 py-2 rounded-(--radius) text-[13px] font-semibold transition-all bg-accent text-accent-foreground hover:opacity-90"
+          >
+            Suggest keywords
+          </button>
+        }
+      />
+    );
+  }
+
+  // Generating for the first time — show header + skeleton
+  if (loading && suggestions.length === 0) {
     return (
       <div className="flex flex-col gap-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-[13px] font-semibold">Suggested keywords</p>
-            <p className="text-[11px] text-muted-foreground mt-0.5">
-              Based on your organisation profile. Select the ones you want to track.
-            </p>
-          </div>
+        <div>
+          <p className="text-[13px] font-semibold">Suggested keywords</p>
+          <p className="text-[11px] text-muted-foreground mt-0.5">
+            Based on your organisation profile. Select the ones you want to track.
+          </p>
         </div>
-
         <div className="rounded-lg border border-border overflow-hidden">
-          {loading ? (
-            Array.from({ length: 6 }).map((_, i) => (
-              <div
-                key={i}
-                className={`flex items-center gap-3 px-4 py-3 ${i < 5 ? "border-b border-border" : ""}`}
-              >
-                <div className="w-3.5 h-3.5 rounded bg-muted animate-pulse shrink-0" />
-                <div className="flex flex-col gap-2 flex-1">
-                  <div className="flex items-center gap-2">
-                    <div className="h-3 rounded bg-muted animate-pulse" style={{ width: `${90 + (i % 3) * 40}px` }} />
-                    <div className="h-4 rounded-full bg-muted animate-pulse" style={{ width: `${50 + (i % 2) * 20}px` }} />
-                    <div className="h-4 rounded-full bg-muted animate-pulse" style={{ width: `${40 + (i % 3) * 15}px` }} />
-                  </div>
-                  <div className="h-2.5 rounded bg-muted animate-pulse w-3/4" />
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div
+              key={i}
+              className={`flex items-center gap-3 px-4 py-3 ${i < 5 ? "border-b border-border" : ""}`}
+            >
+              <div className="w-3.5 h-3.5 rounded bg-muted animate-pulse shrink-0" />
+              <div className="flex flex-col gap-2 flex-1">
+                <div className="flex items-center gap-2">
+                  <div className="h-3 rounded bg-muted animate-pulse" style={{ width: `${90 + (i % 3) * 40}px` }} />
+                  <div className="h-4 rounded-full bg-muted animate-pulse" style={{ width: `${50 + (i % 2) * 20}px` }} />
+                  <div className="h-4 rounded-full bg-muted animate-pulse" style={{ width: `${40 + (i % 3) * 15}px` }} />
                 </div>
-                <div className="h-7 w-16 rounded-full bg-muted animate-pulse shrink-0" />
+                <div className="h-2.5 rounded bg-muted animate-pulse w-3/4" />
               </div>
-            ))
-          ) : (
-            <div className="flex flex-col items-center gap-3 py-12 text-center px-6">
-              <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
-                <AiMagicIcon size={18} className="text-muted-foreground" />
-              </div>
-              <div className="flex flex-col gap-1">
-                <p className="text-[13px] font-semibold">No keywords yet</p>
-                <p className="text-[12px] text-muted-foreground max-w-xs">
-                  Get AI-powered keyword and subreddit recommendations based on your organisation profile.
-                </p>
-              </div>
-              <button
-                onClick={generate}
-                className="flex items-center gap-2 px-4 py-2 rounded-(--radius) text-[13px] font-semibold transition-all bg-accent text-accent-foreground hover:opacity-90"
-              >
-                Suggest keywords
-              </button>
+              <div className="h-7 w-16 rounded-full bg-muted animate-pulse shrink-0" />
             </div>
-          )}
+          ))}
         </div>
       </div>
     );

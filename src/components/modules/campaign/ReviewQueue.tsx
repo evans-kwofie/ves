@@ -1,5 +1,6 @@
 import * as React from "react";
 import { Button } from "~/components/ui/button";
+import { EmptyState } from "~/components/ui/empty-state";
 import {
   Loading03Icon,
   Linkedin01Icon,
@@ -9,6 +10,8 @@ import {
   PencilEdit01Icon,
   CheckmarkCircle01Icon,
   MinusSignIcon,
+  LayoutTable01Icon,
+  UserAdd01Icon,
 } from "hugeicons-react";
 import { toast } from "sonner";
 import { useComposeDraft } from "~/store/compose-draft";
@@ -69,10 +72,22 @@ export function ReviewQueue({
   }
 
   if (steps.length === 0) {
-    return <div className="empty-state">Define your sequence steps first, then generate or draft messages here.</div>;
+    return (
+      <EmptyState
+        icon={<LayoutTable01Icon />}
+        title="No sequence steps"
+        description="Define your sequence steps first, then generate or draft messages here."
+      />
+    );
   }
   if (leads.length === 0) {
-    return <div className="empty-state">No leads in this campaign yet.</div>;
+    return (
+      <EmptyState
+        icon={<UserAdd01Icon />}
+        title="No leads yet"
+        description="Add leads to this campaign before generating drafts."
+      />
+    );
   }
 
   return (
