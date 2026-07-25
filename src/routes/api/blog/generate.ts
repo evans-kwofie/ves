@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { createBlogPost } from "~/db/queries/blog";
-import Anthropic from "@anthropic-ai/sdk";
+import { geminiComplete } from "~/agent/tools/gemini";
 import { z } from "zod";
 
 const requestSchema = z.object({
@@ -9,8 +9,6 @@ const requestSchema = z.object({
   angle: z.string().max(500).optional(),
   save: z.boolean().optional(),
 });
-
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, maxRetries: 2 });
 
 export const Route = createFileRoute("/api/blog/generate")({
   server: {
@@ -52,14 +50,7 @@ Requirements:
 
 Write the full blog post in Markdown. Nothing else.`;
 
-        const response = await client.messages.create({
-          model: "claude-sonnet-4-6",
-          max_tokens: 2000,
-          messages: [{ role: "user", content: prompt }],
-        });
-
-        const content =
-          response.content[0]?.type === "text" ? response.content[0].text.trim() : "";
+        const content = (await geminiComplete(prompt, { maxTokens: 2000 })).trim();
 
         // Extract title from first H1
         const titleMatch = content.match(/^#\s+(.+)$/m);

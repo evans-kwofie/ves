@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { auth } from "~/lib/auth";
 import { listLeads, updateLead } from "~/db/queries/leads";
-import Anthropic from "@anthropic-ai/sdk";
+import { geminiSearch } from "~/agent/tools/gemini";
 import { z } from "zod";
 import { findEmail, splitName } from "~/agent/tools/find-email";
 
@@ -21,8 +21,6 @@ const enrichSchema = z.object({
   score: z.number().int().min(0).max(100),
   fitReason: z.string(),
 });
-
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 async function fetchRedditProfile(username: string): Promise<string> {
   try {
@@ -75,18 +73,7 @@ Return ONLY JSON:
 }`;
 
   try {
-    const response = await client.messages.create({
-      model: "claude-sonnet-4-6",
-      max_tokens: 600,
-      tools: [{ type: "web_search_20260209" as const, name: "web_search" as const }],
-      messages: [{ role: "user", content: prompt }],
-    } as unknown as Anthropic.MessageCreateParamsNonStreaming);
-
-    let text = "";
-    for (const block of response.content) {
-      if (block.type === "text") text += block.text;
-    }
-
+    const text = await geminiSearch(prompt, { maxTokens: 600 });
     const match = text.match(/\{[\s\S]*\}/);
     if (!match) return null;
     const parsed = enrichSchema.safeParse(JSON.parse(match[0]));
@@ -131,18 +118,7 @@ Return ONLY JSON:
 }`;
 
   try {
-    const response = await client.messages.create({
-      model: "claude-sonnet-4-6",
-      max_tokens: 500,
-      tools: [{ type: "web_search_20260209" as const, name: "web_search" as const }],
-      messages: [{ role: "user", content: prompt }],
-    } as unknown as Anthropic.MessageCreateParamsNonStreaming);
-
-    let text = "";
-    for (const block of response.content) {
-      if (block.type === "text") text += block.text;
-    }
-
+    const text = await geminiSearch(prompt, { maxTokens: 500 });
     const match = text.match(/\{[\s\S]*\}/);
     if (!match) return null;
     const parsed = enrichSchema.safeParse(JSON.parse(match[0]));

@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { auth } from "~/lib/auth";
 import { listKeywords } from "~/db/queries/keywords";
-import { mistralJSON } from "~/agent/tools/mistral";
+import { geminiJSON } from "~/agent/tools/gemini";
 import { z } from "zod";
 
 const requestSchema = z.object({
@@ -85,8 +85,7 @@ Respond ONLY with a JSON object in this exact shape:
 No markdown, no extra keys.`;
 
         try {
-          const raw = await mistralJSON<{ suggestions: unknown[] }>(prompt, {
-            model: "mistral-small-latest",
+          const raw = await geminiJSON<{ suggestions: unknown[] }>(prompt, {
             maxTokens: 1500,
           });
 
@@ -138,7 +137,7 @@ No markdown, no extra keys.`;
 
           return Response.json({ suggestions: validated });
         } catch (err) {
-          console.error("[keywords/generate] Mistral API error:", err);
+          console.error("[keywords/generate] Gemini API error:", err);
           return new Response(JSON.stringify({ error: "AI generation failed", detail: String(err) }), {
             status: 500,
             headers: { "Content-Type": "application/json" },

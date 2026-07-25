@@ -1,6 +1,6 @@
 import * as React from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { ArrowUpDownIcon, Tick01Icon, Add01Icon } from "hugeicons-react";
+import { Tick01Icon, Add01Icon } from "hugeicons-react";
 import { authClient } from "~/lib/auth-client";
 import { useWorkspaceStore } from "~/store/workspace";
 
@@ -68,7 +68,7 @@ export function SidebarHeader({ workspaceId, workspaceName, workspaceLogo }: Sid
         <span className="flex-1 min-w-0 text-[13px] font-semibold text-foreground truncate leading-none text-left">
           {workspaceName}
         </span>
-        <ArrowUpDownIcon size={13} className="shrink-0 text-muted-foreground" />
+        <Add01Icon size={13} className="shrink-0 text-muted-foreground" />
       </button>
 
       {selectorOpen && (

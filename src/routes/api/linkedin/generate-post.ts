@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { createLinkedInPost } from "~/db/queries/linkedin";
-import Anthropic from "@anthropic-ai/sdk";
+import { geminiComplete } from "~/agent/tools/gemini";
 import { z } from "zod";
 
 const requestSchema = z.object({
@@ -10,8 +10,6 @@ const requestSchema = z.object({
   keywordId: z.string().optional(),
   save: z.boolean().optional(),
 });
-
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, maxRetries: 2 });
 
 export const Route = createFileRoute("/api/linkedin/generate-post")({
   server: {
@@ -50,14 +48,7 @@ Requirements:
 
 Write only the post text, ready to copy-paste.`;
 
-        const response = await client.messages.create({
-          model: "claude-sonnet-4-6",
-          max_tokens: 600,
-          messages: [{ role: "user", content: prompt }],
-        });
-
-        const content =
-          response.content[0]?.type === "text" ? response.content[0].text.trim() : "";
+        const content = (await geminiComplete(prompt, { maxTokens: 600 })).trim();
 
         if (shouldSave && content) {
           const post = await createLinkedInPost(organizationId, content, keywordId ?? null);

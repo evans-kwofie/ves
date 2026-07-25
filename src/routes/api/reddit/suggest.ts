@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { saveReplySuggestion } from "~/db/queries/reddit";
-import { mistralComplete } from "~/agent/tools/mistral";
+import { geminiComplete } from "~/agent/tools/gemini";
 import { z } from "zod";
 
 const requestSchema = z.object({
@@ -53,10 +53,7 @@ Post body: ${postBody || "(no body)"}
 
 Write only the reply text, nothing else.`;
 
-        const suggestion = await mistralComplete(prompt, {
-          model: "mistral-small-latest",
-          maxTokens: 300,
-        });
+        const suggestion = await geminiComplete(prompt, { maxTokens: 300 });
 
         await saveReplySuggestion(postId, suggestion.trim());
 

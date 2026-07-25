@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import Anthropic from "@anthropic-ai/sdk";
+import { geminiJSON } from "~/agent/tools/gemini";
 import { getCampaign, getCampaignLeadsWithData } from "~/db/queries/campaigns";
 import { upsertDraft } from "~/db/queries/drafts";
 import { listSteps } from "~/db/queries/steps";
@@ -9,7 +9,6 @@ import { getRequestHeaders } from "@tanstack/react-start/server";
 import type { Lead } from "~/types/lead";
 import type { Template } from "~/db/queries/templates";
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 function resolveTokens(text: string, lead: Lead): string {
   const parts = (lead.ceo ?? "").trim().split(/\s+/);
@@ -47,31 +46,26 @@ async function generateWithAI(opts: {
 
   const stepHint = stepContext ? `\n\nSTEP CONTEXT\n${stepContext}` : "";
 
-  const systemPrompt = `You are a concise, direct outreach writer. Write a highly personalised cold ${channel === "email" ? "email" : "LinkedIn message"} that doesn't sound like a template.${isFollowUp ? " This is a follow-up — acknowledge you've reached out before, keep it shorter and more casual." : ""}
+  const isEmail = channel === "email";
+  const systemPrompt = `You are a concise, direct outreach writer. Write a highly personalised cold ${isEmail ? "email" : "LinkedIn DM"} that doesn't sound like a template.${isFollowUp ? " This is a follow-up — acknowledge you've reached out before, keep it shorter and more casual." : ""}
 
 Rules:
-- Never start with "I hope this email finds you well" or any filler opener
+- Never start with filler openers
 - Reference what their company actually does and why the product is genuinely relevant
-- Maximum 4 sentences. Subject line under 8 words.
+- Maximum 4 sentences.${isEmail ? " Subject line under 8 words." : ""}
 - End with one clear, low-friction CTA
 - Write as a human, not a marketer
 
-Respond with JSON only: { "subject": "...", "body": "..." }`;
+Return JSON: { "subject": ${isEmail ? '"short subject line"' : "null"}, "body": "message body" }`;
 
   const userPrompt = `${productContext ? `OUR PRODUCT\n${productContext}\n\n` : ""}LEAD\n${leadContext}${campaignGoal ? `\n\nCAMPAIGN GOAL\n${campaignGoal}` : ""}${stepHint}`;
 
-  const response = await client.messages.create({
-    model: "claude-sonnet-4-6",
-    max_tokens: 512,
+  console.log("[generate-drafts] systemPrompt:", systemPrompt);
+  console.log("[generate-drafts] userPrompt:", userPrompt);
+  const parsed = await geminiJSON<{ subject?: string | null; body?: string }>(userPrompt, {
+    maxTokens: 1024,
     system: systemPrompt,
-    messages: [{ role: "user", content: userPrompt }],
   });
-
-  const text = response.content.find((b) => b.type === "text")?.text ?? "";
-  const jsonMatch = text.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) throw new Error("No JSON in response");
-
-  const parsed = JSON.parse(jsonMatch[0]) as { subject?: string; body?: string };
   if (!parsed.body) throw new Error("No body in response");
 
   return { subject: parsed.subject ?? null, body: parsed.body };

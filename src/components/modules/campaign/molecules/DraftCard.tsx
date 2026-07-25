@@ -1,16 +1,14 @@
 import * as React from "react";
 import { Button } from "~/components/ui/button";
 import {
-  CheckmarkBadge01Icon,
-  Cancel01Icon,
-  Edit01Icon,
   Loading03Icon,
   Mail01Icon,
   Linkedin01Icon,
   InstagramIcon,
   Copy01Icon,
-  ArrowUpRight01Icon,
 } from "hugeicons-react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { SentIcon, PencilEdit02Icon, LinkSquare01Icon } from "@hugeicons/core-free-icons";
 import { toast } from "sonner";
 import type { CampaignDraft } from "~/db/queries/drafts";
 import type { Lead } from "~/types/lead";
@@ -177,38 +175,38 @@ export function DraftCard({
               </Button>
               {isLinkedIn && lead?.linkedin && (
                 <Button variant="outline" onClick={() => window.open(lead.linkedin, "_blank", "noopener")}>
-                  <ArrowUpRight01Icon size={13} />
+                  <HugeiconsIcon icon={LinkSquare01Icon} size={13} />
                   Open LinkedIn
                 </Button>
               )}
               {isInstagram && (
                 <Button variant="outline" onClick={() => window.open("https://www.instagram.com/direct/new/", "_blank", "noopener")}>
-                  <ArrowUpRight01Icon size={13} />
+                  <HugeiconsIcon icon={LinkSquare01Icon} size={13} />
                   Open Instagram
                 </Button>
               )}
               <Button onClick={markSent} disabled={approving || skipping}>
                 {approving
                   ? <><Loading03Icon size={13} className="animate-spin" />Saving...</>
-                  : <><CheckmarkBadge01Icon size={13} />Mark as Sent</>}
+                  : <><HugeiconsIcon icon={SentIcon} size={13} />Mark as Sent</>}
               </Button>
             </>
           ) : (
             <Button onClick={approve} disabled={approving || skipping}>
               {approving
                 ? <><Loading03Icon size={13} className="animate-spin" />Sending...</>
-                : <><CheckmarkBadge01Icon size={13} />Approve & Send</>}
+                : <><HugeiconsIcon icon={SentIcon} size={13} />Approve & Send</>}
             </Button>
           )}
           <Button variant="ghost" onClick={() => setEditing(true)}>
-            <Edit01Icon size={13} />Edit
+            <HugeiconsIcon icon={PencilEdit02Icon} size={13} />Edit
           </Button>
           <button
             className="btn btn-ghost btn-sm ml-auto text-muted-foreground"
             onClick={skip}
             disabled={skipping}
           >
-            <Cancel01Icon size={13} />Skip
+            Skip
           </button>
         </div>
       )}

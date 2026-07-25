@@ -1,5 +1,5 @@
 import { load } from "cheerio";
-import { mistralComplete } from "./mistral";
+import { geminiJSON } from "./gemini";
 import type { DirectoryResult } from "~/routes/api/directories/search";
 
 const FETCH_TIMEOUT_MS = 6000;
@@ -101,19 +101,13 @@ Extract the following and return as JSON:
 
 Return only valid JSON, no markdown.`;
 
-  const result = await mistralComplete(prompt, {
-    model: "mistral-small-latest",
-    maxTokens: 300,
-    json: true,
-  });
-
   try {
-    const parsed = JSON.parse(result) as {
+    const parsed = await geminiJSON<{
       founderName?: string | null;
       email?: string | null;
       linkedinHint?: string | null;
       whatTheyDo?: string | null;
-    };
+    }>(prompt, { maxTokens: 300 });
     return {
       founderName: parsed.founderName ?? null,
       email: parsed.email ?? null,

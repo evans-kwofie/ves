@@ -1,10 +1,8 @@
-import Anthropic from "@anthropic-ai/sdk";
+import { geminiJSON } from "~/agent/tools/gemini";
 import { upsertDraft, type CampaignDraft } from "~/db/queries/drafts";
 import type { CampaignStep } from "~/db/queries/steps";
 import type { Campaign } from "~/types/campaign";
 import type { Lead } from "~/types/lead";
-
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 export async function generateDraftForLead(opts: {
   campaign: Campaign;
@@ -77,18 +75,10 @@ For non-email channels, set subject to null.`;
 
   const userPrompt = `${productContext ? `OUR PRODUCT\n${productContext}\n\n` : ""}LEAD\n${leadContext}${campaign.goal ? `\n\nCAMPAIGN GOAL\n${campaign.goal}` : ""}`;
 
-  const response = await client.messages.create({
-    model: "claude-sonnet-4-6",
-    max_tokens: 512,
+  const parsed = await geminiJSON<{ subject?: string; body?: string }>(userPrompt, {
+    maxTokens: 512,
     system: systemPrompt,
-    messages: [{ role: "user", content: userPrompt }],
   });
-
-  const text = response.content.find((b) => b.type === "text")?.text ?? "";
-  const jsonMatch = text.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) throw new Error("No JSON in response");
-
-  const parsed = JSON.parse(jsonMatch[0]) as { subject?: string; body?: string };
   if (!parsed.body) throw new Error("No body in response");
 
   const finalBody = defaultSig && stepChannel === "email" ? `${parsed.body}\n\n${defaultSig.content}` : parsed.body;

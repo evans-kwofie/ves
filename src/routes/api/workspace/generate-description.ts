@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { auth } from "~/lib/auth";
-import { mistralComplete } from "~/agent/tools/mistral";
+import { geminiComplete } from "~/agent/tools/gemini";
 import { z } from "zod";
 
 const requestSchema = z.object({
@@ -66,10 +66,7 @@ Guidelines:
 Return only the description text. No quotes, no labels.`;
 
         try {
-          const description = await mistralComplete(prompt, {
-            model: "mistral-small-latest",
-            maxTokens: 200,
-          });
+          const description = await geminiComplete(prompt, { maxTokens: 200 });
           return Response.json({ description: description.trim() });
         } catch {
           return new Response(JSON.stringify({ error: "Generation failed" }), {

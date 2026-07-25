@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Mistral } from "@mistralai/mistralai";
+import { geminiSearch } from "~/agent/tools/gemini";
 import { z } from "zod";
 
 export type DirectoryKey =
@@ -223,8 +223,6 @@ async function searchProductHunt(
   });
 }
 
-const mistralClient = new Mistral({ apiKey: process.env.MISTRAL_API_KEY });
-
 async function searchWithAgent(
   directoryKey: DirectoryKey,
   query: string,
@@ -251,28 +249,7 @@ For each product return a JSON object with these fields:
 
 Rules: only real listings visible on the page, no duplicates, return a JSON array only.`;
 
-  const response = await mistralClient.agents.complete({
-    agentId: process.env.MISTRAL_AGENT_ID!,
-    messages: [{ role: "user", content: prompt }],
-  });
-
-  const messageContent = response.choices?.[0]?.message?.content;
-  let rawText = "";
-  if (typeof messageContent === "string") {
-    rawText = messageContent;
-  } else if (Array.isArray(messageContent)) {
-    for (const chunk of messageContent) {
-      if (
-        typeof chunk === "object" &&
-        chunk !== null &&
-        "type" in chunk &&
-        chunk.type === "text" &&
-        "text" in chunk
-      ) {
-        rawText += String(chunk.text);
-      }
-    }
-  }
+  const rawText = await geminiSearch(prompt, { maxTokens: 2000 });
 
   try {
     const match = rawText.match(/\[[\s\S]*\]/);

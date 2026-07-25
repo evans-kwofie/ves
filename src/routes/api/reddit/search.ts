@@ -4,7 +4,7 @@ import { upsertRedditPost, saveClassification } from "~/db/queries/reddit";
 import { createLead, listLeads } from "~/db/queries/leads";
 import type { IntentType, EngagementType } from "~/types/reddit";
 import { z } from "zod";
-import { mistralJSON } from "~/agent/tools/mistral";
+import { geminiJSON } from "~/agent/tools/gemini";
 import { auth } from "~/lib/auth";
 import { getRequestHeaders } from "@tanstack/react-start/server";
 import type { AgentVoiceConfig } from "~/routes/$workspaceId/settings/agent";
@@ -102,8 +102,7 @@ Return ONLY valid JSON with these fields:
 JSON only, no markdown.`;
 
   try {
-    const raw = await mistralJSON<z.infer<typeof classificationSchema>>(prompt, {
-      model: "mistral-small-latest",
+    const raw = await geminiJSON<z.infer<typeof classificationSchema>>(prompt, {
       maxTokens: 150,
     });
     if (!raw) return null;

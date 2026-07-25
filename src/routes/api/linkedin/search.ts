@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import Anthropic from "@anthropic-ai/sdk";
+import { geminiSearch } from "~/agent/tools/gemini";
 import { z } from "zod";
 import { createLead } from "~/db/queries/leads";
 import { listActiveKeywordsWithSubreddits } from "~/db/queries/keywords";
@@ -11,8 +11,6 @@ const requestSchema = z.object({
   keywordId: z.string().optional(),
   runAll: z.boolean().optional(),
 });
-
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, maxRetries: 2 });
 
 async function searchForKeyword(keyword: string): Promise<{
   company: string;
@@ -32,17 +30,7 @@ Return a JSON array only. Each item:
 
 Rules: only real companies, no markdown, JSON array only.`;
 
-  const response = await client.messages.create({
-    model: "claude-sonnet-4-6",
-    max_tokens: 1500,
-    tools: [{ type: "web_search_20260209" as const, name: "web_search" as const }],
-    messages: [{ role: "user", content: prompt }],
-  } as unknown as Anthropic.MessageCreateParamsNonStreaming);
-
-  let rawText = "";
-  for (const block of response.content) {
-    if (block.type === "text") rawText += block.text;
-  }
+  const rawText = await geminiSearch(prompt, { maxTokens: 1500 });
 
   try {
     const match = rawText.match(/\[[\s\S]*\]/);

@@ -1,5 +1,5 @@
 import "dotenv/config";
-import Anthropic from "@anthropic-ai/sdk";
+import { GoogleGenAI } from "@google/genai";
 import { readPipelineSummary, addLead, updateLead } from "./tools/pipeline";
 import { sendEmail } from "./tools/email";
 import { notifySlack } from "./tools/slack";
@@ -7,31 +7,29 @@ import { buildSystemPrompt } from "./prompts";
 import { createOutreachEvent } from "~/db/queries/leads";
 import type { AgentVoiceConfig } from "~/routes/$workspaceId/settings/agent";
 
-const client = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-  maxRetries: 2,
-});
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+const DEFAULT_MODEL = "gemini-2.5-flash";
 
-const USER_TOOLS = [
+const FUNCTION_DECLARATIONS = [
   {
     name: "read_pipeline",
     description: "Read the current outreach pipeline with all leads and their status, email dates, and notes.",
-    input_schema: { type: "object", properties: {}, required: [] },
+    parameters: { type: "OBJECT", properties: {}, required: [] },
   },
   {
     name: "add_lead",
-    description: "Add a new company to the outreach pipeline. Only add leads you have verified through web_search.",
-    input_schema: {
-      type: "object",
+    description: "Add a new company to the outreach pipeline. Only add leads you have verified through web search.",
+    parameters: {
+      type: "OBJECT",
       properties: {
-        company: { type: "string", description: "Company name" },
-        website: { type: "string", description: "Company website URL" },
-        whatTheyDo: { type: "string", description: "One sentence description of what they do" },
-        ceo: { type: "string", description: "CEO or founder name" },
-        email: { type: "string", description: "CEO email address" },
-        linkedin: { type: "string", description: "CEO LinkedIn URL if found" },
-        fit: { type: "string", enum: ["HIGH", "MEDIUM", "LOW"], description: "ICP fit rating" },
-        notes: { type: "string", description: "Why this company is a good fit for MailBridge" },
+        company: { type: "STRING", description: "Company name" },
+        website: { type: "STRING", description: "Company website URL" },
+        whatTheyDo: { type: "STRING", description: "One sentence description of what they do" },
+        ceo: { type: "STRING", description: "CEO or founder name" },
+        email: { type: "STRING", description: "CEO email address" },
+        linkedin: { type: "STRING", description: "CEO LinkedIn URL if found" },
+        fit: { type: "STRING", description: "ICP fit rating: HIGH, MEDIUM, or LOW" },
+        notes: { type: "STRING", description: "Why this company is a good fit" },
       },
       required: ["company", "ceo", "email", "fit"],
     },
@@ -39,18 +37,15 @@ const USER_TOOLS = [
   {
     name: "update_lead",
     description: "Update a lead status or add notes after an action (email sent, reply received, not interested, etc.)",
-    input_schema: {
-      type: "object",
+    parameters: {
+      type: "OBJECT",
       properties: {
-        id: { type: "string", description: "Lead ID from read_pipeline" },
-        status: {
-          type: "string",
-          enum: ["not_contacted", "email_sent", "linkedin_sent", "replied", "call_scheduled", "converted", "not_interested"],
-        },
-        notes: { type: "string", description: "Notes to append" },
-        emailSentAt: { type: "string", description: "ISO date when email was sent" },
-        linkedinSentAt: { type: "string", description: "ISO date when LinkedIn message was sent" },
-        repliedAt: { type: "string", description: "ISO date when they replied" },
+        id: { type: "STRING", description: "Lead ID from read_pipeline" },
+        status: { type: "STRING", description: "New status" },
+        notes: { type: "STRING", description: "Notes to append" },
+        emailSentAt: { type: "STRING", description: "ISO date when email was sent" },
+        linkedinSentAt: { type: "STRING", description: "ISO date when LinkedIn message was sent" },
+        repliedAt: { type: "STRING", description: "ISO date when they replied" },
       },
       required: ["id"],
     },
@@ -58,25 +53,25 @@ const USER_TOOLS = [
   {
     name: "send_email",
     description: "Send an outreach or follow-up email to a lead via Zoho SMTP.",
-    input_schema: {
-      type: "object",
+    parameters: {
+      type: "OBJECT",
       properties: {
-        to: { type: "string", description: "Recipient email address" },
-        subject: { type: "string", description: "Email subject line" },
-        body: { type: "string", description: "Plain text email body. Follow the email format in your instructions." },
-        leadId: { type: "string", description: "Lead ID to auto-update status to email_sent after sending" },
-        campaignId: { type: "string", description: "Campaign ID to tag this outreach event against. Always include when running a campaign." },
+        to: { type: "STRING", description: "Recipient email address" },
+        subject: { type: "STRING", description: "Email subject line" },
+        body: { type: "STRING", description: "Plain text email body." },
+        leadId: { type: "STRING", description: "Lead ID to auto-update status to email_sent after sending" },
+        campaignId: { type: "STRING", description: "Campaign ID to tag this outreach event against." },
       },
       required: ["to", "subject", "body"],
     },
   },
   {
     name: "notify_slack",
-    description: "Send a message to Evans on the MailBridge Slack monitoring channel. Use this to share summaries, flag follow-ups needed, or report what you just did.",
-    input_schema: {
-      type: "object",
+    description: "Send a message to Evans on the MailBridge Slack monitoring channel.",
+    parameters: {
+      type: "OBJECT",
       properties: {
-        message: { type: "string", description: "Message to send. Use plain text, no markdown formatting." },
+        message: { type: "STRING", description: "Message to send. Use plain text, no markdown formatting." },
       },
       required: ["message"],
     },
@@ -84,60 +79,52 @@ const USER_TOOLS = [
   {
     name: "get_current_date",
     description: "Get the current date and time in ISO format.",
-    input_schema: { type: "object", properties: {}, required: [] },
+    parameters: { type: "OBJECT", properties: {}, required: [] },
   },
 ];
 
-async function executeTool(name: string, input: Record<string, unknown>, orgId: string): Promise<string> {
+async function executeTool(name: string, args: Record<string, unknown>, orgId: string): Promise<string> {
   try {
     switch (name) {
-      case "read_pipeline": {
+      case "read_pipeline":
         return await readPipelineSummary(orgId);
-      }
       case "add_lead": {
-        const lead = await addLead(orgId, input as Parameters<typeof addLead>[1]);
+        const lead = await addLead(orgId, args as Parameters<typeof addLead>[1]);
         return JSON.stringify({ success: true, lead });
       }
       case "update_lead": {
-        const { id, ...updates } = input as { id: string } & Record<string, unknown>;
+        const { id, ...updates } = args as { id: string } & Record<string, unknown>;
         const lead = await updateLead(id, updates as Parameters<typeof updateLead>[1]);
         return JSON.stringify({ success: true, lead });
       }
       case "send_email": {
         const result = await sendEmail({
-          to: input.to as string,
-          subject: input.subject as string,
-          body: input.body as string,
+          to: args.to as string,
+          subject: args.subject as string,
+          body: args.body as string,
         });
-        if (result.success && input.leadId) {
+        if (result.success && args.leadId) {
           const now = new Date().toISOString();
-          await updateLead(input.leadId as string, {
-            status: "email_sent",
-            emailSentAt: now,
-          });
+          await updateLead(args.leadId as string, { status: "email_sent", emailSentAt: now });
           await createOutreachEvent({
-            leadId: input.leadId as string,
+            leadId: args.leadId as string,
             channel: "email",
             status: "email_sent",
             sentAt: now,
-            campaignId: (input.campaignId as string | undefined) ?? null,
+            campaignId: (args.campaignId as string | undefined) ?? null,
           });
         }
         return JSON.stringify(result);
       }
-      case "notify_slack": {
-        const result = await notifySlack(input.message as string);
-        return JSON.stringify(result);
-      }
-      case "get_current_date": {
+      case "notify_slack":
+        return JSON.stringify(await notifySlack(args.message as string));
+      case "get_current_date":
         return new Date().toISOString();
-      }
       default:
         return JSON.stringify({ error: `Unknown tool: ${name}` });
     }
   } catch (err) {
-    const error = err instanceof Error ? err.message : String(err);
-    return JSON.stringify({ success: false, error });
+    return JSON.stringify({ success: false, error: err instanceof Error ? err.message : String(err) });
   }
 }
 
@@ -146,90 +133,77 @@ export async function runAgent(
   opts?: { maxIterations?: number; orgId?: string; voice?: Partial<AgentVoiceConfig> },
 ): Promise<string[]> {
   const logs: string[] = [];
-  const log = (line: string) => {
-    logs.push(line);
-    console.log(line);
-  };
+  const log = (line: string) => { logs.push(line); console.log(line); };
 
   const orgId = opts?.orgId ?? "";
   log(`\n[Agent] Running: ${prompt}\n`);
 
-  const messages: Anthropic.MessageParam[] = [{ role: "user", content: prompt }];
-
-  const allTools = [
-    ...USER_TOOLS,
-    { type: "web_search_20260209" as const, name: "web_search" as const },
+  const contents: { role: string; parts: unknown[] }[] = [
+    { role: "user", parts: [{ text: prompt }] },
   ];
 
   let iterations = 0;
   const maxIterations = opts?.maxIterations ?? 30;
-  let containerId: string | undefined;
 
   while (iterations < maxIterations) {
     iterations++;
 
-    const requestParams: Record<string, unknown> = {
-      model: "claude-sonnet-4-6",
-      max_tokens: 8192,
-      system: buildSystemPrompt(opts?.voice),
-      tools: allTools as Anthropic.Messages.ToolUnion[],
-      messages,
-    };
-    if (containerId) requestParams.container = containerId;
+    const response = await ai.models.generateContent({
+      model: DEFAULT_MODEL,
+      contents: contents as never,
+      config: {
+        systemInstruction: buildSystemPrompt(opts?.voice),
+        tools: [
+          { functionDeclarations: FUNCTION_DECLARATIONS as never },
+          { googleSearch: {} },
+        ],
+        maxOutputTokens: 8192,
+      },
+    });
 
-    const response = await client.messages.create(
-      requestParams as unknown as Anthropic.MessageCreateParamsNonStreaming,
-    );
+    const candidate = response.candidates?.[0];
+    if (!candidate) break;
 
-    const responseAny = response as unknown as Record<string, unknown>;
-    if (responseAny.container && typeof responseAny.container === "object") {
-      containerId = (responseAny.container as { id: string }).id;
-    }
+    const parts = candidate.content?.parts ?? [];
+    contents.push({ role: "model", parts });
 
-    for (const block of response.content) {
-      if (block.type === "text" && block.text.trim()) {
-        log(`[Agent] ${block.text}`);
+    let hasText = false;
+    const functionCalls: { name: string; args: Record<string, unknown> }[] = [];
+
+    for (const part of parts) {
+      const p = part as Record<string, unknown>;
+      if (p.text && typeof p.text === "string" && p.text.trim()) {
+        log(`[Agent] ${p.text}`);
+        hasText = true;
+      }
+      if (p.functionCall && typeof p.functionCall === "object") {
+        const fc = p.functionCall as { name: string; args: Record<string, unknown> };
+        functionCalls.push(fc);
       }
     }
 
-    const stopReason = response.stop_reason as string;
-
-    if (stopReason === "end_turn") {
-      log("[Agent] Done.\n");
+    if (functionCalls.length === 0) {
+      if (hasText) log("[Agent] Done.\n");
       break;
     }
 
-    if (stopReason === "pause_turn") {
-      messages.push({ role: "assistant", content: response.content });
-      continue;
+    const resultParts: unknown[] = [];
+    for (const fc of functionCalls) {
+      log(`[Tool] ${fc.name}`);
+      const result = await executeTool(fc.name, fc.args ?? {}, orgId);
+      log(`[Tool Result] ${result.slice(0, 300)}\n`);
+      resultParts.push({
+        functionResponse: { name: fc.name, response: { result } },
+      });
     }
 
-    if (stopReason === "tool_use") {
-      messages.push({ role: "assistant", content: response.content });
+    contents.push({ role: "user", parts: resultParts });
 
-      const toolResults: Anthropic.ToolResultBlockParam[] = [];
-
-      for (const block of response.content) {
-        if (block.type === "tool_use") {
-          log(`[Tool] ${block.name}`);
-          const result = await executeTool(block.name, block.input as Record<string, unknown>, orgId);
-          log(`[Tool Result] ${result.slice(0, 300)}\n`);
-          toolResults.push({
-            type: "tool_result",
-            tool_use_id: block.id,
-            content: result,
-          });
-        }
-      }
-
-      messages.push({ role: "user", content: toolResults });
+    if (contents.length > 42) {
+      contents.splice(1, contents.length - 42);
     }
 
-    if (messages.length > 21) {
-      messages.splice(1, messages.length - 21);
-    }
-
-    await new Promise((resolve) => setTimeout(resolve, 3000));
+    await new Promise((resolve) => setTimeout(resolve, 1000));
   }
 
   if (iterations >= maxIterations) {
