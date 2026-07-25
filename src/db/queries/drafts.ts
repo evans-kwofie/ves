@@ -151,6 +151,36 @@ export async function updateDraft(
   return (await getDraft(id))!;
 }
 
+export async function getDailySendCount(orgId: string): Promise<number> {
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  const result = await db.execute({
+    sql: `SELECT COUNT(*)::int AS count
+          FROM campaign_drafts cd
+          JOIN campaigns c ON c.id = cd.campaign_id
+          WHERE c.organization_id = ? AND cd.status = 'sent' AND cd.sent_at >= ?`,
+    args: [orgId, todayStart.toISOString()],
+  });
+  return Number((result.rows[0] as Record<string, unknown>).count ?? 0);
+}
+
+export async function scheduleDraftForNextStep(input: {
+  campaignId: string;
+  leadId: string;
+  nextStepNumber: number;
+  channel: string;
+  sendAfter: string;
+}): Promise<void> {
+  const now = new Date().toISOString();
+  await db.execute({
+    sql: `UPDATE campaign_drafts
+          SET step_number = ?, channel = ?, status = 'scheduled', send_after = ?,
+              subject = NULL, body = '', updated_at = ?
+          WHERE campaign_id = ? AND lead_id = ?`,
+    args: [input.nextStepNumber, input.channel, input.sendAfter, now, input.campaignId, input.leadId],
+  });
+}
+
 export async function getPendingDraftCount(campaignId: string): Promise<number> {
   const result = await db.execute({
     sql: "SELECT COUNT(*)::int as count FROM campaign_drafts WHERE campaign_id = ? AND status = 'pending'",

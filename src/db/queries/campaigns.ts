@@ -11,6 +11,7 @@ function rowToCampaign(row: Record<string, unknown>): Campaign {
     status: row.status as Campaign["status"],
     channel: (row.channel as Campaign["channel"]) ?? null,
     goal: (row.goal as string | null) ?? null,
+    intentType: (row.intent_type as Campaign["intentType"]) ?? null,
     runFrequency: (row.run_frequency as Campaign["runFrequency"]) ?? null,
     lastRunAt: (row.last_run_at as string | null) ?? null,
     createdAt: row.created_at as string,
@@ -55,9 +56,9 @@ export async function createCampaign(orgId: string, input: CreateCampaignInput):
   const id = uuidv4();
   const now = new Date().toISOString();
   await db.execute({
-    sql: `INSERT INTO campaigns (id, organization_id, name, status, channel, goal, created_at, updated_at)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-    args: [id, orgId, input.name, input.status ?? "draft", input.channel ?? null, input.goal ?? null, now, now],
+    sql: `INSERT INTO campaigns (id, organization_id, name, status, channel, goal, intent_type, created_at, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    args: [id, orgId, input.name, input.status ?? "draft", input.channel ?? null, input.goal ?? null, input.intentType ?? null, now, now],
   });
 
   if (input.leadIds && input.leadIds.length > 0) {
@@ -81,6 +82,7 @@ export async function updateCampaign(id: string, input: UpdateCampaignInput): Pr
   if (input.status !== undefined) { fields.push("status = ?"); args.push(input.status); }
   if (input.channel !== undefined) { fields.push("channel = ?"); args.push(input.channel); }
   if (input.goal !== undefined) { fields.push("goal = ?"); args.push(input.goal); }
+  if (input.intentType !== undefined) { fields.push("intent_type = ?"); args.push(input.intentType ?? null); }
   if (input.runFrequency !== undefined) { fields.push("run_frequency = ?"); args.push(input.runFrequency ?? null); }
 
   args.push(id);

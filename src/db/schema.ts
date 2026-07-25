@@ -380,4 +380,7 @@ export async function initDb(): Promise<void> {
 
   // Bounce tracking
   await safeAlter(`ALTER TABLE campaign_drafts ADD COLUMN bounced_at TEXT`);
+
+  // Campaign intent type
+  await safeAlter(`ALTER TABLE campaigns ADD COLUMN intent_type TEXT`);
 }

@@ -33,8 +33,10 @@ export function DraftCard({
   const [copied, setCopied] = React.useState(false);
 
   const isLinkedIn = draft.channel === "linkedin";
+  const isLinkedInConnect = draft.channel === "linkedin_connect";
   const isInstagram = draft.channel === "instagram";
-  const isSocial = isLinkedIn || isInstagram;
+  const isSocial = isLinkedIn || isLinkedInConnect || isInstagram;
+  const CONNECT_LIMIT = 300;
 
   async function saveEdit() {
     setSaving(true);
@@ -63,8 +65,8 @@ export function DraftCard({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "approve" }),
       });
-      const data = (await res.json()) as { ok?: boolean; draft?: CampaignDraft; error?: string };
-      if (!res.ok) { toast.error(data.error ?? "Failed to send"); return; }
+      const data = (await res.json()) as { ok?: boolean; draft?: CampaignDraft; error?: string; message?: string };
+      if (!res.ok) { toast.error(data.message ?? data.error ?? "Failed to send"); return; }
       onUpdate(data.draft!);
       toast.success(`Sent to ${lead?.email ?? "lead"}`);
     } catch {
@@ -122,10 +124,10 @@ export function DraftCard({
       {/* Channel badge */}
       <div className="flex justify-end">
         <span className="badge badge-gray inline-flex items-center gap-1">
-          {isLinkedIn && <Linkedin01Icon size={11} />}
+          {(isLinkedIn || isLinkedInConnect) && <Linkedin01Icon size={11} />}
           {isInstagram && <InstagramIcon size={11} />}
           {!isSocial && <Mail01Icon size={11} />}
-          {draft.channel}
+          {isLinkedInConnect ? "LinkedIn Connect" : draft.channel}
         </span>
       </div>
 
@@ -140,9 +142,14 @@ export function DraftCard({
           )}
           <div className="form-group" style={{ margin: 0 }}>
             <label className="form-label">Message</label>
-            <textarea className="input" value={body} onChange={(e) => setBody(e.target.value)} rows={6} />
+            <textarea className="input" value={body} onChange={(e) => setBody(e.target.value)} rows={isLinkedInConnect ? 4 : 6} />
+            {isLinkedInConnect && (
+              <p className={`text-[11px] mt-1 ${body.length > CONNECT_LIMIT ? "text-red-500 font-semibold" : "text-muted-foreground"}`}>
+                {body.length} / {CONNECT_LIMIT} chars{body.length > CONNECT_LIMIT ? " — over limit, LinkedIn will reject this" : ""}
+              </p>
+            )}
             {isLinkedIn && (
-              <p className="text-[11px] text-muted-foreground mt-1">{body.length} chars — LinkedIn DMs: 2,000 max · Connection notes: 300 max</p>
+              <p className="text-[11px] text-muted-foreground mt-1">{body.length} chars</p>
             )}
           </div>
           <div className="flex gap-2">
@@ -158,8 +165,16 @@ export function DraftCard({
           <p className="text-[13px] text-muted-foreground leading-relaxed whitespace-pre-wrap bg-muted rounded px-3 py-2">
             {draft.body}
           </p>
-          {isSocial && (
-            <p className="text-[11px] text-muted-foreground">{draft.body.length} chars{isInstagram ? " — keep under 1,000" : " — LinkedIn DMs: 2,000 max · Connection notes: 300 max"}</p>
+          {isLinkedInConnect && (
+            <p className={`text-[11px] ${draft.body.length > CONNECT_LIMIT ? "text-red-500 font-semibold" : "text-muted-foreground"}`}>
+              {draft.body.length} / {CONNECT_LIMIT} chars{draft.body.length > CONNECT_LIMIT ? " — over limit" : ""}
+            </p>
+          )}
+          {isLinkedIn && (
+            <p className="text-[11px] text-muted-foreground">{draft.body.length} chars</p>
+          )}
+          {isInstagram && (
+            <p className="text-[11px] text-muted-foreground">{draft.body.length} chars — keep under 1,000</p>
           )}
         </div>
       )}
@@ -173,10 +188,10 @@ export function DraftCard({
                 <Copy01Icon size={13} />
                 {copied ? "Copied!" : "Copy"}
               </Button>
-              {isLinkedIn && lead?.linkedin && (
+              {(isLinkedIn || isLinkedInConnect) && lead?.linkedin && (
                 <Button variant="outline" onClick={() => window.open(lead.linkedin, "_blank", "noopener")}>
                   <HugeiconsIcon icon={LinkSquare01Icon} size={13} />
-                  Open LinkedIn
+                  {isLinkedInConnect ? "Open Profile" : "Open LinkedIn"}
                 </Button>
               )}
               {isInstagram && (
@@ -188,7 +203,7 @@ export function DraftCard({
               <Button onClick={markSent} disabled={approving || skipping}>
                 {approving
                   ? <><Loading03Icon size={13} className="animate-spin" />Saving...</>
-                  : <><HugeiconsIcon icon={SentIcon} size={13} />Mark as Sent</>}
+                  : <><HugeiconsIcon icon={SentIcon} size={13} />{isLinkedInConnect ? "Mark as Sent" : "Mark as Sent"}</>}
               </Button>
             </>
           ) : (

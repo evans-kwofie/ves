@@ -46,14 +46,5 @@ export async function geminiJSON<T>(
       ...(opts?.maxTokens ? { maxOutputTokens: opts.maxTokens } : {}),
     },
   });
-  const raw = response.text ?? "";
-  console.log("[geminiJSON] raw response length:", raw.length);
-  console.log("[geminiJSON] raw response:", raw.slice(0, 500));
-  try {
-    return JSON.parse(raw) as T;
-  } catch (err) {
-    console.error("[geminiJSON] JSON parse failed:", err);
-    console.error("[geminiJSON] full raw response:", raw);
-    throw err;
-  }
+  return JSON.parse(response.text ?? "{}") as T;
 }

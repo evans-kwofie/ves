@@ -9,7 +9,7 @@ import { EmptyState } from "~/components/ui/empty-state";
 import { listLeads } from "~/db/queries/leads";
 import { toast } from "sonner";
 import type { Lead } from "~/types/lead";
-import type { CampaignChannel } from "~/types/campaign";
+import type { CampaignChannel, CampaignIntent } from "~/types/campaign";
 
 const getLeadsData = createServerFn({ method: "GET" })
   .inputValidator(z.string())
@@ -35,6 +35,13 @@ const CHANNELS: { value: CampaignChannel; label: string; icon: React.ReactNode }
   { value: "both", label: "Both", icon: <GlobalIcon size={16} /> },
 ];
 
+const INTENTS: { value: CampaignIntent; label: string; description: string }[] = [
+  { value: "advice_seeking",  label: "Advice seeking",   description: "Ask for their opinion or expertise — no pitch" },
+  { value: "product_review",  label: "Product review",   description: "Ask them to try or review the product" },
+  { value: "audit_offer",     label: "Audit offer",      description: "Lead with a free audit or analysis upfront" },
+  { value: "direct_pitch",    label: "Direct pitch",     description: "Clear value prop with a demo ask" },
+];
+
 function NewCampaignPage() {
   const leads = Route.useLoaderData();
   const { workspaceId } = Route.useParams();
@@ -50,6 +57,7 @@ function NewCampaignPage() {
   const [name, setName] = React.useState("");
   const [channel, setChannel] = React.useState<CampaignChannel | "">("");
   const [goal, setGoal] = React.useState("");
+  const [intentType, setIntentType] = React.useState<CampaignIntent | "">("");
   const [selectedLeads, setSelectedLeads] = React.useState<Set<string>>(preselected);
   const [search, setSearch] = React.useState("");
   const [saving, setSaving] = React.useState(false);
@@ -89,6 +97,7 @@ function NewCampaignPage() {
           name,
           channel: channel || undefined,
           goal: goal || undefined,
+          intentType: intentType || undefined,
           leadIds: Array.from(selectedLeads),
         }),
       });
@@ -220,6 +229,47 @@ function NewCampaignPage() {
               />
             </div>
 
+            <div className="form-group" style={{ margin: 0 }}>
+              <label className="form-label">Outreach intent</label>
+              <p style={{ fontSize: 11, color: "var(--muted-foreground)", marginBottom: 8, marginTop: 2 }}>
+                Sets the tone for AI-generated drafts. Choose how you want to come across.
+              </p>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                {INTENTS.map((intent) => {
+                  const selected = intentType === intent.value;
+                  return (
+                    <button
+                      key={intent.value}
+                      type="button"
+                      onClick={() => setIntentType(selected ? "" : intent.value)}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 12,
+                        padding: "10px 14px",
+                        borderRadius: "var(--radius)",
+                        border: `1px solid ${selected ? "var(--accent)" : "var(--border)"}`,
+                        background: selected ? "var(--accent-subtle)" : "var(--input-bg)",
+                        cursor: "pointer",
+                        textAlign: "left",
+                        transition: "all 0.15s",
+                      }}
+                    >
+                      <div style={{ flex: 1 }}>
+                        <p style={{ fontSize: 13, fontWeight: 600, color: selected ? "var(--accent)" : "var(--foreground)", margin: 0 }}>
+                          {intent.label}
+                        </p>
+                        <p style={{ fontSize: 11, color: "var(--muted-foreground)", margin: "2px 0 0" }}>
+                          {intent.description}
+                        </p>
+                      </div>
+                      {selected && <CheckmarkCircle01Icon size={16} style={{ color: "var(--accent)", flexShrink: 0 }} />}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
             <div style={{ display: "flex", justifyContent: "flex-end" }}>
               <Button onClick={() => setStep("leads")} disabled={!canProceedDetails}>
                 Next: Select Leads
@@ -329,6 +379,15 @@ function NewCampaignPage() {
               <div>
                 <p className="form-label" style={{ marginBottom: 4 }}>Goal</p>
                 <p style={{ fontSize: 13, margin: 0, color: "var(--muted-foreground)", lineHeight: 1.5 }}>{goal}</p>
+              </div>
+            )}
+
+            {intentType && (
+              <div>
+                <p className="form-label" style={{ marginBottom: 4 }}>Outreach intent</p>
+                <p style={{ fontSize: 13, margin: 0 }}>
+                  {INTENTS.find((i) => i.value === intentType)?.label}
+                </p>
               </div>
             )}
 

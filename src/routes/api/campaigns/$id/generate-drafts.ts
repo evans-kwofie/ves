@@ -8,6 +8,7 @@ import { auth } from "~/lib/auth";
 import { getRequestHeaders } from "@tanstack/react-start/server";
 import type { Lead } from "~/types/lead";
 import type { Template } from "~/db/queries/templates";
+import type { CampaignIntent } from "~/types/campaign";
 
 
 function resolveTokens(text: string, lead: Lead): string {
@@ -23,6 +24,101 @@ function resolveTokens(text: string, lead: Lead): string {
     .replaceAll("{{whatTheyDo}}", lead.whatTheyDo ?? "");
 }
 
+function buildSystemPrompt(opts: {
+  channel: string;
+  isFollowUp: boolean;
+  intentType: CampaignIntent | null;
+}): string {
+  const { channel, isFollowUp, intentType } = opts;
+
+  if (channel === "linkedin_connect") {
+    return `You are writing a LinkedIn connection request note from a founder to a potential customer.
+
+Rules:
+- HARD LIMIT: 300 characters total (LinkedIn enforces this — count carefully)
+- One sentence about something specific to THEIR work — show you actually looked them up
+- One sentence on why you want to connect — brief, genuine, no pitch
+- No CTA beyond connecting — do not ask for a call or a demo
+- No filler phrases like "I'd love to connect" or "I came across your profile"
+- Sound like a real person, not a template
+
+Return JSON: { "subject": null, "body": "connection note under 300 chars" }`;
+  }
+
+  const isEmail = channel === "email";
+  const medium = isEmail ? "email" : "LinkedIn DM";
+  const subjectRule = isEmail
+    ? (isFollowUp ? "\n- Subject line: 5 words max, different from the first" : "\n- Subject line: 6 words max, specific to them — not generic")
+    : "";
+  const jsonShape = `{ "subject": ${isEmail ? '"short subject"' : "null"}, "body": "message" }`;
+
+  if (isFollowUp) {
+    return `You are writing a short, human follow-up ${medium} from a founder to a prospect who didn't reply.
+
+Rules:
+- Acknowledge you reached out before — casually, not apologetically
+- One new angle or value point; don't repeat yourself${subjectRule}
+- Under 50 words. Every word must earn its place.
+- CTA: softer than the first — "worth a quick chat?" or "happy to share more if useful"
+- Read it aloud. If it sounds like a sales email, rewrite it.
+
+Return JSON: ${jsonShape}`;
+  }
+
+  const intent = intentType ?? "advice_seeking";
+
+  if (intent === "advice_seeking") {
+    return `You are a founder writing a personal, concise outreach ${medium} to a potential early customer. Your goal is not to pitch — it's to get their advice or perspective.
+
+Rules:
+- Open with something specific about what THEY do — show you actually looked them up
+- Ask for their feedback, opinion, or experience — not a demo, not a sale
+- Under 75 words total.${subjectRule}
+- One CTA only: low-friction — "would love your take if you have 10 minutes" or "any chance you'd be open to a quick call?"
+- Sound like a curious founder, not a sales rep
+
+Return JSON: ${jsonShape}`;
+  }
+
+  if (intent === "product_review") {
+    return `You are a founder writing a personal outreach ${medium} asking someone to try your product and give honest feedback.
+
+Rules:
+- Start with something specific about what THEY do — show genuine interest in their work
+- Make the offer clear: try it free, give feedback — no commitment required
+- Under 75 words total.${subjectRule}
+- One CTA only: "would you be up for trying it and telling me what you think?" or similar
+- This is a request for help, not a sales pitch — keep that energy
+
+Return JSON: ${jsonShape}`;
+  }
+
+  if (intent === "audit_offer") {
+    return `You are a founder writing a personal outreach ${medium} leading with a free, specific audit or analysis as an upfront gift.
+
+Rules:
+- Open by naming something concrete about their business you noticed — make the audit feel relevant to THEM
+- Offer the audit for free, no strings — make the value obvious in one sentence
+- Under 75 words total.${subjectRule}
+- One CTA only: low-friction — "want me to run this for you?" or "happy to send it over if useful"
+- Never mention a demo or a pitch; the audit IS the intro
+
+Return JSON: ${jsonShape}`;
+  }
+
+  // direct_pitch
+  return `You are a founder writing a direct, concise outreach ${medium} with a clear value prop and a demo ask.
+
+Rules:
+- Open with something specific about their business — show you looked them up
+- State the core outcome your product delivers in one sentence — specific, not vague
+- Under 75 words total.${subjectRule}
+- One CTA only: "would you be open to a 20-min demo?" or "happy to show you how it works"
+- Be direct and confident, but not pushy — founders respect founders
+
+Return JSON: ${jsonShape}`;
+}
+
 async function generateWithAI(opts: {
   channel: string;
   lead: Lead;
@@ -30,8 +126,9 @@ async function generateWithAI(opts: {
   campaignGoal: string | null | undefined;
   stepContext: string | null | undefined;
   isFollowUp: boolean;
+  intentType: CampaignIntent | null;
 }): Promise<{ subject: string | null; body: string }> {
-  const { channel, lead, productContext, campaignGoal, stepContext, isFollowUp } = opts;
+  const { channel, lead, productContext, campaignGoal, stepContext, isFollowUp, intentType } = opts;
 
   const leadContext = [
     `Company: ${lead.company}`,
@@ -46,22 +143,10 @@ async function generateWithAI(opts: {
 
   const stepHint = stepContext ? `\n\nSTEP CONTEXT\n${stepContext}` : "";
 
-  const isEmail = channel === "email";
-  const systemPrompt = `You are a concise, direct outreach writer. Write a highly personalised cold ${isEmail ? "email" : "LinkedIn DM"} that doesn't sound like a template.${isFollowUp ? " This is a follow-up — acknowledge you've reached out before, keep it shorter and more casual." : ""}
-
-Rules:
-- Never start with filler openers
-- Reference what their company actually does and why the product is genuinely relevant
-- Maximum 4 sentences.${isEmail ? " Subject line under 8 words." : ""}
-- End with one clear, low-friction CTA
-- Write as a human, not a marketer
-
-Return JSON: { "subject": ${isEmail ? '"short subject line"' : "null"}, "body": "message body" }`;
+  const systemPrompt = buildSystemPrompt({ channel, isFollowUp, intentType });
 
   const userPrompt = `${productContext ? `OUR PRODUCT\n${productContext}\n\n` : ""}LEAD\n${leadContext}${campaignGoal ? `\n\nCAMPAIGN GOAL\n${campaignGoal}` : ""}${stepHint}`;
 
-  console.log("[generate-drafts] systemPrompt:", systemPrompt);
-  console.log("[generate-drafts] userPrompt:", userPrompt);
   const parsed = await geminiJSON<{ subject?: string | null; body?: string }>(userPrompt, {
     maxTokens: 1024,
     system: systemPrompt,
@@ -128,7 +213,7 @@ export const Route = createFileRoute("/api/campaigns/$id/generate-drafts")({
         const generated: { leadId: string; stepNumber: number; ok: boolean }[] = [];
 
         for (const step of stepsToRun) {
-          const channel = step.channel === "linkedin" ? "linkedin" : "email";
+          const channel = (step.channel === "linkedin" || step.channel === "linkedin_connect") ? step.channel : "email";
           const isFollowUp = step.stepNumber > 1;
 
           // Load template if this step has one
@@ -164,6 +249,7 @@ export const Route = createFileRoute("/api/campaigns/$id/generate-drafts")({
                   campaignGoal: campaign.goal,
                   stepContext: "context" in step ? step.context as string | null : null,
                   isFollowUp,
+                  intentType: campaign.intentType,
                 });
                 subject = result.subject;
                 body = result.body;

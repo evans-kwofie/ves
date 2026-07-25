@@ -1,5 +1,6 @@
 export type CampaignStatus = 'draft' | 'active' | 'scheduled' | 'completed';
-export type CampaignChannel = 'email' | 'linkedin' | 'instagram' | 'both';
+export type CampaignChannel = 'email' | 'linkedin' | 'linkedin_connect' | 'instagram' | 'both';
+export type CampaignIntent = 'advice_seeking' | 'product_review' | 'audit_offer' | 'direct_pitch';
 
 export type RunFrequency = 'daily' | 'every_3_days' | 'weekly';
 
@@ -10,6 +11,7 @@ export interface Campaign {
   status: CampaignStatus;
   channel: CampaignChannel | null;
   goal: string | null;
+  intentType: CampaignIntent | null;
   runFrequency: RunFrequency | null;
   lastRunAt: string | null;
   createdAt: string;
@@ -24,6 +26,7 @@ export interface CreateCampaignInput {
   status?: CampaignStatus;
   channel?: CampaignChannel;
   goal?: string;
+  intentType?: CampaignIntent;
   leadIds?: string[];
 }
 
@@ -32,5 +35,6 @@ export interface UpdateCampaignInput {
   status?: CampaignStatus;
   channel?: CampaignChannel;
   goal?: string;
+  intentType?: CampaignIntent;
   runFrequency?: RunFrequency | null;
 }
