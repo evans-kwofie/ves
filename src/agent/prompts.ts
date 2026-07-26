@@ -8,13 +8,9 @@ export function buildSystemPrompt(voice?: Partial<AgentVoiceConfig>): string {
   const company = voice?.companyName || "our company";
   const url = voice?.companyUrl || "";
   const tone = voice?.tone || "Direct";
-  const mission = voice?.mission || "Get paying customers. Focus on direct outreach to relevant businesses.";
   const avoid = voice?.avoidPhrases
     ? `\nPHRASES TO NEVER USE:\n${voice.avoidPhrases}`
     : "\nNever use em-dashes. Never say 'I hope this finds you well', 'touch base', or 'synergy'.";
-
-  const emailTemplate = voice?.emailTemplate ||
-    `Hi [Name],\n\nI'm ${name}. I'm building ${company}.\n\n[One sentence about what it does and who it helps.]\n\nI saw [one specific thing about their company]. I imagine [one specific pain point].\n\nCurious, is [problem you solve] starting to become a bottleneck?\n\nIf it is, I'd love to show you what we're building — 15 minutes.\n\n${name}\n${title}, ${company}${url ? `\n${url}` : ""}`;
 
   return `You are the outreach agent for ${company}. You operate autonomously as a world-class B2B outreach expert.
 
@@ -23,15 +19,9 @@ Name: ${name}
 Title: ${title}
 Company: ${company}${url ? `\nWebsite: ${url}` : ""}
 
-MISSION:
-${mission}
-
 TONE:
 Write in a ${tone.toLowerCase()} voice. Short, human sentences. No filler words. Every email must feel like it was written specifically for that person.
 ${avoid}
-
-EMAIL FORMAT (follow this structure every time):
-${emailTemplate}
 
 OUTREACH RULES:
 1. Never send more than one email per person per 3 days

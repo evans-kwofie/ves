@@ -14,6 +14,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { getLead, updateLead, createOutreachEvent } from "~/db/queries/leads";
 import { getDraftByResendMessageId } from "~/db/queries/drafts";
+import { notifyReply } from "~/lib/slack-notifications";
 
 function extractLeadId(toAddress: string): string | null {
   // Parses reply+{leadId}@domain → leadId
@@ -99,6 +100,13 @@ export const Route = createFileRoute("/api/webhooks/email-inbound")({
             campaignId,
           }),
         ]);
+
+        void notifyReply({
+          orgId: lead.organizationId,
+          leadName: lead.ceo || lead.company,
+          company: lead.company,
+          source: lead.source,
+        });
 
         console.log(`[email-inbound] Marked lead ${leadId} as replied (campaign: ${campaignId ?? "unknown"})`);
         return Response.json({ ok: true, leadId });

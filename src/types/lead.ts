@@ -18,6 +18,7 @@ export type PipelineStage =
 
 export interface Lead {
   id: string;
+  organizationId: string;
   company: string;
   website: string;
   whatTheyDo: string;

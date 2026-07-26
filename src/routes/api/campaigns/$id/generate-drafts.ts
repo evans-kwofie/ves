@@ -9,6 +9,7 @@ import { getRequestHeaders } from "@tanstack/react-start/server";
 import type { Lead } from "~/types/lead";
 import type { Template } from "~/db/queries/templates";
 import type { CampaignIntent } from "~/types/campaign";
+import { notifyDraftsReady } from "~/lib/slack-notifications";
 
 
 function resolveTokens(text: string, lead: Lead): string {
@@ -275,6 +276,15 @@ export const Route = createFileRoute("/api/campaigns/$id/generate-drafts")({
         }
 
         const succeeded = generated.filter((g) => g.ok).length;
+
+        if (succeeded > 0) {
+          void notifyDraftsReady({
+            orgId: campaign.organizationId,
+            campaignName: campaign.name,
+            count: succeeded,
+          });
+        }
+
         return Response.json({ ok: true, generated: succeeded, total: generated.length });
       },
     },

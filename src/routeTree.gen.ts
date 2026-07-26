@@ -69,6 +69,7 @@ import { Route as WorkspaceIdTemplatesNewRouteImport } from './routes/$workspace
 import { Route as WorkspaceIdTemplatesTemplateIdRouteImport } from './routes/$workspaceId/templates/$templateId'
 import { Route as WorkspaceIdSettingsWorkspaceRouteImport } from './routes/$workspaceId/settings/workspace'
 import { Route as WorkspaceIdSettingsProfileRouteImport } from './routes/$workspaceId/settings/profile'
+import { Route as WorkspaceIdSettingsNotificationsRouteImport } from './routes/$workspaceId/settings/notifications'
 import { Route as WorkspaceIdSettingsEmailRouteImport } from './routes/$workspaceId/settings/email'
 import { Route as WorkspaceIdSettingsDangerRouteImport } from './routes/$workspaceId/settings/danger'
 import { Route as WorkspaceIdSettingsBillingRouteImport } from './routes/$workspaceId/settings/billing'
@@ -396,6 +397,12 @@ const WorkspaceIdSettingsProfileRoute =
     path: '/profile',
     getParentRoute: () => WorkspaceIdSettingsRouteRoute,
   } as any)
+const WorkspaceIdSettingsNotificationsRoute =
+  WorkspaceIdSettingsNotificationsRouteImport.update({
+    id: '/notifications',
+    path: '/notifications',
+    getParentRoute: () => WorkspaceIdSettingsRouteRoute,
+  } as any)
 const WorkspaceIdSettingsEmailRoute =
   WorkspaceIdSettingsEmailRouteImport.update({
     id: '/email',
@@ -511,6 +518,7 @@ export interface FileRoutesByFullPath {
   '/$workspaceId/settings/billing': typeof WorkspaceIdSettingsBillingRoute
   '/$workspaceId/settings/danger': typeof WorkspaceIdSettingsDangerRoute
   '/$workspaceId/settings/email': typeof WorkspaceIdSettingsEmailRoute
+  '/$workspaceId/settings/notifications': typeof WorkspaceIdSettingsNotificationsRoute
   '/$workspaceId/settings/profile': typeof WorkspaceIdSettingsProfileRoute
   '/$workspaceId/settings/workspace': typeof WorkspaceIdSettingsWorkspaceRoute
   '/$workspaceId/templates/$templateId': typeof WorkspaceIdTemplatesTemplateIdRoute
@@ -587,6 +595,7 @@ export interface FileRoutesByTo {
   '/$workspaceId/settings/billing': typeof WorkspaceIdSettingsBillingRoute
   '/$workspaceId/settings/danger': typeof WorkspaceIdSettingsDangerRoute
   '/$workspaceId/settings/email': typeof WorkspaceIdSettingsEmailRoute
+  '/$workspaceId/settings/notifications': typeof WorkspaceIdSettingsNotificationsRoute
   '/$workspaceId/settings/profile': typeof WorkspaceIdSettingsProfileRoute
   '/$workspaceId/settings/workspace': typeof WorkspaceIdSettingsWorkspaceRoute
   '/$workspaceId/templates/$templateId': typeof WorkspaceIdTemplatesTemplateIdRoute
@@ -666,6 +675,7 @@ export interface FileRoutesById {
   '/$workspaceId/settings/billing': typeof WorkspaceIdSettingsBillingRoute
   '/$workspaceId/settings/danger': typeof WorkspaceIdSettingsDangerRoute
   '/$workspaceId/settings/email': typeof WorkspaceIdSettingsEmailRoute
+  '/$workspaceId/settings/notifications': typeof WorkspaceIdSettingsNotificationsRoute
   '/$workspaceId/settings/profile': typeof WorkspaceIdSettingsProfileRoute
   '/$workspaceId/settings/workspace': typeof WorkspaceIdSettingsWorkspaceRoute
   '/$workspaceId/templates/$templateId': typeof WorkspaceIdTemplatesTemplateIdRoute
@@ -746,6 +756,7 @@ export interface FileRouteTypes {
     | '/$workspaceId/settings/billing'
     | '/$workspaceId/settings/danger'
     | '/$workspaceId/settings/email'
+    | '/$workspaceId/settings/notifications'
     | '/$workspaceId/settings/profile'
     | '/$workspaceId/settings/workspace'
     | '/$workspaceId/templates/$templateId'
@@ -822,6 +833,7 @@ export interface FileRouteTypes {
     | '/$workspaceId/settings/billing'
     | '/$workspaceId/settings/danger'
     | '/$workspaceId/settings/email'
+    | '/$workspaceId/settings/notifications'
     | '/$workspaceId/settings/profile'
     | '/$workspaceId/settings/workspace'
     | '/$workspaceId/templates/$templateId'
@@ -900,6 +912,7 @@ export interface FileRouteTypes {
     | '/$workspaceId/settings/billing'
     | '/$workspaceId/settings/danger'
     | '/$workspaceId/settings/email'
+    | '/$workspaceId/settings/notifications'
     | '/$workspaceId/settings/profile'
     | '/$workspaceId/settings/workspace'
     | '/$workspaceId/templates/$templateId'
@@ -1421,6 +1434,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkspaceIdSettingsProfileRouteImport
       parentRoute: typeof WorkspaceIdSettingsRouteRoute
     }
+    '/$workspaceId/settings/notifications': {
+      id: '/$workspaceId/settings/notifications'
+      path: '/notifications'
+      fullPath: '/$workspaceId/settings/notifications'
+      preLoaderRoute: typeof WorkspaceIdSettingsNotificationsRouteImport
+      parentRoute: typeof WorkspaceIdSettingsRouteRoute
+    }
     '/$workspaceId/settings/email': {
       id: '/$workspaceId/settings/email'
       path: '/email'
@@ -1542,6 +1562,7 @@ interface WorkspaceIdSettingsRouteRouteChildren {
   WorkspaceIdSettingsBillingRoute: typeof WorkspaceIdSettingsBillingRoute
   WorkspaceIdSettingsDangerRoute: typeof WorkspaceIdSettingsDangerRoute
   WorkspaceIdSettingsEmailRoute: typeof WorkspaceIdSettingsEmailRoute
+  WorkspaceIdSettingsNotificationsRoute: typeof WorkspaceIdSettingsNotificationsRoute
   WorkspaceIdSettingsProfileRoute: typeof WorkspaceIdSettingsProfileRoute
   WorkspaceIdSettingsWorkspaceRoute: typeof WorkspaceIdSettingsWorkspaceRoute
   WorkspaceIdSettingsIndexRoute: typeof WorkspaceIdSettingsIndexRoute
@@ -1554,6 +1575,8 @@ const WorkspaceIdSettingsRouteRouteChildren: WorkspaceIdSettingsRouteRouteChildr
     WorkspaceIdSettingsBillingRoute: WorkspaceIdSettingsBillingRoute,
     WorkspaceIdSettingsDangerRoute: WorkspaceIdSettingsDangerRoute,
     WorkspaceIdSettingsEmailRoute: WorkspaceIdSettingsEmailRoute,
+    WorkspaceIdSettingsNotificationsRoute:
+      WorkspaceIdSettingsNotificationsRoute,
     WorkspaceIdSettingsProfileRoute: WorkspaceIdSettingsProfileRoute,
     WorkspaceIdSettingsWorkspaceRoute: WorkspaceIdSettingsWorkspaceRoute,
     WorkspaceIdSettingsIndexRoute: WorkspaceIdSettingsIndexRoute,

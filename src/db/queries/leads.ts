@@ -49,6 +49,7 @@ export async function getOutreachEvents(leadId: string): Promise<OutreachEvent[]
 function rowToLead(row: Record<string, unknown>): Lead {
   return {
     id: row.id as string,
+    organizationId: row.organization_id as string,
     company: row.company as string,
     website: row.website as string,
     whatTheyDo: row.what_they_do as string,
@@ -195,45 +196,70 @@ export async function getDashboardStats(orgId: string): Promise<{
   };
 }
 
-export async function getRecentLeads(orgId: string, limit = 5): Promise<Lead[]> {
+export async function getRecentLeads(
+  orgId: string,
+  limit = 12,
+  opts?: { source?: string; fit?: string },
+): Promise<Lead[]> {
+  const conditions = ["organization_id = ?"];
+  const args: unknown[] = [orgId];
+  if (opts?.source) { conditions.push("source = ?"); args.push(opts.source); }
+  if (opts?.fit) { conditions.push("fit = ?"); args.push(opts.fit); }
+  args.push(limit);
   const result = await db.execute({
-    sql: "SELECT * FROM leads WHERE organization_id = ? ORDER BY added_at DESC LIMIT ?",
-    args: [orgId, limit],
+    sql: `SELECT * FROM leads WHERE ${conditions.join(" AND ")} ORDER BY added_at DESC LIMIT ?`,
+    args,
   });
   return result.rows.map((r) => rowToLead(r as Record<string, unknown>));
+}
+
+export async function getDistinctSources(orgId: string): Promise<string[]> {
+  const result = await db.execute({
+    sql: "SELECT DISTINCT source FROM leads WHERE organization_id = ? AND source IS NOT NULL AND source != '' ORDER BY source",
+    args: [orgId],
+  });
+  return result.rows.map((r) => (r as Record<string, unknown>).source as string);
 }
 
 export async function deleteLead(id: string): Promise<void> {
   await db.execute({ sql: "DELETE FROM leads WHERE id = ?", args: [id] });
 }
 
-export async function getLeadGrowth(orgId: string): Promise<{ date: string; count: number }[]> {
-  // Returns lead counts grouped by day for the last 7 days
+export async function getLeadGrowth(
+  orgId: string,
+  days = 7,
+  opts?: { source?: string },
+): Promise<{ date: string; count: number }[]> {
+  const interval = days - 1;
+  const conditions = [
+    "organization_id = ?",
+    `added_at >= (CURRENT_DATE - INTERVAL '${interval} days')::text`,
+  ];
+  const args: unknown[] = [orgId];
+  if (opts?.source) { conditions.push("source = ?"); args.push(opts.source); }
   const result = await db.execute({
     sql: `
       SELECT added_at::date as date, COUNT(*)::int as count
       FROM leads
-      WHERE organization_id = ?
-        AND added_at >= (CURRENT_DATE - INTERVAL '6 days')::text
+      WHERE ${conditions.join(" AND ")}
       GROUP BY added_at::date
       ORDER BY date ASC
     `,
-    args: [orgId],
+    args,
   });
-  // Fill in missing days with 0
   const map = new Map<string, number>();
   for (const row of result.rows) {
     const r = row as Record<string, unknown>;
     map.set(r.date as string, Number(r.count));
   }
-  const days: { date: string; count: number }[] = [];
-  for (let i = 6; i >= 0; i--) {
+  const result2: { date: string; count: number }[] = [];
+  for (let i = interval; i >= 0; i--) {
     const d = new Date();
     d.setDate(d.getDate() - i);
     const key = d.toISOString().split("T")[0];
-    days.push({ date: key, count: map.get(key) ?? 0 });
+    result2.push({ date: key, count: map.get(key) ?? 0 });
   }
-  return days;
+  return result2;
 }
 
 export async function getPipelineSummary(orgId: string): Promise<string> {

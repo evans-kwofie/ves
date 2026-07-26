@@ -13,6 +13,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Webhook } from "svix";
 import { getDraftByResendMessageId, updateDraft } from "~/db/queries/drafts";
 import { getLead, updateLead } from "~/db/queries/leads";
+import { notifyBounce } from "~/lib/slack-notifications";
 
 interface ResendEmailEvent {
   type: string;
@@ -85,9 +86,17 @@ export const Route = createFileRoute("/api/webhooks/resend")({
             const now = new Date().toISOString();
             await updateDraft(draft.id, { bouncedAt: now });
             const lead = await getLead(draft.leadId);
-            if (lead && lead.status === "email_sent") {
-              await updateLead(lead.id, { status: "not_contacted" });
-              console.log(`[webhook/resend] Marked lead ${lead.id} as not_contacted due to ${type}`);
+            if (lead) {
+              if (lead.status === "email_sent") {
+                await updateLead(lead.id, { status: "not_contacted" });
+                console.log(`[webhook/resend] Marked lead ${lead.id} as not_contacted due to ${type}`);
+              }
+              void notifyBounce({
+                orgId: lead.organizationId,
+                email: lead.email,
+                leadName: lead.ceo,
+                company: lead.company,
+              });
             }
           }
         }

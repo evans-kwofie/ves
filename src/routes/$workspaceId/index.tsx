@@ -2,7 +2,7 @@ import * as React from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import * as z from "zod";
-import { getDashboardStats, getRecentLeads, getLeadGrowth } from "~/db/queries/leads";
+import { getDashboardStats, getRecentLeads, getLeadGrowth, getDistinctSources } from "~/db/queries/leads";
 import { getRedditPostCount, getRecentRedditActivity } from "~/db/queries/reddit";
 import { listKeywords } from "~/db/queries/keywords";
 import { listCampaigns } from "~/db/queries/campaigns";
@@ -11,19 +11,36 @@ import { ArrowUpRight01Icon, MinusSignIcon } from "hugeicons-react";
 import type { Lead } from "~/types/lead";
 import { WelcomeDashboard } from "~/components/modules/WelcomeDashboard";
 
+// ─── Constants ────────────────────────────────────────────────────────────────
+
+const PERIODS = ["7d", "30d", "90d"] as const;
+type Period = (typeof PERIODS)[number];
+const PERIOD_DAYS: Record<Period, number> = { "7d": 7, "30d": 30, "90d": 90 };
+const PERIOD_LABEL: Record<Period, string> = { "7d": "7 days", "30d": "30 days", "90d": "90 days" };
+
+// ─── Server ───────────────────────────────────────────────────────────────────
+
 const getDashboard = createServerFn({ method: "GET" })
-  .inputValidator(z.string())
-  .handler(async ({ data: orgId }) => {
-    const [session, leadStats, redditCount, keywords, campaigns, recentLeads, leadGrowth, recentActivity] =
+  .inputValidator(z.object({
+    orgId: z.string(),
+    period: z.string().optional(),
+    source: z.string().optional(),
+    fit: z.string().optional(),
+  }))
+  .handler(async ({ data }) => {
+    const { orgId, period = "7d", source, fit } = data;
+    const days = PERIOD_DAYS[(period as Period)] ?? 7;
+    const [session, leadStats, redditCount, keywords, campaigns, recentLeads, leadGrowth, recentActivity, availableSources] =
       await Promise.all([
         getSessionFn(),
         getDashboardStats(orgId),
         getRedditPostCount(orgId),
         listKeywords(orgId),
         listCampaigns(orgId),
-        getRecentLeads(orgId, 5),
-        getLeadGrowth(orgId),
+        getRecentLeads(orgId, 12, { source, fit }),
+        getLeadGrowth(orgId, days, { source }),
         getRecentRedditActivity(orgId, 4),
+        getDistinctSources(orgId),
       ]);
     return {
       userName: session?.user.name ?? "",
@@ -35,11 +52,25 @@ const getDashboard = createServerFn({ method: "GET" })
       recentLeads,
       leadGrowth,
       recentActivity,
+      availableSources,
     };
   });
 
+const searchSchema = z.object({
+  period: z.enum(PERIODS).optional().catch("7d"),
+  source: z.string().optional(),
+  fit: z.string().optional(),
+});
+
 export const Route = createFileRoute("/$workspaceId/")({
-  loader: ({ params }) => getDashboard({ data: params.workspaceId }),
+  validateSearch: searchSchema,
+  loaderDeps: ({ search }) => ({
+    period: search.period ?? "7d",
+    source: search.source,
+    fit: search.fit,
+  }),
+  loader: ({ params, deps }) =>
+    getDashboard({ data: { orgId: params.workspaceId, period: deps.period, source: deps.source, fit: deps.fit } }),
   component: DashboardPage,
 });
 
@@ -77,16 +108,27 @@ function LeadGrowthChart({ data }: { data: { date: string; count: number }[] }) 
   const PAD = { top: 10, right: 8, bottom: 28, left: 28 };
   const iW = W - PAD.left - PAD.right;
   const iH = H - PAD.top - PAD.bottom;
+  const n = counts.length;
 
   const pts = counts.map((v, i) => ({
-    x: PAD.left + (i / (counts.length - 1)) * iW,
+    x: PAD.left + (n > 1 ? (i / (n - 1)) * iW : iW / 2),
     y: PAD.top + iH - (v / max) * iH,
   }));
 
   const linePath = pts.map((p, i) => `${i === 0 ? "M" : "L"}${p.x},${p.y}`).join(" ");
   const areaPath = `${linePath} L${pts[pts.length - 1].x},${PAD.top + iH} L${pts[0].x},${PAD.top + iH} Z`;
-  const labels = data.map((d) => new Date(d.date).toLocaleDateString("en", { weekday: "short" }));
   const yTicks = [0, Math.round(max / 2), max];
+
+  const labelStep = Math.ceil(n / 7);
+  const labelIndices = new Set(
+    Array.from({ length: n }, (_, i) => i).filter((i) => i % labelStep === 0 || i === n - 1),
+  );
+
+  function fmtLabel(iso: string) {
+    const d = new Date(iso);
+    if (n <= 14) return d.toLocaleDateString("en", { weekday: "short" });
+    return d.toLocaleDateString("en", { month: "short", day: "numeric" });
+  }
 
   return (
     <svg width="100%" viewBox={`0 0 ${W} ${H}`} className="overflow-visible">
@@ -107,12 +149,16 @@ function LeadGrowthChart({ data }: { data: { date: string; count: number }[] }) 
       })}
       <path d={areaPath} fill="url(#cg)" />
       <path d={linePath} fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
-      {pts.map((p, i) => (
+      {n <= 14 && pts.map((p, i) => (
         <circle key={i} cx={p.x} cy={p.y} r="3" fill="var(--accent)" stroke="var(--card)" strokeWidth="1.5" />
       ))}
-      {pts.map((p, i) => (
-        <text key={i} x={p.x} y={H - 6} textAnchor="middle" fontSize="9" fill="var(--muted-foreground)">{labels[i]}</text>
-      ))}
+      {pts.map((p, i) =>
+        labelIndices.has(i) ? (
+          <text key={i} x={p.x} y={H - 6} textAnchor="middle" fontSize="9" fill="var(--muted-foreground)">
+            {fmtLabel(data[i].date)}
+          </text>
+        ) : null,
+      )}
     </svg>
   );
 }
@@ -138,24 +184,224 @@ function greeting(name: string) {
   return name ? `${time}, ${name.split(" ")[0]}.` : `${time}.`;
 }
 
+function capitalize(s: string) {
+  return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
+}
+
 const INTENT_DOT: Record<string, string> = {
-  buying: "bg-[var(--accent)]",
+  buying: "bg-accent",
   pain: "bg-amber-400",
-  discussion: "bg-[var(--muted-foreground)]",
-  noise: "bg-[var(--muted-foreground)]",
+  discussion: "bg-muted-foreground",
+  noise: "bg-muted-foreground",
 };
 
 const FIT_COLOR: Record<string, string> = {
-  HIGH: "text-[var(--accent)]",
+  HIGH: "text-accent",
   MEDIUM: "text-amber-400",
-  LOW: "text-[var(--muted-foreground)]",
+  LOW: "text-muted-foreground",
 };
+
+// ─── Filter bar ───────────────────────────────────────────────────────────────
+
+function DropdownFilter({
+  triggerLabel,
+  isActive,
+  children,
+}: {
+  triggerLabel: React.ReactNode;
+  isActive: boolean;
+  children: (close: () => void) => React.ReactNode;
+}) {
+  const [open, setOpen] = React.useState(false);
+  const ref = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    if (!open) return;
+    function h(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", h);
+    return () => document.removeEventListener("mousedown", h);
+  }, [open]);
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className={[
+          "inline-flex items-center gap-1.5 h-7.5 px-2.5 rounded-md border text-[11px] font-medium transition-all select-none",
+          isActive
+            ? "border-accent/50 bg-accent-subtle text-accent"
+            : "border-border bg-card text-muted-foreground hover:text-foreground hover:border-border/80",
+        ].join(" ")}
+      >
+        {triggerLabel}
+        <svg width="8" height="5" viewBox="0 0 8 5" fill="none" className="shrink-0 opacity-40 mt-px">
+          <path d="M1 1l3 3 3-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </button>
+
+      {open && (
+        <div className="absolute top-full left-0 mt-1.5 min-w-[168px] bg-card border border-border rounded-lg shadow-[0_8px_32px_rgba(0,0,0,0.12)] z-50 py-1 overflow-hidden">
+          {children(() => setOpen(false))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+
+function FilterBar({
+  period,
+  source,
+  fit,
+  availableSources,
+  workspaceId,
+}: {
+  period: Period;
+  source: string | undefined;
+  fit: string | undefined;
+  availableSources: string[];
+  workspaceId: string;
+}) {
+  const hasActiveFilters = !!source || (!!fit && fit !== "ALL");
+  const activeFit = fit && fit !== "ALL" ? fit : undefined;
+
+  const sourceLabel = source ? capitalize(source) : "All sources";
+  const fitLabel = fit && fit !== "ALL" ? capitalize(fit.toLowerCase()) : "All scores";
+
+  const sourceOptions = [
+    { value: "", label: "All sources" },
+    ...availableSources.map((s) => ({ value: s, label: capitalize(s) })),
+  ];
+
+  const fitOptions = [
+    { value: "ALL", label: "All scores" },
+    { value: "HIGH", label: "High" },
+    { value: "MEDIUM", label: "Medium" },
+    { value: "LOW", label: "Low" },
+  ];
+
+  return (
+    <div className="flex items-center gap-2.5">
+      {/* Segmented period control */}
+      <div className="inline-flex items-stretch h-7.5 border border-border rounded-md overflow-hidden">
+        {PERIODS.map((p, i) => (
+          <Link
+            key={p}
+            to="/$workspaceId"
+            params={{ workspaceId }}
+            search={{ period: p, source: source || undefined, fit: activeFit }}
+            className={[
+              "px-3 text-[11px] font-semibold flex items-center transition-colors select-none",
+              i > 0 ? "border-l border-border" : "",
+              period === p
+                ? "bg-accent-subtle text-accent"
+                : "text-muted-foreground hover:bg-muted hover:text-foreground",
+            ].join(" ")}
+          >
+            {p === "7d" ? "7D" : p === "30d" ? "30D" : "90D"}
+          </Link>
+        ))}
+      </div>
+
+      <div className="w-px h-4 bg-border shrink-0" />
+
+      {/* Source dropdown */}
+      {availableSources.length > 0 && (
+        <DropdownFilter
+          isActive={!!source}
+          triggerLabel={
+            <>
+              <span className="text-muted-foreground/50 font-normal">Source</span>
+              <span className={source ? "font-semibold" : ""}>{sourceLabel}</span>
+            </>
+          }
+        >
+          {(close) => (
+            <>
+              {sourceOptions.map((opt) => (
+                <Link
+                  key={opt.value}
+                  to="/$workspaceId"
+                  params={{ workspaceId }}
+                  search={{ period, source: opt.value || undefined, fit: activeFit }}
+                  onClick={close}
+                  className={[
+                    "flex items-center gap-2.5 w-full px-3 py-1.75 text-[12px] transition-colors no-underline",
+                    (source ?? "") === opt.value
+                      ? "text-accent"
+                      : "text-foreground hover:bg-muted",
+                  ].join(" ")}
+                >
+                  <span className={`w-3.5 text-[9px] shrink-0 ${(source ?? "") === opt.value ? "opacity-100" : "opacity-0"}`}>✓</span>
+                  {opt.label}
+                </Link>
+              ))}
+            </>
+          )}
+        </DropdownFilter>
+      )}
+
+      {/* Fit dropdown */}
+      <DropdownFilter
+        isActive={!!fit && fit !== "ALL"}
+        triggerLabel={
+          <>
+            <span className="text-muted-foreground/50 font-normal">Fit</span>
+            <span className={fit && fit !== "ALL" ? "font-semibold" : ""}>{fitLabel}</span>
+          </>
+        }
+      >
+        {(close) => (
+          <>
+            {fitOptions.map((opt) => (
+              <Link
+                key={opt.value}
+                to="/$workspaceId"
+                params={{ workspaceId }}
+                search={{ period, source: source || undefined, fit: opt.value !== "ALL" ? opt.value : undefined }}
+                onClick={close}
+                className={[
+                  "flex items-center gap-2.5 w-full px-3 py-1.75 text-[12px] transition-colors no-underline",
+                  (fit ?? "ALL") === opt.value
+                    ? "text-accent"
+                    : "text-foreground hover:bg-muted",
+                ].join(" ")}
+              >
+                <span className={`w-3.5 text-[9px] shrink-0 ${(fit ?? "ALL") === opt.value ? "opacity-100" : "opacity-0"}`}>✓</span>
+                {opt.label}
+              </Link>
+            ))}
+          </>
+        )}
+      </DropdownFilter>
+
+      {/* Reset */}
+      {hasActiveFilters && (
+        <>
+          <div className="w-px h-4 bg-border shrink-0" />
+          <Link
+            to="/$workspaceId"
+            params={{ workspaceId }}
+            search={{ period }}
+            className="text-[11px] text-muted-foreground hover:text-foreground transition-colors no-underline"
+          >
+            Reset
+          </Link>
+        </>
+      )}
+    </div>
+  );
+}
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 function DashboardPage() {
   const data = Route.useLoaderData();
   const { workspaceId } = Route.useParams();
+  const { period = "7d", source, fit } = Route.useSearch();
 
   const isEmpty = data.totalLeads === 0 && !data.hasCampaigns && !data.hasKeywords;
 
@@ -177,28 +423,29 @@ function DashboardPage() {
     ? ((data.converted / data.totalLeads) * 100).toFixed(1)
     : "0.0";
   const growthCounts = data.leadGrowth.map((d) => d.count);
-  const totalThisWeek = growthCounts.reduce((a, b) => a + b, 0);
+  const totalInPeriod = growthCounts.reduce((a, b) => a + b, 0);
+  const resolvedPeriod = (period as Period) ?? "7d";
 
   return (
     <div className="page-content flex flex-col gap-6">
 
-      {/* Greeting */}
-      <div className="flex items-center justify-between">
+      {/* Greeting + filter bar */}
+      <div className="flex items-center justify-between gap-6">
         <div>
-          <h1 className="text-[22px] font-bold tracking-tight text-[var(--foreground)]">
+          <h1 className="text-[22px] font-bold tracking-tight text-foreground">
             {greeting(data.userName)}
           </h1>
-          <p className="text-[13px] text-[var(--muted-foreground)] mt-1">
+          <p className="text-[13px] text-muted-foreground mt-1">
             Here's what's happening across your pipeline today.
           </p>
         </div>
-        <Link
-          to="/$workspaceId/campaigns/new"
-          params={{ workspaceId }}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-[var(--radius)] bg-[var(--accent)] text-[var(--accent-foreground)] text-[13px] font-semibold no-underline hover:opacity-90 transition-opacity"
-        >
-          + New Campaign
-        </Link>
+        <FilterBar
+          period={resolvedPeriod}
+          source={source}
+          fit={fit}
+          availableSources={data.availableSources}
+          workspaceId={workspaceId}
+        />
       </div>
 
       {/* Stat cards */}
@@ -206,8 +453,8 @@ function DashboardPage() {
         <StatCard
           label="Total Leads"
           value={fmt(data.totalLeads)}
-          sub={`+${totalThisWeek} this week`}
-          trend={totalThisWeek > 0 ? "up" : "flat"}
+          sub={`+${totalInPeriod} in ${PERIOD_LABEL[resolvedPeriod]}`}
+          trend={totalInPeriod > 0 ? "up" : "flat"}
           sparkline={growthCounts}
         />
         <StatCard
@@ -236,27 +483,34 @@ function DashboardPage() {
       {/* Chart + Activity */}
       <div className="grid gap-3" style={{ gridTemplateColumns: "1fr 280px" }}>
         <div className="card p-5">
-          <p className="text-[13px] font-semibold text-[var(--foreground)]">Lead Growth</p>
-          <p className="text-[11px] text-[var(--muted-foreground)] mt-0.5 mb-4">New leads per day — last 7 days</p>
+          <div className="flex items-start justify-between mb-4">
+            <div>
+              <p className="text-[13px] font-semibold text-foreground">Lead Growth</p>
+              <p className="text-[11px] text-muted-foreground mt-0.5">
+                New leads per day — last {PERIOD_LABEL[resolvedPeriod]}
+                {source ? ` · ${capitalize(source)}` : ""}
+              </p>
+            </div>
+          </div>
           <LeadGrowthChart data={data.leadGrowth} />
         </div>
 
         <div className="card p-5 flex flex-col gap-0">
           <div className="flex items-center justify-between mb-3">
-            <p className="text-[13px] font-semibold text-[var(--foreground)]">Live Activity</p>
-            <span className="text-[10px] font-bold text-[var(--accent)] bg-[var(--accent-subtle)] px-2 py-0.5 rounded-full">LIVE</span>
+            <p className="text-[13px] font-semibold text-foreground">Live Activity</p>
+            <span className="text-[10px] font-bold text-accent bg-accent-subtle px-2 py-0.5 rounded-full">LIVE</span>
           </div>
 
           {data.recentActivity.length === 0 ? (
-            <p className="text-[12px] text-[var(--muted-foreground)]">No signals yet. Fetch some Reddit posts.</p>
+            <p className="text-[12px] text-muted-foreground">No signals yet. Fetch some Reddit posts.</p>
           ) : (
             <div className="flex flex-col gap-3">
               {data.recentActivity.map((item) => (
                 <div key={item.id} className="flex gap-2.5 items-start">
-                  <div className={`w-1.5 h-1.5 rounded-full mt-1.5 shrink-0 ${INTENT_DOT[item.intentType ?? ""] ?? "bg-[var(--muted-foreground)]"}`} />
+                  <div className={`w-1.5 h-1.5 rounded-full mt-1.5 shrink-0 ${INTENT_DOT[item.intentType ?? ""] ?? "bg-muted-foreground"}`} />
                   <div className="min-w-0">
-                    <p className="text-[12px] text-[var(--foreground)] leading-snug truncate">{item.title}</p>
-                    <p className="text-[11px] text-[var(--muted-foreground)] mt-0.5">r/{item.subreddit} · {timeAgo(item.fetchedAt)}</p>
+                    <p className="text-[12px] text-foreground leading-snug truncate">{item.title}</p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">r/{item.subreddit} · {timeAgo(item.fetchedAt)}</p>
                   </div>
                 </div>
               ))}
@@ -266,7 +520,7 @@ function DashboardPage() {
           <Link
             to="/$workspaceId/reddit"
             params={{ workspaceId }}
-            className="text-[11px] font-semibold text-[var(--accent)] no-underline mt-auto pt-4 tracking-wide"
+            className="text-[11px] font-semibold text-accent no-underline mt-auto pt-4 tracking-wide"
           >
             VIEW ALL SIGNALS →
           </Link>
@@ -276,40 +530,56 @@ function DashboardPage() {
       {/* Recent leads */}
       <div className="card p-5">
         <div className="flex items-center justify-between mb-4">
-          <p className="text-[13px] font-semibold text-[var(--foreground)]">Recent Leads</p>
-          <Link to="/$workspaceId/pipeline" params={{ workspaceId }} className="text-[11px] font-semibold text-[var(--accent)] no-underline">
+          <div>
+            <p className="text-[13px] font-semibold text-foreground">Recent Leads</p>
+            {(source || (fit && fit !== "ALL")) && (
+              <p className="text-[11px] text-muted-foreground mt-0.5">
+                Filtered
+                {source ? ` · ${capitalize(source)}` : ""}
+                {fit && fit !== "ALL" ? ` · ${capitalize(fit.toLowerCase())} fit` : ""}
+              </p>
+            )}
+          </div>
+          <Link to="/$workspaceId/pipeline" params={{ workspaceId }} className="text-[11px] font-semibold text-accent no-underline">
             View all →
           </Link>
         </div>
 
         {data.recentLeads.length === 0 ? (
-          <p className="text-[12px] text-[var(--muted-foreground)]">No leads yet. Run the Reddit agent to auto-discover leads.</p>
+          <p className="text-[12px] text-muted-foreground">
+            {source || fit
+              ? "No leads match the current filters."
+              : "No leads yet. Run the Reddit agent to auto-discover leads."}
+          </p>
         ) : (
           <table className="w-full border-collapse">
             <thead>
               <tr>
-                {["Company", "Contact", "Fit", "Status", "Added"].map((h) => (
-                  <th key={h} className="text-left text-[10px] font-bold uppercase tracking-widest text-[var(--muted-foreground)] pb-2.5 border-b border-[var(--border)]">{h}</th>
+                {["Company", "Contact", "Fit", "Status", "Source", "Added"].map((h) => (
+                  <th key={h} className="text-left text-[10px] font-bold uppercase tracking-widest text-muted-foreground pb-2.5 border-b border-border">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {data.recentLeads.map((lead: Lead) => (
-                <tr key={lead.id} className="border-b border-[var(--border)]">
-                  <td className="py-2.5 text-[12px] font-semibold text-[var(--foreground)]">{lead.company}</td>
-                  <td className="py-2.5 text-[12px] text-[var(--muted-foreground)]">{lead.ceo}</td>
-                  <td className="py-2.5">
+                <tr key={lead.id} className="border-b border-border last:border-b-0">
+                  <td className="py-2.5 pr-4 text-[12px] font-semibold text-foreground">{lead.company}</td>
+                  <td className="py-2.5 pr-4 text-[12px] text-muted-foreground">{lead.ceo}</td>
+                  <td className="py-2.5 pr-4">
                     {lead.fit
-                      ? <span className={`text-[10px] font-bold uppercase tracking-wide ${FIT_COLOR[lead.fit] ?? "text-[var(--muted-foreground)]"}`}>{lead.fit}</span>
-                      : <span className="text-[11px] text-[var(--muted-foreground)]">—</span>
+                      ? <span className={`text-[10px] font-bold uppercase tracking-wide ${FIT_COLOR[lead.fit] ?? "text-muted-foreground"}`}>{lead.fit}</span>
+                      : <span className="text-[11px] text-muted-foreground">—</span>
                     }
                   </td>
-                  <td className="py-2.5">
-                    <span className="text-[11px] px-2 py-0.5 rounded-full bg-[var(--muted)] text-[var(--muted-foreground)] capitalize">
+                  <td className="py-2.5 pr-4">
+                    <span className="text-[11px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground capitalize">
                       {lead.status?.replace(/_/g, " ")}
                     </span>
                   </td>
-                  <td className="py-2.5 text-[11px] text-[var(--muted-foreground)]">{timeAgo(lead.addedAt)}</td>
+                  <td className="py-2.5 pr-4 text-[11px] text-muted-foreground capitalize">
+                    {lead.source ?? "—"}
+                  </td>
+                  <td className="py-2.5 text-[11px] text-muted-foreground">{timeAgo(lead.addedAt)}</td>
                 </tr>
               ))}
             </tbody>
@@ -336,20 +606,20 @@ function StatCard({
   return (
     <div className="card p-4 flex flex-col gap-2">
       <div className="flex items-center justify-between">
-        <p className="text-[11px] font-semibold uppercase tracking-widest text-[var(--muted-foreground)]">{label}</p>
-        {trend === "up" && <ArrowUpRight01Icon size={13} className="text-[var(--accent)]" />}
-        {trend === "flat" && <MinusSignIcon size={13} className="text-[var(--muted-foreground)]" />}
+        <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">{label}</p>
+        {trend === "up" && <ArrowUpRight01Icon size={13} className="text-accent" />}
+        {trend === "flat" && <MinusSignIcon size={13} className="text-muted-foreground" />}
       </div>
       <div className="flex items-end justify-between gap-2">
-        <p className="text-[26px] font-extrabold tracking-tight text-[var(--foreground)] leading-none">{value}</p>
+        <p className="text-[26px] font-extrabold tracking-tight text-foreground leading-none">{value}</p>
         {sparkline && <Sparkline data={sparkline} color={sparkColor ?? "var(--accent)"} />}
       </div>
       {progress !== undefined && (
-        <div className="h-0.5 bg-[var(--border)] rounded-full overflow-hidden">
-          <div className="h-full bg-[var(--accent)] rounded-full transition-all duration-500" style={{ width: `${Math.min(progress, 100)}%` }} />
+        <div className="h-0.5 bg-border rounded-full overflow-hidden">
+          <div className="h-full bg-accent rounded-full transition-all duration-500" style={{ width: `${Math.min(progress, 100)}%` }} />
         </div>
       )}
-      {sub && <p className="text-[11px] text-[var(--muted-foreground)]">{sub}</p>}
+      {sub && <p className="text-[11px] text-muted-foreground">{sub}</p>}
     </div>
   );
 }
