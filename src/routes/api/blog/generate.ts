@@ -50,7 +50,7 @@ Requirements:
 
 Write the full blog post in Markdown. Nothing else.`;
 
-        const content = (await geminiComplete(prompt, { maxTokens: 2000 })).trim();
+        const content = (await geminiComplete(prompt, { maxTokens: 8192, thinkingBudget: 0 })).trim();
 
         // Extract title from first H1
         const titleMatch = content.match(/^#\s+(.+)$/m);

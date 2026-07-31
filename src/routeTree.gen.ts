@@ -19,7 +19,6 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as WorkspaceIdIndexRouteImport } from './routes/$workspaceId/index'
 import { Route as WorkspaceIdRedditRouteImport } from './routes/$workspaceId/reddit'
 import { Route as WorkspaceIdPipelineRouteImport } from './routes/$workspaceId/pipeline'
-import { Route as WorkspaceIdLinkedinPostsRouteImport } from './routes/$workspaceId/linkedin-posts'
 import { Route as WorkspaceIdLinkedinRouteImport } from './routes/$workspaceId/linkedin'
 import { Route as WorkspaceIdKeywordsRouteImport } from './routes/$workspaceId/keywords'
 import { Route as WorkspaceIdDirectoriesRouteImport } from './routes/$workspaceId/directories'
@@ -49,7 +48,11 @@ import { Route as ApiPipelineLeadsRouteImport } from './routes/api/pipeline/lead
 import { Route as ApiPipelineImportRouteImport } from './routes/api/pipeline/import'
 import { Route as ApiPipelineEnrichRouteImport } from './routes/api/pipeline/enrich'
 import { Route as ApiLinkedinSearchRouteImport } from './routes/api/linkedin/search'
+import { Route as ApiLinkedinPublishRouteImport } from './routes/api/linkedin/publish'
 import { Route as ApiLinkedinGeneratePostRouteImport } from './routes/api/linkedin/generate-post'
+import { Route as ApiLinkedinCallbackRouteImport } from './routes/api/linkedin/callback'
+import { Route as ApiLinkedinAuthorizeRouteImport } from './routes/api/linkedin/authorize'
+import { Route as ApiLinkedinIdRouteImport } from './routes/api/linkedin/$id'
 import { Route as ApiKeywordsGenerateRouteImport } from './routes/api/keywords/generate'
 import { Route as ApiKeywordsIdRouteImport } from './routes/api/keywords/$id'
 import { Route as ApiEmailTestSmtpRouteImport } from './routes/api/email/test-smtp'
@@ -67,9 +70,11 @@ import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as ApiAgentRunRouteImport } from './routes/api/agent/run'
 import { Route as WorkspaceIdTemplatesNewRouteImport } from './routes/$workspaceId/templates/new'
 import { Route as WorkspaceIdTemplatesTemplateIdRouteImport } from './routes/$workspaceId/templates/$templateId'
+import { Route as WorkspaceIdSettingsWritingStyleRouteImport } from './routes/$workspaceId/settings/writing-style'
 import { Route as WorkspaceIdSettingsWorkspaceRouteImport } from './routes/$workspaceId/settings/workspace'
 import { Route as WorkspaceIdSettingsProfileRouteImport } from './routes/$workspaceId/settings/profile'
 import { Route as WorkspaceIdSettingsNotificationsRouteImport } from './routes/$workspaceId/settings/notifications'
+import { Route as WorkspaceIdSettingsIntegrationsRouteImport } from './routes/$workspaceId/settings/integrations'
 import { Route as WorkspaceIdSettingsEmailRouteImport } from './routes/$workspaceId/settings/email'
 import { Route as WorkspaceIdSettingsDangerRouteImport } from './routes/$workspaceId/settings/danger'
 import { Route as WorkspaceIdSettingsBillingRouteImport } from './routes/$workspaceId/settings/billing'
@@ -137,12 +142,6 @@ const WorkspaceIdPipelineRoute = WorkspaceIdPipelineRouteImport.update({
   path: '/pipeline',
   getParentRoute: () => WorkspaceIdRouteRoute,
 } as any)
-const WorkspaceIdLinkedinPostsRoute =
-  WorkspaceIdLinkedinPostsRouteImport.update({
-    id: '/linkedin-posts',
-    path: '/linkedin-posts',
-    getParentRoute: () => WorkspaceIdRouteRoute,
-  } as any)
 const WorkspaceIdLinkedinRoute = WorkspaceIdLinkedinRouteImport.update({
   id: '/linkedin',
   path: '/linkedin',
@@ -293,9 +292,29 @@ const ApiLinkedinSearchRoute = ApiLinkedinSearchRouteImport.update({
   path: '/api/linkedin/search',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiLinkedinPublishRoute = ApiLinkedinPublishRouteImport.update({
+  id: '/api/linkedin/publish',
+  path: '/api/linkedin/publish',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiLinkedinGeneratePostRoute = ApiLinkedinGeneratePostRouteImport.update({
   id: '/api/linkedin/generate-post',
   path: '/api/linkedin/generate-post',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiLinkedinCallbackRoute = ApiLinkedinCallbackRouteImport.update({
+  id: '/api/linkedin/callback',
+  path: '/api/linkedin/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiLinkedinAuthorizeRoute = ApiLinkedinAuthorizeRouteImport.update({
+  id: '/api/linkedin/authorize',
+  path: '/api/linkedin/authorize',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiLinkedinIdRoute = ApiLinkedinIdRouteImport.update({
+  id: '/api/linkedin/$id',
+  path: '/api/linkedin/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiKeywordsGenerateRoute = ApiKeywordsGenerateRouteImport.update({
@@ -385,6 +404,12 @@ const WorkspaceIdTemplatesTemplateIdRoute =
     path: '/templates/$templateId',
     getParentRoute: () => WorkspaceIdRouteRoute,
   } as any)
+const WorkspaceIdSettingsWritingStyleRoute =
+  WorkspaceIdSettingsWritingStyleRouteImport.update({
+    id: '/writing-style',
+    path: '/writing-style',
+    getParentRoute: () => WorkspaceIdSettingsRouteRoute,
+  } as any)
 const WorkspaceIdSettingsWorkspaceRoute =
   WorkspaceIdSettingsWorkspaceRouteImport.update({
     id: '/workspace',
@@ -401,6 +426,12 @@ const WorkspaceIdSettingsNotificationsRoute =
   WorkspaceIdSettingsNotificationsRouteImport.update({
     id: '/notifications',
     path: '/notifications',
+    getParentRoute: () => WorkspaceIdSettingsRouteRoute,
+  } as any)
+const WorkspaceIdSettingsIntegrationsRoute =
+  WorkspaceIdSettingsIntegrationsRouteImport.update({
+    id: '/integrations',
+    path: '/integrations',
     getParentRoute: () => WorkspaceIdSettingsRouteRoute,
   } as any)
 const WorkspaceIdSettingsEmailRoute =
@@ -508,7 +539,6 @@ export interface FileRoutesByFullPath {
   '/$workspaceId/directories': typeof WorkspaceIdDirectoriesRoute
   '/$workspaceId/keywords': typeof WorkspaceIdKeywordsRoute
   '/$workspaceId/linkedin': typeof WorkspaceIdLinkedinRoute
-  '/$workspaceId/linkedin-posts': typeof WorkspaceIdLinkedinPostsRoute
   '/$workspaceId/pipeline': typeof WorkspaceIdPipelineRoute
   '/$workspaceId/reddit': typeof WorkspaceIdRedditRoute
   '/$workspaceId/': typeof WorkspaceIdIndexRoute
@@ -518,9 +548,11 @@ export interface FileRoutesByFullPath {
   '/$workspaceId/settings/billing': typeof WorkspaceIdSettingsBillingRoute
   '/$workspaceId/settings/danger': typeof WorkspaceIdSettingsDangerRoute
   '/$workspaceId/settings/email': typeof WorkspaceIdSettingsEmailRoute
+  '/$workspaceId/settings/integrations': typeof WorkspaceIdSettingsIntegrationsRoute
   '/$workspaceId/settings/notifications': typeof WorkspaceIdSettingsNotificationsRoute
   '/$workspaceId/settings/profile': typeof WorkspaceIdSettingsProfileRoute
   '/$workspaceId/settings/workspace': typeof WorkspaceIdSettingsWorkspaceRoute
+  '/$workspaceId/settings/writing-style': typeof WorkspaceIdSettingsWritingStyleRoute
   '/$workspaceId/templates/$templateId': typeof WorkspaceIdTemplatesTemplateIdRoute
   '/$workspaceId/templates/new': typeof WorkspaceIdTemplatesNewRoute
   '/api/agent/run': typeof ApiAgentRunRoute
@@ -538,7 +570,11 @@ export interface FileRoutesByFullPath {
   '/api/email/test-smtp': typeof ApiEmailTestSmtpRoute
   '/api/keywords/$id': typeof ApiKeywordsIdRoute
   '/api/keywords/generate': typeof ApiKeywordsGenerateRoute
+  '/api/linkedin/$id': typeof ApiLinkedinIdRoute
+  '/api/linkedin/authorize': typeof ApiLinkedinAuthorizeRoute
+  '/api/linkedin/callback': typeof ApiLinkedinCallbackRoute
   '/api/linkedin/generate-post': typeof ApiLinkedinGeneratePostRoute
+  '/api/linkedin/publish': typeof ApiLinkedinPublishRoute
   '/api/linkedin/search': typeof ApiLinkedinSearchRoute
   '/api/pipeline/enrich': typeof ApiPipelineEnrichRoute
   '/api/pipeline/import': typeof ApiPipelineImportRoute
@@ -585,7 +621,6 @@ export interface FileRoutesByTo {
   '/$workspaceId/directories': typeof WorkspaceIdDirectoriesRoute
   '/$workspaceId/keywords': typeof WorkspaceIdKeywordsRoute
   '/$workspaceId/linkedin': typeof WorkspaceIdLinkedinRoute
-  '/$workspaceId/linkedin-posts': typeof WorkspaceIdLinkedinPostsRoute
   '/$workspaceId/pipeline': typeof WorkspaceIdPipelineRoute
   '/$workspaceId/reddit': typeof WorkspaceIdRedditRoute
   '/$workspaceId': typeof WorkspaceIdIndexRoute
@@ -595,9 +630,11 @@ export interface FileRoutesByTo {
   '/$workspaceId/settings/billing': typeof WorkspaceIdSettingsBillingRoute
   '/$workspaceId/settings/danger': typeof WorkspaceIdSettingsDangerRoute
   '/$workspaceId/settings/email': typeof WorkspaceIdSettingsEmailRoute
+  '/$workspaceId/settings/integrations': typeof WorkspaceIdSettingsIntegrationsRoute
   '/$workspaceId/settings/notifications': typeof WorkspaceIdSettingsNotificationsRoute
   '/$workspaceId/settings/profile': typeof WorkspaceIdSettingsProfileRoute
   '/$workspaceId/settings/workspace': typeof WorkspaceIdSettingsWorkspaceRoute
+  '/$workspaceId/settings/writing-style': typeof WorkspaceIdSettingsWritingStyleRoute
   '/$workspaceId/templates/$templateId': typeof WorkspaceIdTemplatesTemplateIdRoute
   '/$workspaceId/templates/new': typeof WorkspaceIdTemplatesNewRoute
   '/api/agent/run': typeof ApiAgentRunRoute
@@ -615,7 +652,11 @@ export interface FileRoutesByTo {
   '/api/email/test-smtp': typeof ApiEmailTestSmtpRoute
   '/api/keywords/$id': typeof ApiKeywordsIdRoute
   '/api/keywords/generate': typeof ApiKeywordsGenerateRoute
+  '/api/linkedin/$id': typeof ApiLinkedinIdRoute
+  '/api/linkedin/authorize': typeof ApiLinkedinAuthorizeRoute
+  '/api/linkedin/callback': typeof ApiLinkedinCallbackRoute
   '/api/linkedin/generate-post': typeof ApiLinkedinGeneratePostRoute
+  '/api/linkedin/publish': typeof ApiLinkedinPublishRoute
   '/api/linkedin/search': typeof ApiLinkedinSearchRoute
   '/api/pipeline/enrich': typeof ApiPipelineEnrichRoute
   '/api/pipeline/import': typeof ApiPipelineImportRoute
@@ -665,7 +706,6 @@ export interface FileRoutesById {
   '/$workspaceId/directories': typeof WorkspaceIdDirectoriesRoute
   '/$workspaceId/keywords': typeof WorkspaceIdKeywordsRoute
   '/$workspaceId/linkedin': typeof WorkspaceIdLinkedinRoute
-  '/$workspaceId/linkedin-posts': typeof WorkspaceIdLinkedinPostsRoute
   '/$workspaceId/pipeline': typeof WorkspaceIdPipelineRoute
   '/$workspaceId/reddit': typeof WorkspaceIdRedditRoute
   '/$workspaceId/': typeof WorkspaceIdIndexRoute
@@ -675,9 +715,11 @@ export interface FileRoutesById {
   '/$workspaceId/settings/billing': typeof WorkspaceIdSettingsBillingRoute
   '/$workspaceId/settings/danger': typeof WorkspaceIdSettingsDangerRoute
   '/$workspaceId/settings/email': typeof WorkspaceIdSettingsEmailRoute
+  '/$workspaceId/settings/integrations': typeof WorkspaceIdSettingsIntegrationsRoute
   '/$workspaceId/settings/notifications': typeof WorkspaceIdSettingsNotificationsRoute
   '/$workspaceId/settings/profile': typeof WorkspaceIdSettingsProfileRoute
   '/$workspaceId/settings/workspace': typeof WorkspaceIdSettingsWorkspaceRoute
+  '/$workspaceId/settings/writing-style': typeof WorkspaceIdSettingsWritingStyleRoute
   '/$workspaceId/templates/$templateId': typeof WorkspaceIdTemplatesTemplateIdRoute
   '/$workspaceId/templates/new': typeof WorkspaceIdTemplatesNewRoute
   '/api/agent/run': typeof ApiAgentRunRoute
@@ -695,7 +737,11 @@ export interface FileRoutesById {
   '/api/email/test-smtp': typeof ApiEmailTestSmtpRoute
   '/api/keywords/$id': typeof ApiKeywordsIdRoute
   '/api/keywords/generate': typeof ApiKeywordsGenerateRoute
+  '/api/linkedin/$id': typeof ApiLinkedinIdRoute
+  '/api/linkedin/authorize': typeof ApiLinkedinAuthorizeRoute
+  '/api/linkedin/callback': typeof ApiLinkedinCallbackRoute
   '/api/linkedin/generate-post': typeof ApiLinkedinGeneratePostRoute
+  '/api/linkedin/publish': typeof ApiLinkedinPublishRoute
   '/api/linkedin/search': typeof ApiLinkedinSearchRoute
   '/api/pipeline/enrich': typeof ApiPipelineEnrichRoute
   '/api/pipeline/import': typeof ApiPipelineImportRoute
@@ -746,7 +792,6 @@ export interface FileRouteTypes {
     | '/$workspaceId/directories'
     | '/$workspaceId/keywords'
     | '/$workspaceId/linkedin'
-    | '/$workspaceId/linkedin-posts'
     | '/$workspaceId/pipeline'
     | '/$workspaceId/reddit'
     | '/$workspaceId/'
@@ -756,9 +801,11 @@ export interface FileRouteTypes {
     | '/$workspaceId/settings/billing'
     | '/$workspaceId/settings/danger'
     | '/$workspaceId/settings/email'
+    | '/$workspaceId/settings/integrations'
     | '/$workspaceId/settings/notifications'
     | '/$workspaceId/settings/profile'
     | '/$workspaceId/settings/workspace'
+    | '/$workspaceId/settings/writing-style'
     | '/$workspaceId/templates/$templateId'
     | '/$workspaceId/templates/new'
     | '/api/agent/run'
@@ -776,7 +823,11 @@ export interface FileRouteTypes {
     | '/api/email/test-smtp'
     | '/api/keywords/$id'
     | '/api/keywords/generate'
+    | '/api/linkedin/$id'
+    | '/api/linkedin/authorize'
+    | '/api/linkedin/callback'
     | '/api/linkedin/generate-post'
+    | '/api/linkedin/publish'
     | '/api/linkedin/search'
     | '/api/pipeline/enrich'
     | '/api/pipeline/import'
@@ -823,7 +874,6 @@ export interface FileRouteTypes {
     | '/$workspaceId/directories'
     | '/$workspaceId/keywords'
     | '/$workspaceId/linkedin'
-    | '/$workspaceId/linkedin-posts'
     | '/$workspaceId/pipeline'
     | '/$workspaceId/reddit'
     | '/$workspaceId'
@@ -833,9 +883,11 @@ export interface FileRouteTypes {
     | '/$workspaceId/settings/billing'
     | '/$workspaceId/settings/danger'
     | '/$workspaceId/settings/email'
+    | '/$workspaceId/settings/integrations'
     | '/$workspaceId/settings/notifications'
     | '/$workspaceId/settings/profile'
     | '/$workspaceId/settings/workspace'
+    | '/$workspaceId/settings/writing-style'
     | '/$workspaceId/templates/$templateId'
     | '/$workspaceId/templates/new'
     | '/api/agent/run'
@@ -853,7 +905,11 @@ export interface FileRouteTypes {
     | '/api/email/test-smtp'
     | '/api/keywords/$id'
     | '/api/keywords/generate'
+    | '/api/linkedin/$id'
+    | '/api/linkedin/authorize'
+    | '/api/linkedin/callback'
     | '/api/linkedin/generate-post'
+    | '/api/linkedin/publish'
     | '/api/linkedin/search'
     | '/api/pipeline/enrich'
     | '/api/pipeline/import'
@@ -902,7 +958,6 @@ export interface FileRouteTypes {
     | '/$workspaceId/directories'
     | '/$workspaceId/keywords'
     | '/$workspaceId/linkedin'
-    | '/$workspaceId/linkedin-posts'
     | '/$workspaceId/pipeline'
     | '/$workspaceId/reddit'
     | '/$workspaceId/'
@@ -912,9 +967,11 @@ export interface FileRouteTypes {
     | '/$workspaceId/settings/billing'
     | '/$workspaceId/settings/danger'
     | '/$workspaceId/settings/email'
+    | '/$workspaceId/settings/integrations'
     | '/$workspaceId/settings/notifications'
     | '/$workspaceId/settings/profile'
     | '/$workspaceId/settings/workspace'
+    | '/$workspaceId/settings/writing-style'
     | '/$workspaceId/templates/$templateId'
     | '/$workspaceId/templates/new'
     | '/api/agent/run'
@@ -932,7 +989,11 @@ export interface FileRouteTypes {
     | '/api/email/test-smtp'
     | '/api/keywords/$id'
     | '/api/keywords/generate'
+    | '/api/linkedin/$id'
+    | '/api/linkedin/authorize'
+    | '/api/linkedin/callback'
     | '/api/linkedin/generate-post'
+    | '/api/linkedin/publish'
     | '/api/linkedin/search'
     | '/api/pipeline/enrich'
     | '/api/pipeline/import'
@@ -990,7 +1051,11 @@ export interface RootRouteChildren {
   ApiEmailTestSmtpRoute: typeof ApiEmailTestSmtpRoute
   ApiKeywordsIdRoute: typeof ApiKeywordsIdRoute
   ApiKeywordsGenerateRoute: typeof ApiKeywordsGenerateRoute
+  ApiLinkedinIdRoute: typeof ApiLinkedinIdRoute
+  ApiLinkedinAuthorizeRoute: typeof ApiLinkedinAuthorizeRoute
+  ApiLinkedinCallbackRoute: typeof ApiLinkedinCallbackRoute
   ApiLinkedinGeneratePostRoute: typeof ApiLinkedinGeneratePostRoute
+  ApiLinkedinPublishRoute: typeof ApiLinkedinPublishRoute
   ApiLinkedinSearchRoute: typeof ApiLinkedinSearchRoute
   ApiPipelineEnrichRoute: typeof ApiPipelineEnrichRoute
   ApiPipelineImportRoute: typeof ApiPipelineImportRoute
@@ -1082,13 +1147,6 @@ declare module '@tanstack/react-router' {
       path: '/pipeline'
       fullPath: '/$workspaceId/pipeline'
       preLoaderRoute: typeof WorkspaceIdPipelineRouteImport
-      parentRoute: typeof WorkspaceIdRouteRoute
-    }
-    '/$workspaceId/linkedin-posts': {
-      id: '/$workspaceId/linkedin-posts'
-      path: '/linkedin-posts'
-      fullPath: '/$workspaceId/linkedin-posts'
-      preLoaderRoute: typeof WorkspaceIdLinkedinPostsRouteImport
       parentRoute: typeof WorkspaceIdRouteRoute
     }
     '/$workspaceId/linkedin': {
@@ -1294,11 +1352,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiLinkedinSearchRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/linkedin/publish': {
+      id: '/api/linkedin/publish'
+      path: '/api/linkedin/publish'
+      fullPath: '/api/linkedin/publish'
+      preLoaderRoute: typeof ApiLinkedinPublishRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/linkedin/generate-post': {
       id: '/api/linkedin/generate-post'
       path: '/api/linkedin/generate-post'
       fullPath: '/api/linkedin/generate-post'
       preLoaderRoute: typeof ApiLinkedinGeneratePostRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/linkedin/callback': {
+      id: '/api/linkedin/callback'
+      path: '/api/linkedin/callback'
+      fullPath: '/api/linkedin/callback'
+      preLoaderRoute: typeof ApiLinkedinCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/linkedin/authorize': {
+      id: '/api/linkedin/authorize'
+      path: '/api/linkedin/authorize'
+      fullPath: '/api/linkedin/authorize'
+      preLoaderRoute: typeof ApiLinkedinAuthorizeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/linkedin/$id': {
+      id: '/api/linkedin/$id'
+      path: '/api/linkedin/$id'
+      fullPath: '/api/linkedin/$id'
+      preLoaderRoute: typeof ApiLinkedinIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/keywords/generate': {
@@ -1420,6 +1506,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkspaceIdTemplatesTemplateIdRouteImport
       parentRoute: typeof WorkspaceIdRouteRoute
     }
+    '/$workspaceId/settings/writing-style': {
+      id: '/$workspaceId/settings/writing-style'
+      path: '/writing-style'
+      fullPath: '/$workspaceId/settings/writing-style'
+      preLoaderRoute: typeof WorkspaceIdSettingsWritingStyleRouteImport
+      parentRoute: typeof WorkspaceIdSettingsRouteRoute
+    }
     '/$workspaceId/settings/workspace': {
       id: '/$workspaceId/settings/workspace'
       path: '/workspace'
@@ -1439,6 +1532,13 @@ declare module '@tanstack/react-router' {
       path: '/notifications'
       fullPath: '/$workspaceId/settings/notifications'
       preLoaderRoute: typeof WorkspaceIdSettingsNotificationsRouteImport
+      parentRoute: typeof WorkspaceIdSettingsRouteRoute
+    }
+    '/$workspaceId/settings/integrations': {
+      id: '/$workspaceId/settings/integrations'
+      path: '/integrations'
+      fullPath: '/$workspaceId/settings/integrations'
+      preLoaderRoute: typeof WorkspaceIdSettingsIntegrationsRouteImport
       parentRoute: typeof WorkspaceIdSettingsRouteRoute
     }
     '/$workspaceId/settings/email': {
@@ -1562,9 +1662,11 @@ interface WorkspaceIdSettingsRouteRouteChildren {
   WorkspaceIdSettingsBillingRoute: typeof WorkspaceIdSettingsBillingRoute
   WorkspaceIdSettingsDangerRoute: typeof WorkspaceIdSettingsDangerRoute
   WorkspaceIdSettingsEmailRoute: typeof WorkspaceIdSettingsEmailRoute
+  WorkspaceIdSettingsIntegrationsRoute: typeof WorkspaceIdSettingsIntegrationsRoute
   WorkspaceIdSettingsNotificationsRoute: typeof WorkspaceIdSettingsNotificationsRoute
   WorkspaceIdSettingsProfileRoute: typeof WorkspaceIdSettingsProfileRoute
   WorkspaceIdSettingsWorkspaceRoute: typeof WorkspaceIdSettingsWorkspaceRoute
+  WorkspaceIdSettingsWritingStyleRoute: typeof WorkspaceIdSettingsWritingStyleRoute
   WorkspaceIdSettingsIndexRoute: typeof WorkspaceIdSettingsIndexRoute
 }
 
@@ -1575,10 +1677,12 @@ const WorkspaceIdSettingsRouteRouteChildren: WorkspaceIdSettingsRouteRouteChildr
     WorkspaceIdSettingsBillingRoute: WorkspaceIdSettingsBillingRoute,
     WorkspaceIdSettingsDangerRoute: WorkspaceIdSettingsDangerRoute,
     WorkspaceIdSettingsEmailRoute: WorkspaceIdSettingsEmailRoute,
+    WorkspaceIdSettingsIntegrationsRoute: WorkspaceIdSettingsIntegrationsRoute,
     WorkspaceIdSettingsNotificationsRoute:
       WorkspaceIdSettingsNotificationsRoute,
     WorkspaceIdSettingsProfileRoute: WorkspaceIdSettingsProfileRoute,
     WorkspaceIdSettingsWorkspaceRoute: WorkspaceIdSettingsWorkspaceRoute,
+    WorkspaceIdSettingsWritingStyleRoute: WorkspaceIdSettingsWritingStyleRoute,
     WorkspaceIdSettingsIndexRoute: WorkspaceIdSettingsIndexRoute,
   }
 
@@ -1595,7 +1699,6 @@ interface WorkspaceIdRouteRouteChildren {
   WorkspaceIdDirectoriesRoute: typeof WorkspaceIdDirectoriesRoute
   WorkspaceIdKeywordsRoute: typeof WorkspaceIdKeywordsRoute
   WorkspaceIdLinkedinRoute: typeof WorkspaceIdLinkedinRoute
-  WorkspaceIdLinkedinPostsRoute: typeof WorkspaceIdLinkedinPostsRoute
   WorkspaceIdPipelineRoute: typeof WorkspaceIdPipelineRoute
   WorkspaceIdRedditRoute: typeof WorkspaceIdRedditRoute
   WorkspaceIdIndexRoute: typeof WorkspaceIdIndexRoute
@@ -1615,7 +1718,6 @@ const WorkspaceIdRouteRouteChildren: WorkspaceIdRouteRouteChildren = {
   WorkspaceIdDirectoriesRoute: WorkspaceIdDirectoriesRoute,
   WorkspaceIdKeywordsRoute: WorkspaceIdKeywordsRoute,
   WorkspaceIdLinkedinRoute: WorkspaceIdLinkedinRoute,
-  WorkspaceIdLinkedinPostsRoute: WorkspaceIdLinkedinPostsRoute,
   WorkspaceIdPipelineRoute: WorkspaceIdPipelineRoute,
   WorkspaceIdRedditRoute: WorkspaceIdRedditRoute,
   WorkspaceIdIndexRoute: WorkspaceIdIndexRoute,
@@ -1718,7 +1820,11 @@ const rootRouteChildren: RootRouteChildren = {
   ApiEmailTestSmtpRoute: ApiEmailTestSmtpRoute,
   ApiKeywordsIdRoute: ApiKeywordsIdRoute,
   ApiKeywordsGenerateRoute: ApiKeywordsGenerateRoute,
+  ApiLinkedinIdRoute: ApiLinkedinIdRoute,
+  ApiLinkedinAuthorizeRoute: ApiLinkedinAuthorizeRoute,
+  ApiLinkedinCallbackRoute: ApiLinkedinCallbackRoute,
   ApiLinkedinGeneratePostRoute: ApiLinkedinGeneratePostRoute,
+  ApiLinkedinPublishRoute: ApiLinkedinPublishRoute,
   ApiLinkedinSearchRoute: ApiLinkedinSearchRoute,
   ApiPipelineEnrichRoute: ApiPipelineEnrichRoute,
   ApiPipelineImportRoute: ApiPipelineImportRoute,

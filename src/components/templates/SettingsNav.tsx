@@ -12,6 +12,7 @@ const TABS: SettingsTab[] = [
   { to: "/$workspaceId/settings/agent", label: "Agent voice" },
   { to: "/$workspaceId/settings/email", label: "Email / SMTP" },
   { to: "/$workspaceId/settings/notifications", label: "Notifications" },
+  { to: "/$workspaceId/settings/integrations", label: "Integrations" },
   { to: "/$workspaceId/settings/billing", label: "Billing" },
   { to: "/$workspaceId/settings/appearance", label: "Appearance" },
   { to: "/$workspaceId/settings/danger", label: "Danger zone", danger: true },

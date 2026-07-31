@@ -3,6 +3,8 @@ export interface LinkedInPost {
   content: string;
   keywordId: string | null;
   createdAt: string;
+  postedAt: string | null;
+  linkedinPostId: string | null;
 }
 
 export interface LinkedInLeadResult {

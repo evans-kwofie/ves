@@ -8,6 +8,8 @@ function rowToPost(row: Record<string, unknown>): LinkedInPost {
     content: row.content as string,
     keywordId: (row.keyword_id as string | null) ?? null,
     createdAt: row.created_at as string,
+    postedAt: (row.posted_at as string | null) ?? null,
+    linkedinPostId: (row.linkedin_post_id as string | null) ?? null,
   };
 }
 
@@ -32,7 +34,23 @@ export async function createLinkedInPost(
     args: [id, orgId, content, keywordId, now],
   });
 
-  return { id, content, keywordId, createdAt: now };
+  return { id, content, keywordId, createdAt: now, postedAt: null, linkedinPostId: null };
+}
+
+export async function updateLinkedInPost(id: string, content: string): Promise<LinkedInPost> {
+  await db.execute({
+    sql: "UPDATE linkedin_posts SET content = ? WHERE id = ?",
+    args: [content, id],
+  });
+  const result = await db.execute({ sql: "SELECT * FROM linkedin_posts WHERE id = ?", args: [id] });
+  return rowToPost(result.rows[0] as Record<string, unknown>);
+}
+
+export async function markLinkedInPostPublished(id: string, linkedinPostId: string): Promise<void> {
+  await db.execute({
+    sql: "UPDATE linkedin_posts SET posted_at = ?, linkedin_post_id = ? WHERE id = ?",
+    args: [new Date().toISOString(), linkedinPostId, id],
+  });
 }
 
 export async function deleteLinkedInPost(id: string): Promise<void> {

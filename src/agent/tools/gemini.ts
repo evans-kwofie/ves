@@ -5,7 +5,7 @@ const DEFAULT_MODEL = "gemini-2.5-flash";
 
 export async function geminiComplete(
   prompt: string,
-  opts?: { model?: string; maxTokens?: number; system?: string },
+  opts?: { model?: string; maxTokens?: number; system?: string; thinkingBudget?: number },
 ): Promise<string> {
   const response = await ai.models.generateContent({
     model: opts?.model ?? DEFAULT_MODEL,
@@ -13,6 +13,8 @@ export async function geminiComplete(
     config: {
       ...(opts?.system ? { systemInstruction: opts.system } : {}),
       ...(opts?.maxTokens ? { maxOutputTokens: opts.maxTokens } : {}),
+      // thinkingBudget: 0 disables thinking tokens so they don't consume the output budget
+      ...(opts?.thinkingBudget !== undefined ? { thinkingConfig: { thinkingBudget: opts.thinkingBudget } } : {}),
     },
   });
   return response.text ?? "";
@@ -35,7 +37,7 @@ export async function geminiSearch(
 
 export async function geminiJSON<T>(
   prompt: string,
-  opts?: { model?: string; maxTokens?: number; system?: string },
+  opts?: { model?: string; maxTokens?: number; system?: string; thinkingBudget?: number },
 ): Promise<T> {
   const response = await ai.models.generateContent({
     model: opts?.model ?? DEFAULT_MODEL,
@@ -44,6 +46,7 @@ export async function geminiJSON<T>(
       responseMimeType: "application/json",
       ...(opts?.system ? { systemInstruction: opts.system } : {}),
       ...(opts?.maxTokens ? { maxOutputTokens: opts.maxTokens } : {}),
+      ...(opts?.thinkingBudget !== undefined ? { thinkingConfig: { thinkingBudget: opts.thinkingBudget } } : {}),
     },
   });
   return JSON.parse(response.text ?? "{}") as T;

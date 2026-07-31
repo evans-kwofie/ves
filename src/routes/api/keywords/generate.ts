@@ -86,7 +86,8 @@ No markdown, no extra keys.`;
 
         try {
           const raw = await geminiJSON<{ suggestions: unknown[] }>(prompt, {
-            maxTokens: 1500,
+            maxTokens: 4096,
+            thinkingBudget: 0,
           });
 
           if (!raw?.suggestions) {
@@ -106,7 +107,7 @@ No markdown, no extra keys.`;
           }
 
           // Validate all subreddits against Reddit API in parallel, drop fakes
-          const userAgent = process.env.REDDIT_USER_AGENT ?? "vesper/1.0";
+          const userAgent = process.env.REDDIT_USER_AGENT ?? "nextreach/1.0";
           // Normalise: strip any leading "r/" Mistral may have included
           const normaliseSub = (s: string) => s.replace(/^r\//, "");
           const allSubs = [...new Set(suggestions.data.flatMap((s) => s.subreddits).map(normaliseSub))];

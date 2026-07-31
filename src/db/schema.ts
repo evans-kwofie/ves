@@ -383,4 +383,8 @@ export async function initDb(): Promise<void> {
 
   // Campaign intent type
   await safeAlter(`ALTER TABLE campaigns ADD COLUMN intent_type TEXT`);
+
+  // LinkedIn post publishing tracking
+  await safeAlter(`ALTER TABLE linkedin_posts ADD COLUMN posted_at TEXT`);
+  await safeAlter(`ALTER TABLE linkedin_posts ADD COLUMN linkedin_post_id TEXT`);
 }

@@ -33,6 +33,9 @@ const getAgentVoice = createServerFn({ method: "GET" }).handler(async () => {
   let voice: Partial<AgentVoiceConfig> = {};
   try { voice = metadata.agentVoice ? JSON.parse(metadata.agentVoice) : {}; } catch {}
 
+  let examplePosts = "";
+  try { examplePosts = metadata.linkedinWritingStyle ? JSON.parse(metadata.linkedinWritingStyle).examplePosts ?? "" : ""; } catch {}
+
   return {
     orgId: org.id,
     metadata,
@@ -44,6 +47,7 @@ const getAgentVoice = createServerFn({ method: "GET" }).handler(async () => {
       tone:         voice.tone         ?? "",
       avoidPhrases: voice.avoidPhrases ?? "",
     } satisfies AgentVoiceConfig,
+    examplePosts,
   };
 });
 
@@ -75,6 +79,15 @@ function AgentVoicePage() {
         description="How the agent should sound across every email and LinkedIn message it writes."
       >
         <ToneForm data={data} />
+      </SettingsSection>
+
+      <Divider />
+
+      <SettingsSection
+        title="Writing examples"
+        description="Paste 2–4 posts you've actually written. The AI mirrors your sentence length, vocabulary, and rhythm — the more examples you add, the closer it sounds like you."
+      >
+        <ExamplePostsForm data={data} />
       </SettingsSection>
     </div>
   );
@@ -115,7 +128,7 @@ function SenderForm({ data }: { data: NonNullable<Awaited<ReturnType<typeof getA
         <Input value={senderTitle} onChange={(e) => setSenderTitle(e.target.value)} placeholder="e.g. Founder" />
       </FieldGroup>
       <FieldGroup label="Company name">
-        <Input value={companyName} onChange={(e) => setCompanyName(e.target.value)} placeholder="e.g. Vesper" />
+        <Input value={companyName} onChange={(e) => setCompanyName(e.target.value)} placeholder="e.g. Nextreach" />
       </FieldGroup>
       <FieldGroup label="Company URL">
         <Input type="url" value={companyUrl} onChange={(e) => setCompanyUrl(e.target.value)} placeholder="https://yourcompany.com" />
@@ -182,6 +195,44 @@ function ToneForm({ data }: { data: NonNullable<Awaited<ReturnType<typeof getAge
       <div>
         <Button type="submit" disabled={loading || !dirty}>
           {loading ? "Saving…" : "Save changes"}
+        </Button>
+      </div>
+    </form>
+  );
+}
+
+function ExamplePostsForm({ data }: { data: NonNullable<Awaited<ReturnType<typeof getAgentVoice>>> }) {
+  const [examplePosts, setExamplePosts] = React.useState(data.examplePosts);
+  const [loading, setLoading] = React.useState(false);
+  const dirty = examplePosts !== data.examplePosts;
+
+  async function save(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+    const result = await authClient.organization.update({
+      organizationId: data.orgId,
+      data: { metadata: { ...data.metadata, linkedinWritingStyle: JSON.stringify({ examplePosts }) } },
+    });
+    setLoading(false);
+    if (result.error) toast.error(result.error.message ?? "Failed to save");
+    else toast.success("Saved");
+  }
+
+  return (
+    <form onSubmit={save} className="flex flex-col gap-3 max-w-lg">
+      <Textarea
+        value={examplePosts}
+        onChange={(e) => setExamplePosts(e.target.value)}
+        placeholder={"Paste one of your LinkedIn posts here...\n\n---\n\nPaste another post here (separate each with ---)"}
+        rows={12}
+        style={{ resize: "vertical", fontFamily: "inherit", lineHeight: 1.65 }}
+      />
+      <p className="text-[11px] text-muted-foreground">
+        Separate multiple posts with <code className="bg-muted px-1 rounded text-[10px]">---</code> on its own line.
+      </p>
+      <div>
+        <Button type="submit" disabled={loading || !dirty}>
+          {loading ? "Saving…" : "Save examples"}
         </Button>
       </div>
     </form>
