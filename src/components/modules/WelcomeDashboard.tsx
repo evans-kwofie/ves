@@ -148,7 +148,7 @@ export function WelcomeDashboard({
     {
       number: 3,
       title: "Generate & review drafts",
-      description: "Hit Generate Drafts and Vesper writes a personalised message for each lead using their company context. You approve, edit, or skip before anything sends.",
+      description: "Hit Generate Drafts and Nextreach writes a personalised message for each lead using their company context. You approve, edit, or skip before anything sends.",
       cta: "View Campaigns",
       to: "/$workspaceId/campaigns",
       params: { workspaceId },
@@ -178,7 +178,7 @@ export function WelcomeDashboard({
       {/* Header */}
       <div>
         <h1 style={{ fontSize: 24, fontWeight: 800, letterSpacing: "-0.03em", color: "var(--foreground)", margin: 0 }}>
-          {firstName ? `Welcome, ${firstName}.` : "Welcome to Vesper."}
+          {firstName ? `Welcome, ${firstName}.` : "Welcome to Nextreach."}
         </h1>
         <p style={{ fontSize: 14, color: "var(--muted-foreground)", marginTop: 6, marginBottom: 0 }}>
           Your outreach operating system. Here's how to get started.
@@ -322,7 +322,7 @@ export function WelcomeDashboard({
           >
             Settings → Profile
           </Link>{" "}
-          — Vesper uses it to write more relevant outreach for every lead.
+          — Nextreach uses it to write more relevant outreach for every lead.
         </p>
       </div>
     </div>

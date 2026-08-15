@@ -31,8 +31,8 @@ export const Route = createFileRoute("/api/email/test-smtp")({
         const result = await sendEmail(
           {
             to: parsed.data.user,
-            subject: "Vesper SMTP test — connection successful",
-            body: `Your SMTP settings are working. Vesper will use ${parsed.data.user} to send outreach emails on your behalf.`,
+            subject: "Nextreach SMTP test — connection successful",
+            body: `Your SMTP settings are working. Nextreach will use ${parsed.data.user} to send outreach emails on your behalf.`,
           },
           parsed.data,
         );

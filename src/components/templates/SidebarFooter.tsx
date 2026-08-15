@@ -5,7 +5,7 @@ export function SidebarFooter() {
   return (
     <div className="px-2 pb-3 pt-1 flex flex-col gap-px">
       <a
-        href="https://docs.vesper.app"
+        href="https://docs.nextreach.app"
         target="_blank"
         rel="noopener noreferrer"
         className="nav-link"
@@ -14,7 +14,7 @@ export function SidebarFooter() {
         Docs
       </a>
       <a
-        href="mailto:support@vesper.app"
+        href="mailto:support@nextreach.app"
         className="nav-link"
       >
         <HelpCircleIcon size={14} primaryColor="currentColor" secondaryColor="var(--accent)" />

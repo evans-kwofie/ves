@@ -69,7 +69,7 @@ export async function notifyReply({
   const contextItems: { type: "mrkdwn"; text: string }[] = [];
   if (campaignName) contextItems.push({ type: "mrkdwn", text: `Campaign: *${campaignName}*` });
   if (source) contextItems.push({ type: "mrkdwn", text: `Source: ${source}` });
-  contextItems.push({ type: "mrkdwn", text: `Go to Vesper → pipeline` });
+  contextItems.push({ type: "mrkdwn", text: `Go to Nextreach → pipeline` });
 
   const blocks: SlackBlock[] = [
     {
@@ -142,7 +142,7 @@ export async function notifyDraftsReady({
         type: "section",
         text: {
           type: "mrkdwn",
-          text: `✉️ *${count} draft${count !== 1 ? "s" : ""} ready for approval*\nCampaign: *${campaignName}*\nOpen Vesper to review and send.`,
+          text: `✉️ *${count} draft${count !== 1 ? "s" : ""} ready for approval*\nCampaign: *${campaignName}*\nOpen Nextreach to review and send.`,
         },
       },
     ],

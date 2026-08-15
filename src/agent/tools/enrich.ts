@@ -13,7 +13,7 @@ async function fetchPageText(url: string): Promise<string> {
       signal: controller.signal,
       headers: {
         "User-Agent":
-          "Mozilla/5.0 (compatible; Vesper/1.0; +https://vesper.so)",
+          "Mozilla/5.0 (compatible; Nextreach/1.0; +https://nextreach.so)",
         Accept: "text/html",
       },
     });

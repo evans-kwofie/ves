@@ -43,8 +43,8 @@ function EmailSettingsPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          to: "test@example.com",
-          subject: "Vesper test email",
+          to: "delivered@resend.dev",
+          subject: "Nextreach test email",
           body: "If you're reading this, Resend is connected correctly.",
         }),
       });
@@ -62,11 +62,11 @@ function EmailSettingsPage() {
     <div className="flex flex-col gap-8 max-w-lg">
       <SettingsSection
         title="Email sending"
-        description="Vesper sends outreach emails via Resend. Set your API key and verified sender address in your environment variables."
+        description="Nextreach sends outreach emails via Resend. Set your API key and verified sender address in your environment variables."
       >
         <div className="flex flex-col gap-3">
           <EnvRow name="RESEND_API_KEY" description="Your Resend API key — get one at resend.com." />
-          <EnvRow name="EMAIL_FROM" description='The sender address shown to recipients. Must be a verified domain in Resend. Example: "Vesper <hello@yourdomain.com>"' />
+          <EnvRow name="EMAIL_FROM" description='The sender address shown to recipients. Must be a verified domain in Resend. Example: "Nextreach <hello@yourdomain.com>"' />
         </div>
       </SettingsSection>
 
@@ -153,7 +153,7 @@ function SendSchedulingForm({
   return (
     <SettingsSection
       title="Send scheduling"
-      description="Control when and how many emails Vesper sends per day. Protects your domain reputation and avoids overwhelming your inbox."
+      description="Control when and how many emails Nextreach sends per day. Protects your domain reputation and avoids overwhelming your inbox."
     >
       <form onSubmit={handleSave} className="flex flex-col gap-5 max-w-sm">
 

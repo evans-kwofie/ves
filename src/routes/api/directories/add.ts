@@ -50,7 +50,7 @@ export const Route = createFileRoute("/api/directories/add")({
 
         for (const r of results as DirectoryResult[]) {
           // Use real email if found, otherwise a placeholder so the lead can still enter the pipeline
-          const email = r.email ?? `directory-${uuidv4()}@placeholder.vesper`;
+          const email = r.email ?? `directory-${uuidv4()}@placeholder.nextreach`;
 
           const domain = r.website
             ? r.website.replace(/^https?:\/\//, "").split("/")[0].replace(/^www\./, "")

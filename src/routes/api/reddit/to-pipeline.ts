@@ -48,7 +48,7 @@ export const Route = createFileRoute("/api/reddit/to-pipeline")({
           return Response.json({ error: "duplicate", leadId: existingId }, { status: 409 });
         }
 
-        const placeholderEmail = `reddit-${uuidv4()}@placeholder.vesper`;
+        const placeholderEmail = `reddit-${uuidv4()}@placeholder.nextreach`;
 
         try {
           const lead = await createLead(organizationId, {

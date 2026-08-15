@@ -1,7 +1,7 @@
 import * as React from "react";
 import { Sun01Icon, Moon01Icon, ComputerIcon } from "hugeicons-react";
 
-const STORAGE_KEY = "vesper-theme";
+const STORAGE_KEY = "nextreach-theme";
 
 export type ThemeSetting = "system" | "dark" | "light";
 export type ResolvedTheme = "dark" | "light";

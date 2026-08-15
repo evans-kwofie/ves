@@ -12,7 +12,7 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 export async function sendEmail(
   input: SendEmailInput,
 ): Promise<{ success: boolean; messageId?: string; error?: string }> {
-  const from = process.env.EMAIL_FROM ?? "Vesper <onboarding@resend.dev>";
+  const from = process.env.EMAIL_FROM ?? "Nextreach <onboarding@resend.dev>";
 
   try {
     const { data, error } = await resend.emails.send({

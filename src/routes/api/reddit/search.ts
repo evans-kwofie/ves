@@ -60,7 +60,7 @@ async function fetchOpComments(subreddit: string, postId: string, author: string
   try {
     const url = `https://www.reddit.com/r/${subreddit}/comments/${postId}.json?limit=20&depth=1`;
     const res = await fetch(url, {
-      headers: { "User-Agent": process.env.REDDIT_USER_AGENT ?? "vesper/1.0" },
+      headers: { "User-Agent": process.env.REDDIT_USER_AGENT ?? "nextreach/1.0" },
     });
     if (!res.ok) return "";
     const data = (await res.json()) as unknown[][];
@@ -197,7 +197,7 @@ export const Route = createFileRoute("/api/reddit/search")({
                       after: String(after),
                     });
                     const res = await fetch(`https://api.pullpush.io/reddit/search/submission/?${params}`, {
-                      headers: { "User-Agent": process.env.REDDIT_USER_AGENT ?? "vesper/1.0" },
+                      headers: { "User-Agent": process.env.REDDIT_USER_AGENT ?? "nextreach/1.0" },
                     });
 
                     if (!res.ok) {
@@ -262,7 +262,7 @@ export const Route = createFileRoute("/api/reddit/search")({
                             website: `https://reddit.com/user/${post.author}`,
                             whatTheyDo: `Reddit user in r/${post.subreddit}`,
                             ceo: post.author,
-                            email: `reddit-${post.author}@placeholder.vesper`,
+                            email: `reddit-${post.author}@placeholder.nextreach`,
                             linkedin: "",
                             fit: fit as "HIGH" | "MEDIUM",
                             notes: `"${post.title.slice(0, 200)}"\nhttps://reddit.com${post.permalink}`,

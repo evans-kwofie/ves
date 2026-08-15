@@ -120,7 +120,7 @@ function WorkspaceForm({ workspace }: { workspace: NonNullable<Awaited<ReturnTyp
       </FieldGroup>
       <FieldGroup label="URL slug">
         <div className="flex items-center gap-2">
-          <span className="text-[12px] text-[var(--muted-foreground)] shrink-0">vesper.app/</span>
+          <span className="text-[12px] text-[var(--muted-foreground)] shrink-0">nextreach.app/</span>
           <Input
             value={slug}
             onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))}
@@ -186,12 +186,7 @@ function BusinessContextForm({ workspace }: { workspace: NonNullable<Awaited<Ret
       const res = await fetch("/api/workspace/generate-description", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          organizationId: workspace.id,
-          website,
-          name: workspace.name,
-          industry,
-        }),
+        body: JSON.stringify({ website: website.trim(), name: workspace.name }),
       });
       const data = (await res.json()) as { description?: string; error?: string };
       if (data.description) {
@@ -242,18 +237,18 @@ function BusinessContextForm({ workspace }: { workspace: NonNullable<Awaited<Ret
           <button
             type="button"
             onClick={generateDescription}
-            disabled={generating}
-            title="Generate with AI"
+            disabled={generating || !website.trim()}
+            title={!website.trim() ? "Add a website URL first" : "Pull description from website"}
             style={{
               display: "flex",
               alignItems: "center",
               gap: 4,
               background: "none",
               border: "none",
-              cursor: generating ? "not-allowed" : "pointer",
+              cursor: (generating || !website.trim()) ? "not-allowed" : "pointer",
               padding: "2px 4px",
               borderRadius: 4,
-              opacity: generating ? 0.5 : 1,
+              opacity: (generating || !website.trim()) ? 0.4 : 1,
               color: "var(--muted-foreground)",
               fontSize: 11,
               transition: "color 0.15s",
@@ -266,7 +261,7 @@ function BusinessContextForm({ workspace }: { workspace: NonNullable<Awaited<Ret
               primaryColor="currentColor"
               secondaryColor="var(--accent)"
             />
-            {generating ? "Generating…" : "Generate"}
+            {generating ? "Reading…" : "Pull from website"}
           </button>
         </div>
         <Textarea

@@ -1,6 +1,6 @@
 import postgres from "postgres";
 
-export const pgClient = postgres(process.env.DATABASE_URL ?? "postgresql://postgres:postgres@localhost:5432/vesper", {
+export const pgClient = postgres(process.env.DATABASE_URL ?? "postgresql://postgres:postgres@localhost:5432/nextreach", {
   onnotice: () => {},
 });
 

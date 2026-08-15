@@ -94,13 +94,13 @@ function SlackSection({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          text: "✅ Vesper is connected. Notifications are working.",
+          text: "✅ Nextreach is connected. Notifications are working.",
           blocks: [
             {
               type: "section",
               text: {
                 type: "mrkdwn",
-                text: "✅ *Vesper is connected*\nThis is a test notification. Your Slack integration is working correctly.",
+                text: "✅ *Nextreach is connected*\nThis is a test notification. Your Slack integration is working correctly.",
               },
             },
           ],

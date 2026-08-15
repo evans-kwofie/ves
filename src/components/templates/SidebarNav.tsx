@@ -53,7 +53,7 @@ const NAV_SECTIONS: NavSection[] = [
     items: [
       { to: "/$workspaceId/directories", label: "Directories", icon: <CompassIcon size={14} /> },
       { to: "/$workspaceId/linkedin", label: "LinkedIn", icon: <Linkedin01Icon size={14} /> },
-      { to: "/$workspaceId/linkedin-posts", label: "Post Generator", icon: <PencilEdit01Icon size={14} /> },
+      { to: "/$workspaceId/blog", label: "Content", icon: <PencilEdit01Icon size={14} /> },
     ],
   },
 ];

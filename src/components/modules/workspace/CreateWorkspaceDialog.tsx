@@ -85,7 +85,7 @@ export function CreateWorkspaceDialog() {
             <label className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">URL slug</label>
             <div className="flex items-center">
               <span className="text-[12px] text-muted-foreground px-2.5 h-9 flex items-center rounded-l-md shrink-0 bg-muted border border-card-border border-r-0">
-                vesper.app/
+                nextreach.app/
               </span>
               <Input
                 value={slug}

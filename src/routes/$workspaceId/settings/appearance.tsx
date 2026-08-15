@@ -14,7 +14,7 @@ function AppearancePage() {
     <div className="flex flex-col gap-8">
       <SettingsSection
         title="Theme"
-        description="Choose how Vesper looks on this device. System follows your OS preference."
+        description="Choose how Nextreach looks on this device. System follows your OS preference."
       >
         <ThemeToggler value={theme} onChange={setTheme} />
       </SettingsSection>

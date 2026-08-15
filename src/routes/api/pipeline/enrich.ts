@@ -25,7 +25,7 @@ const enrichSchema = z.object({
 async function fetchRedditProfile(username: string): Promise<string> {
   try {
     const res = await fetch(`https://www.reddit.com/user/${username}/about.json`, {
-      headers: { "User-Agent": process.env.REDDIT_USER_AGENT ?? "vesper/1.0" },
+      headers: { "User-Agent": process.env.REDDIT_USER_AGENT ?? "nextreach/1.0" },
     });
     if (!res.ok) return "";
     const data = (await res.json()) as { data?: { subreddit?: { public_description?: string }; icon_img?: string } };

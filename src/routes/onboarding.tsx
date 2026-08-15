@@ -74,6 +74,7 @@ interface FormState {
   industry: string;
   companySize: string;
   useCases: string[];
+  description: string;
 }
 
 // ─── Root component ───────────────────────────────────────────────────────────
@@ -89,7 +90,7 @@ function OnboardingPage() {
 
   const [form, setForm] = React.useState<FormState>({
     name: "", slug: "", slugTouched: false, logo: "",
-    website: "", industry: "", companySize: "", useCases: [],
+    website: "", industry: "", companySize: "", useCases: [], description: "",
   });
 
   function update<K extends keyof FormState>(key: K, val: FormState[K]) {
@@ -133,6 +134,7 @@ function OnboardingPage() {
         ...(form.industry ? { industry: form.industry } : {}),
         ...(form.companySize ? { companySize: form.companySize } : {}),
         ...(form.useCases.length ? { useCases: form.useCases } : {}),
+        ...(form.description ? { description: form.description } : {}),
       },
     });
     setLoading(false);
@@ -152,16 +154,11 @@ function OnboardingPage() {
   const progress = step - 1; // 0 on welcome, 1–3 on form steps
 
   return (
-    <div className="min-h-screen flex flex-col bg-[var(--background)]"
-      style={{
-        backgroundImage: "radial-gradient(circle, #1a1a1a 1px, transparent 1px)",
-        backgroundSize: "28px 28px",
-      }}
-    >
+    <div className="min-h-screen flex flex-col bg-background">
       {/* Header */}
       <header className="h-[60px] flex items-center justify-between px-8 border-b border-[var(--border)] bg-[var(--background)] shrink-0">
         <span className="text-[15px] font-bold tracking-tight">
-          vesper<span className="text-[var(--accent)]">.</span>
+          nextreach<span className="text-[var(--accent)]">.</span>
         </span>
 
         {step > 1 && step < 5 && (
@@ -206,9 +203,12 @@ function OnboardingPage() {
               website={form.website}
               industry={form.industry}
               companySize={form.companySize}
+              description={form.description}
+              companyName={form.name}
               onWebsiteChange={v => update("website", v)}
               onIndustryChange={v => update("industry", v)}
               onCompanySizeChange={v => update("companySize", v)}
+              onDescriptionChange={v => update("description", v)}
             />
           )}
           {step === 4 && (
@@ -282,7 +282,7 @@ function StepWelcome({ firstName, onNext }: { firstName: string; onNext: () => v
   return (
     <div className="text-center">
       <p className="text-[11px] font-semibold tracking-[0.14em] uppercase text-[var(--accent)] mb-5">
-        Welcome to Vesper
+        Welcome to Nextreach
       </p>
       <h1 className="text-[44px] font-bold tracking-[-0.04em] leading-[1.05] mb-5 text-[var(--foreground)]">
         {firstName ? `Hey, ${firstName}.` : "Let's get started."}
@@ -338,7 +338,7 @@ function StepWorkspace({
       {/* Slug preview */}
       <div className="flex items-center gap-2 mt-3">
         <span className="text-[12px] text-[var(--muted-foreground)]">
-          vesper.app/
+          nextreach.app/
           <span className="text-[var(--foreground)] font-medium">
             {slug || "your-workspace"}
           </span>
@@ -381,14 +381,42 @@ function StepWorkspace({
 // ─── Step 3: About your business ─────────────────────────────────────────────
 
 function StepAbout({
-  website, industry, companySize,
-  onWebsiteChange, onIndustryChange, onCompanySizeChange,
+  website, industry, companySize, description, companyName,
+  onWebsiteChange, onIndustryChange, onCompanySizeChange, onDescriptionChange,
 }: {
   website: string; industry: string; companySize: string;
+  description: string; companyName: string;
   onWebsiteChange: (v: string) => void;
   onIndustryChange: (v: string) => void;
   onCompanySizeChange: (v: string) => void;
+  onDescriptionChange: (v: string) => void;
 }) {
+  const [scraping, setScraping] = React.useState(false);
+  const [scrapeError, setScrapeError] = React.useState("");
+
+  async function handleWebsiteBlur() {
+    if (!website.trim() || !website.startsWith("http")) return;
+    setScraping(true);
+    setScrapeError("");
+    try {
+      const res = await fetch("/api/workspace/generate-description", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ website: website.trim(), name: companyName }),
+      });
+      const data = await res.json() as { description?: string; error?: string };
+      if (data.description) {
+        onDescriptionChange(data.description);
+      } else {
+        setScrapeError(data.error ?? "Couldn't read the website");
+      }
+    } catch {
+      setScrapeError("Couldn't reach the website");
+    } finally {
+      setScraping(false);
+    }
+  }
+
   return (
     <div>
       <StepLabel>Your business</StepLabel>
@@ -396,7 +424,7 @@ function StepAbout({
         Tell us about your business
       </h2>
       <p className="text-[14px] text-[var(--muted-foreground)] mb-10">
-        This helps Vesper tailor suggestions to your context. All optional.
+        Enter your website and we'll pull a description automatically.
       </p>
 
       {/* Website */}
@@ -408,8 +436,33 @@ function StepAbout({
           type="url"
           value={website}
           onChange={e => onWebsiteChange(e.target.value)}
+          onBlur={handleWebsiteBlur}
           placeholder="https://example.com"
           autoFocus
+        />
+      </div>
+
+      {/* Description — auto-populated from scrape */}
+      <div className="mb-8">
+        <div className="flex items-center justify-between mb-2">
+          <label className="block text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+            Description
+          </label>
+          {scraping && (
+            <span className="text-[11px] text-muted-foreground animate-pulse">
+              Reading website…
+            </span>
+          )}
+          {scrapeError && (
+            <span className="text-[11px] text-destructive">{scrapeError}</span>
+          )}
+        </div>
+        <textarea
+          value={description}
+          onChange={e => onDescriptionChange(e.target.value)}
+          placeholder="What does your company do? Who are your customers?"
+          rows={3}
+          className="w-full rounded-(--radius) border border-border bg-transparent px-3 py-2 text-[13px] text-foreground placeholder:text-muted-foreground resize-none focus:outline-none focus:ring-1 focus:ring-accent transition-colors"
         />
       </div>
 

@@ -90,7 +90,7 @@ export const Route = createFileRoute("/api/linkedin/search")({
                 website: r.website ? `https://${domain}` : "",
                 whatTheyDo: r.whatTheyDo,
                 ceo: r.name,
-                email: email ?? `noemail-${r.company.toLowerCase().replace(/\s+/g, "-")}@placeholder.vesper`,
+                email: email ?? `noemail-${r.company.toLowerCase().replace(/\s+/g, "-")}@placeholder.nextreach`,
                 linkedin: r.linkedinHint ? `https://linkedin.com/in/${r.linkedinHint}` : "",
                 fit: "MEDIUM",
                 notes: `Discovered via keyword search: ${kw}${!email ? " — email not verified, needs manual lookup" : ` — email verified via Hunter (confidence: ${hunterResult.confidence})`}`,

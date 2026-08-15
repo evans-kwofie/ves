@@ -101,7 +101,7 @@ function ContentPage() {
               tab === t ? "text-foreground" : "text-muted-foreground hover:text-foreground",
             ].join(" ")}
           >
-            {t === "blog" ? "Blog posts" : "LinkedIn posts"}
+            {t === "blog" ? "Blog Posts" : "LinkedIn Posts"}
             {tab === t && (
               <span className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full bg-accent" />
             )}

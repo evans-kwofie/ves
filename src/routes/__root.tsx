@@ -21,7 +21,7 @@ export const Route = createRootRoute({
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       ...seo({
-        title: "Vesper | Marketing Toolkit",
+        title: "Nextreach | Marketing Toolkit",
         description:
           "A full marketing toolkit: keywords, Reddit, LinkedIn, blog generation, lead pipeline, and AI agent.",
       }),
@@ -42,7 +42,7 @@ export const Route = createRootRoute({
   shellComponent: RootDocument,
 });
 
-const themeScript = `(function(){try{var t=localStorage.getItem("vesper-theme"),d="dark";if(t==="light")d="light";else if(t==="dark")d="dark";else if(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)d="light";document.documentElement.setAttribute("data-theme",d)}catch(e){}})();`;
+const themeScript = `(function(){try{var t=localStorage.getItem("nextreach-theme"),d="dark";if(t==="light")d="light";else if(t==="dark")d="dark";else if(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)d="light";document.documentElement.setAttribute("data-theme",d)}catch(e){}})();`;
 
 function RootDocument({ children }: { children: React.ReactNode }) {
   const [theme, setTheme] = React.useState<"dark" | "light">("dark");
