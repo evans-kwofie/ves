@@ -1,4 +1,5 @@
-import * as React from "react"
+"use client"
+
 import { Tooltip as TooltipPrimitive } from "@base-ui/react/tooltip"
 
 import { cn } from "~/lib/utils"
@@ -62,21 +63,4 @@ function TooltipContent({
   )
 }
 
-function Tip({
-  label,
-  side = "top",
-  children,
-}: {
-  label: string;
-  side?: TooltipPrimitive.Positioner.Props["side"];
-  children: React.ReactElement;
-}) {
-  return (
-    <Tooltip>
-      <TooltipTrigger render={children} />
-      <TooltipContent side={side}>{label}</TooltipContent>
-    </Tooltip>
-  );
-}
-
-export { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider, Tip }
+export { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider }

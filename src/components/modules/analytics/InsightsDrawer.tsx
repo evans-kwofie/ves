@@ -6,7 +6,6 @@ import {
   SheetHeader,
   SheetTitle,
   SheetDescription,
-  SheetBody,
 } from "~/components/ui/sheet";
 import { Button } from "~/components/ui/button";
 import {
@@ -42,7 +41,7 @@ const BEST_PRACTICE_INSIGHTS: Insight[] = [
   {
     icon: <AiIdeaIcon size={16} />,
     title: "Ask, don't tell — in your subject line",
-    body: "Subject lines phrased as questions consistently outperform statements. Instead of \"Intro to [Product]\", try \"Quick question about [Company]\" for a 2x lift in opens.",
+    body: 'Subject lines phrased as questions consistently outperform statements. Instead of "Intro to [Product]", try "Quick question about [Company]" for a 2x lift in opens.',
   },
   {
     icon: <AiIdeaIcon size={16} />,
@@ -140,7 +139,13 @@ function generateInsights(
       if (steps.length < 2) continue;
       const step1 = steps.find((s) => s.stepNumber === 1);
       const step2 = steps.find((s) => s.stepNumber === 2);
-      if (step1 && step2 && step1.sent > 0 && step2.sent > 0 && step2.replyRate > step1.replyRate) {
+      if (
+        step1 &&
+        step2 &&
+        step1.sent > 0 &&
+        step2.sent > 0 &&
+        step2.replyRate > step1.replyRate
+      ) {
         insights.push({
           icon: <AiIdeaIcon size={16} />,
           title: "Your follow-ups outperform first touches",
@@ -185,7 +190,12 @@ interface InsightsDrawerProps {
   abSummary: ABSummary;
 }
 
-export function InsightsDrawer({ stats, campaigns, stepDropoff, abSummary }: InsightsDrawerProps) {
+export function InsightsDrawer({
+  stats,
+  campaigns,
+  stepDropoff,
+  abSummary,
+}: InsightsDrawerProps) {
   const insights = generateInsights(stats, campaigns, stepDropoff, abSummary);
   const accentCount = insights.filter((i) => i.accent).length;
 
@@ -214,7 +224,7 @@ export function InsightsDrawer({ stats, campaigns, stepDropoff, abSummary }: Ins
             Recommendations based on your outreach performance
           </SheetDescription>
         </SheetHeader>
-        <SheetBody className="flex flex-col gap-3">
+        <div className="flex flex-col gap-3">
           {insights.map((insight, i) => (
             <div
               key={i}
@@ -224,11 +234,15 @@ export function InsightsDrawer({ stats, campaigns, stepDropoff, abSummary }: Ins
                   : "border-card-border bg-card"
               }`}
             >
-              <div className={`mt-0.5 shrink-0 ${insight.accent ? "text-accent" : "text-muted-foreground"}`}>
+              <div
+                className={`mt-0.5 shrink-0 ${insight.accent ? "text-accent" : "text-muted-foreground"}`}
+              >
                 {insight.icon}
               </div>
               <div className="min-w-0">
-                <p className={`text-[12px] font-semibold mb-1.5 ${insight.accent ? "text-accent" : "text-foreground"}`}>
+                <p
+                  className={`text-[12px] font-semibold mb-1.5 ${insight.accent ? "text-accent" : "text-foreground"}`}
+                >
                   {insight.title}
                 </p>
                 <p className="text-[12px] text-muted-foreground leading-relaxed">
@@ -237,7 +251,7 @@ export function InsightsDrawer({ stats, campaigns, stepDropoff, abSummary }: Ins
               </div>
             </div>
           ))}
-        </SheetBody>
+        </div>
       </SheetContent>
     </Sheet>
   );

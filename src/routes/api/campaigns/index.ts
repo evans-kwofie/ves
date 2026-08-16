@@ -6,8 +6,9 @@ const createSchema = z.object({
   organizationId: z.string().min(1),
   name: z.string().min(1).max(200),
   status: z.enum(["draft", "active", "scheduled", "completed"]).optional(),
-  channel: z.enum(["email", "linkedin", "both"]).optional(),
+  channels: z.array(z.enum(["email", "linkedin", "instagram", "reddit"])).optional(),
   goal: z.string().optional(),
+  intentType: z.enum(["advice_seeking", "product_review", "audit_offer", "direct_pitch"]).optional(),
   leadIds: z.array(z.string()).optional(),
 });
 

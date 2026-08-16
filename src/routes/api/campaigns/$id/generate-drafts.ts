@@ -191,7 +191,7 @@ export const Route = createFileRoute("/api/campaigns/$id/generate-drafts")({
         const steps = await listSteps(id);
         const stepsToRun = filterStepNumber != null
           ? steps.filter((s) => s.stepNumber === filterStepNumber)
-          : steps.length > 0 ? steps : [{ stepNumber: 1, channel: campaign.channel ?? "email", context: null, delayDays: 0, templateId: null }];
+          : steps.length > 0 ? steps : [{ stepNumber: 1, channel: campaign.channels[0] ?? "email", context: null, delayDays: 0, templateId: null }];
 
         // Load org profile from metadata
         let orgProfile: Record<string, string> = {};

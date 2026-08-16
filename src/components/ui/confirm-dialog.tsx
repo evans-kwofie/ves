@@ -30,17 +30,24 @@ export function ConfirmDialog({
 }: ConfirmDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent showCloseButton={false} className="max-w-sm gap-0 p-0 overflow-hidden">
+      <DialogContent
+        showCloseButton={false}
+        className="max-w-sm gap-0 p-0 overflow-hidden"
+      >
         <DialogHeader className="px-5 pt-5 pb-4">
-          <DialogTitle className="text-[14px] font-semibold">{title}</DialogTitle>
+          <DialogTitle className="text-[14px] font-semibold">
+            {title}
+          </DialogTitle>
           {description && (
-            <DialogDescription className="text-[12px] mt-1">{description}</DialogDescription>
+            <DialogDescription className="text-[12px] mt-1">
+              {description}
+            </DialogDescription>
           )}
         </DialogHeader>
         <DialogFooter className="px-5 pb-5 gap-2 sm:flex-row">
           <Button
             variant="outline"
-            className="flex-1"
+            className="flex-1 mb-2"
             onClick={() => onOpenChange(false)}
             disabled={loading}
           >
@@ -48,11 +55,15 @@ export function ConfirmDialog({
           </Button>
           <Button
             variant="destructive"
-            className="flex-1"
+            className="flex-1 mb-2"
             onClick={onConfirm}
             disabled={loading}
           >
-            {loading ? <Loading03Icon size={13} className="animate-spin" /> : confirmLabel}
+            {loading ? (
+              <Loading03Icon size={13} className="animate-spin" />
+            ) : (
+              confirmLabel
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>

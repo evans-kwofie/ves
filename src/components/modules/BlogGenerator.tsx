@@ -2,7 +2,7 @@ import * as React from "react";
 import { FlashIcon } from "hugeicons-react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetBody, SheetFooter } from "~/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from "~/components/ui/sheet";
 import { toast } from "sonner";
 import type { BlogPost } from "~/types/blog";
 import type { Keyword } from "~/types/keyword";
@@ -67,7 +67,7 @@ export function BlogGenerator({ open, onOpenChange, orgId, keywords, onGenerated
           <SheetDescription>AI writes a full post from your keywords.</SheetDescription>
         </SheetHeader>
 
-        <SheetBody>
+        <div className="flex-1 overflow-y-auto p-4">
           <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
 
             {keywords.length > 0 && (
@@ -129,7 +129,7 @@ export function BlogGenerator({ open, onOpenChange, orgId, keywords, onGenerated
             </div>
 
           </div>
-        </SheetBody>
+        </div>
 
         <SheetFooter>
           <Button

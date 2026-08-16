@@ -1,7 +1,7 @@
 import * as React from "react";
 import {
   Sheet, SheetContent, SheetHeader, SheetTitle,
-  SheetDescription, SheetBody, SheetFooter,
+  SheetDescription, SheetFooter,
 } from "~/components/ui/sheet";
 import { Button } from "~/components/ui/button";
 import { Loading03Icon, InformationCircleIcon } from "hugeicons-react";
@@ -58,7 +58,7 @@ export function ComposeDraftPanel({ onDraftAdded }: { onDraftAdded: (draft: Camp
           <SheetDescription>Manually write a draft and add it to the review queue.</SheetDescription>
         </SheetHeader>
 
-        <SheetBody>
+        <div className="flex-1 overflow-y-auto p-4">
           <div className="flex flex-col gap-5">
           {/* Lead */}
           <div className="flex flex-col gap-1">
@@ -143,7 +143,7 @@ export function ComposeDraftPanel({ onDraftAdded }: { onDraftAdded: (draft: Camp
             </div>
           )}
           </div>
-        </SheetBody>
+        </div>
 
         <SheetFooter>
           <div className="flex gap-2">

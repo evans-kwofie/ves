@@ -3,7 +3,7 @@ import { Add01Icon, Delete01Icon, HashtagIcon, ViewIcon } from "hugeicons-react"
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { EmptyState } from "~/components/ui/empty-state";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetBody, SheetFooter } from "~/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from "~/components/ui/sheet";
 import { toast } from "sonner";
 import type { Keyword, Subreddit } from "~/types/keyword";
 
@@ -77,7 +77,7 @@ export function SubredditPanel({ open, onOpenChange, keywords, onKeywordsChange 
           <SheetDescription>Manage which subreddits are monitored per keyword.</SheetDescription>
         </SheetHeader>
 
-        <SheetBody>
+        <div className="flex-1 overflow-y-auto p-4">
           {keywords.length === 0 ? (
             <EmptyState
               icon={<HashtagIcon />}
@@ -167,7 +167,7 @@ export function SubredditPanel({ open, onOpenChange, keywords, onKeywordsChange 
               )}
             </div>
           )}
-        </SheetBody>
+        </div>
       </SheetContent>
     </Sheet>
   );

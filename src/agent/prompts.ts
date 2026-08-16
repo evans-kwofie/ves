@@ -60,19 +60,20 @@ export function buildCampaignPrompt(campaign: Campaign, leads: Lead[]): string {
       .join(" | ");
   });
 
+  const ch = campaign.channels;
   const channelInstruction =
-    campaign.channel === "linkedin"
+    ch.length === 1 && ch[0] === "linkedin"
       ? "Reach out via LinkedIn message only — do NOT send emails."
-      : campaign.channel === "both"
-        ? "Use email as the primary channel. For leads missing an email, note that LinkedIn outreach is needed."
-        : "Send outreach emails as the primary channel.";
+      : ch.includes("email")
+        ? "Use email as the primary channel. For leads missing an email, use an alternative channel where available."
+        : `Use ${ch.join(" or ")} as the outreach channel.`;
 
   return `You are running an outreach campaign called "${campaign.name}".
 
 CAMPAIGN GOAL:
 ${campaign.goal || "Book discovery calls and move leads toward conversion."}
 
-CHANNEL: ${campaign.channel ?? "email"}
+CHANNELS: ${ch.length > 0 ? ch.join(", ") : "email"}
 ${channelInstruction}
 
 CAMPAIGN LEADS (${leads.length} total):

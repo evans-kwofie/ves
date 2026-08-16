@@ -112,6 +112,7 @@ function CampaignDetailPage() {
               workspaceId={workspaceId}
               campaignId={id as string}
               status={campaign.status}
+              stepCount={steps.length}
               existingLeadIds={leads.map((l) => l.id)}
               onDelete={() => window.history.back()}
               onStatusChange={(_, status) => setCampaign((c) => c ? { ...c, status } : c)}
@@ -142,7 +143,7 @@ function CampaignDetailPage() {
 
         <div key={tab} className="tab-reveal">
           {tab === "sequence" && (
-            <SequenceTab campaignId={id} steps={steps} templates={templates} onStepsChange={setSteps} />
+            <SequenceTab campaignId={id} steps={steps} templates={templates} channels={campaign.channels} onStepsChange={setSteps} />
           )}
           {tab === "queue" && (
             <ReviewQueue

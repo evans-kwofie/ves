@@ -377,6 +377,7 @@ export async function initDb(): Promise<void> {
   await safeAlter(`ALTER TABLE templates ADD COLUMN variant_b_body TEXT`);
   await safeAlter(`ALTER TABLE campaign_drafts ADD COLUMN ab_variant TEXT NOT NULL DEFAULT 'a'`);
   await safeAlter(`ALTER TABLE campaign_steps ADD COLUMN template_id TEXT`);
+  await safeAlter(`ALTER TABLE campaign_steps ADD COLUMN linkedin_type TEXT`);
 
   // Bounce tracking
   await safeAlter(`ALTER TABLE campaign_drafts ADD COLUMN bounced_at TEXT`);

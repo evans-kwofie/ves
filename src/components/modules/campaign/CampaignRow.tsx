@@ -1,7 +1,8 @@
 import { Link } from "@tanstack/react-router";
-import { Mail01Icon, Linkedin01Icon, InstagramIcon } from "hugeicons-react";
 import CampaignDropdownMenu from "./molecules/CampaignDropdown";
 import type { Campaign, CampaignStatus } from "~/types/campaign";
+import { CHANNEL_META } from "~/lib/channels";
+import type { Channel } from "~/lib/channels";
 
 export const STATUS_BADGE: Record<CampaignStatus, { label: string; cls: string }> = {
   draft:     { label: "Draft",     cls: "badge badge-gray"   },
@@ -15,14 +16,14 @@ export function replyRate(sent: number, replies: number) {
   return `${Math.round((replies / sent) * 100)}%`;
 }
 
-function ChannelBadge({ channel }: { channel: string }) {
+function ChannelBadge({ channels }: { channels: Channel[] }) {
   return (
-    <span className="inline-flex items-center gap-1.5 text-[12px] text-muted-foreground">
-      {channel === "email"     && <Mail01Icon size={12} />}
-      {channel === "linkedin"  && <Linkedin01Icon size={12} />}
-      {channel === "instagram" && <InstagramIcon size={12} />}
-      {channel === "both"      && <><Mail01Icon size={12} /><Linkedin01Icon size={12} /></>}
-      <span className="capitalize">{channel}</span>
+    <span className="inline-flex items-center gap-2 text-[12px] text-muted-foreground">
+      {channels.map((c) => {
+        const { Icon, label } = CHANNEL_META[c];
+        return <Icon key={c} size={12} title={label} />;
+      })}
+      <span>{channels.map((c) => CHANNEL_META[c].label).join(", ")}</span>
     </span>
   );
 }
@@ -60,8 +61,8 @@ export function CampaignRow({
       </td>
 
       <td className="py-3 px-4">
-        {campaign.channel
-          ? <ChannelBadge channel={campaign.channel} />
+        {campaign.channels.length > 0
+          ? <ChannelBadge channels={campaign.channels} />
           : <span className="text-muted-foreground/40">—</span>}
       </td>
 

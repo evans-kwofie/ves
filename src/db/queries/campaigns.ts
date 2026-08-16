@@ -1,6 +1,18 @@
 import { v4 as uuidv4 } from "uuid";
 import { db } from "../client";
-import type { Campaign, CreateCampaignInput, UpdateCampaignInput } from "~/types/campaign";
+import type { Campaign, CampaignChannel, CreateCampaignInput, UpdateCampaignInput } from "~/types/campaign";
+
+function parseChannels(raw: unknown): CampaignChannel[] {
+  if (!raw) return [];
+  const s = raw as string;
+  if (s.startsWith("[")) {
+    try { return JSON.parse(s) as CampaignChannel[]; } catch { return []; }
+  }
+  // backward compat: single-value or "both"
+  if (s === "both") return ["email", "linkedin"];
+  if (s === "linkedin_connect") return ["linkedin"];
+  return [s as CampaignChannel];
+}
 import type { Lead } from "~/types/lead";
 
 function rowToCampaign(row: Record<string, unknown>): Campaign {
@@ -9,7 +21,7 @@ function rowToCampaign(row: Record<string, unknown>): Campaign {
     organizationId: row.organization_id as string,
     name: row.name as string,
     status: row.status as Campaign["status"],
-    channel: (row.channel as Campaign["channel"]) ?? null,
+    channels: parseChannels(row.channel),
     goal: (row.goal as string | null) ?? null,
     intentType: (row.intent_type as Campaign["intentType"]) ?? null,
     runFrequency: (row.run_frequency as Campaign["runFrequency"]) ?? null,
@@ -58,7 +70,7 @@ export async function createCampaign(orgId: string, input: CreateCampaignInput):
   await db.execute({
     sql: `INSERT INTO campaigns (id, organization_id, name, status, channel, goal, intent_type, created_at, updated_at)
           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    args: [id, orgId, input.name, input.status ?? "draft", input.channel ?? null, input.goal ?? null, input.intentType ?? null, now, now],
+    args: [id, orgId, input.name, input.status ?? "draft", input.channels?.length ? JSON.stringify(input.channels) : null, input.goal ?? null, input.intentType ?? null, now, now],
   });
 
   if (input.leadIds && input.leadIds.length > 0) {
@@ -80,13 +92,24 @@ export async function updateCampaign(id: string, input: UpdateCampaignInput): Pr
 
   if (input.name !== undefined) { fields.push("name = ?"); args.push(input.name); }
   if (input.status !== undefined) { fields.push("status = ?"); args.push(input.status); }
-  if (input.channel !== undefined) { fields.push("channel = ?"); args.push(input.channel); }
-  if (input.goal !== undefined) { fields.push("goal = ?"); args.push(input.goal); }
+  if (input.channels !== undefined) { fields.push("channel = ?"); args.push(input.channels.length ? JSON.stringify(input.channels) : null); }
+  if (input.goal !== undefined) { fields.push("goal = ?"); args.push(input.goal ?? null); }
   if (input.intentType !== undefined) { fields.push("intent_type = ?"); args.push(input.intentType ?? null); }
   if (input.runFrequency !== undefined) { fields.push("run_frequency = ?"); args.push(input.runFrequency ?? null); }
 
   args.push(id);
   await db.execute({ sql: `UPDATE campaigns SET ${fields.join(", ")} WHERE id = ?`, args });
+
+  if (input.leadIds !== undefined) {
+    await db.execute({ sql: "DELETE FROM campaign_leads WHERE campaign_id = ?", args: [id] });
+    for (const leadId of input.leadIds) {
+      await db.execute({
+        sql: "INSERT INTO campaign_leads (id, campaign_id, lead_id) VALUES (?, ?, ?) ON CONFLICT DO NOTHING",
+        args: [uuidv4(), id, leadId],
+      });
+    }
+  }
+
   return (await getCampaign(id))!;
 }
 

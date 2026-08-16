@@ -1,23 +1,71 @@
 import * as React from "react";
-import { createFileRoute, useNavigate, useSearch } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  useNavigate,
+  useSearch,
+} from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import * as z from "zod";
 import { Header } from "~/components/templates/Header";
 import { Button } from "~/components/ui/button";
-import { ArrowLeft01Icon, CheckmarkCircle01Icon, Mail01Icon, Linkedin01Icon, GlobalIcon, UserGroupIcon, FilterIcon } from "hugeicons-react";
+import {
+  CheckmarkCircle01Icon,
+  UserGroupIcon,
+  FilterIcon,
+} from "hugeicons-react";
 import { EmptyState } from "~/components/ui/empty-state";
 import { listLeads } from "~/db/queries/leads";
+import { getCampaign, getCampaignLeadIds } from "~/db/queries/campaigns";
 import { toast } from "sonner";
 import type { Lead } from "~/types/lead";
-import type { CampaignChannel, CampaignIntent } from "~/types/campaign";
+import type { CampaignIntent } from "~/types/campaign";
+import { CHANNEL_LIST, CHANNEL_META } from "~/lib/channels";
+import type { Channel } from "~/lib/channels";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
+import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
+import { Textarea } from "~/components/ui/textarea";
+import { Checkbox } from "~/components/ui/checkbox";
 
 const getLeadsData = createServerFn({ method: "GET" })
   .inputValidator(z.string())
   .handler(async ({ data: orgId }) => listLeads(orgId));
 
+const getCampaignForEdit = createServerFn({ method: "GET" })
+  .inputValidator(z.object({ orgId: z.string(), campaignId: z.string() }))
+  .handler(async ({ data }) => {
+    const [campaign, leadIds] = await Promise.all([
+      getCampaign(data.campaignId),
+      getCampaignLeadIds(data.campaignId),
+    ]);
+    if (!campaign || campaign.organizationId !== data.orgId) return null;
+    return { campaign, leadIds };
+  });
+
 export const Route = createFileRoute("/$workspaceId/campaigns/new")({
-  validateSearch: z.object({ leadIds: z.string().optional() }),
-  loader: ({ params }) => getLeadsData({ data: params.workspaceId }),
+  validateSearch: z.object({
+    leadIds: z.string().optional(),
+    campaignId: z.string().optional(),
+  }),
+  loaderDeps: ({ search }) => ({ campaignId: search.campaignId }),
+  loader: async ({ params, deps }) => {
+    const { campaignId } = deps;
+    const [leads, existing] = await Promise.all([
+      getLeadsData({ data: params.workspaceId }),
+      campaignId
+        ? getCampaignForEdit({
+            data: { orgId: params.workspaceId, campaignId },
+          })
+        : Promise.resolve(null),
+    ]);
+    return { leads, existing };
+  },
   component: NewCampaignPage,
 });
 
@@ -29,45 +77,89 @@ const FIT_BADGE: Record<string, string> = {
   LOW: "badge badge-red",
 };
 
-const CHANNELS: { value: CampaignChannel; label: string; icon: React.ReactNode }[] = [
-  { value: "email", label: "Email", icon: <Mail01Icon size={16} /> },
-  { value: "linkedin", label: "LinkedIn", icon: <Linkedin01Icon size={16} /> },
-  { value: "both", label: "Both", icon: <GlobalIcon size={16} /> },
-];
-
-const INTENTS: { value: CampaignIntent; label: string; description: string }[] = [
-  { value: "advice_seeking",  label: "Advice seeking",   description: "Ask for their opinion or expertise — no pitch" },
-  { value: "product_review",  label: "Product review",   description: "Ask them to try or review the product" },
-  { value: "audit_offer",     label: "Audit offer",      description: "Lead with a free audit or analysis upfront" },
-  { value: "direct_pitch",    label: "Direct pitch",     description: "Clear value prop with a demo ask" },
-];
+const INTENTS: { value: CampaignIntent; label: string; description: string }[] =
+  [
+    {
+      value: "advice_seeking",
+      label: "Advice seeking",
+      description: "Ask for their opinion or expertise — no pitch",
+    },
+    {
+      value: "product_review",
+      label: "Product review",
+      description: "Ask them to try or review the product",
+    },
+    {
+      value: "audit_offer",
+      label: "Audit offer",
+      description: "Lead with a free audit or analysis upfront",
+    },
+    {
+      value: "direct_pitch",
+      label: "Direct pitch",
+      description: "Clear value prop with a demo ask",
+    },
+  ];
 
 function NewCampaignPage() {
-  const leads = Route.useLoaderData();
+  const { leads, existing } = Route.useLoaderData();
   const { workspaceId } = Route.useParams();
-  const { leadIds: leadIdsParam } = useSearch({ from: "/$workspaceId/campaigns/new" });
+  const { leadIds: leadIdsParam, campaignId: editingId } = useSearch({
+    from: "/$workspaceId/campaigns/new",
+  });
   const navigate = useNavigate();
+  const isEditing = !!editingId;
 
-  const preselected = React.useMemo(
-    () => new Set(leadIdsParam ? leadIdsParam.split(",").filter(Boolean) : []),
-    [leadIdsParam],
+  const preselected = React.useMemo(() => {
+    if (existing) return new Set(existing.leadIds);
+    return new Set(leadIdsParam ? leadIdsParam.split(",").filter(Boolean) : []);
+  }, [existing, leadIdsParam]);
+
+  const [step, setStep] = React.useState<Step>("details");
+  const [name, setName] = React.useState(existing?.campaign.name ?? "");
+  const [channels, setChannels] = React.useState<Channel[]>(
+    existing?.campaign.channels ?? [],
   );
+  const [goal, setGoal] = React.useState(existing?.campaign.goal ?? "");
+  const [intentType, setIntentType] = React.useState<CampaignIntent | "">(
+    existing?.campaign.intentType ?? "",
+  );
+  const [selectedLeads, setSelectedLeads] =
+    React.useState<Set<string>>(preselected);
 
-  const [step, setStep] = React.useState<Step>(preselected.size > 0 ? "details" : "details");
-  const [name, setName] = React.useState("");
-  const [channel, setChannel] = React.useState<CampaignChannel | "">("");
-  const [goal, setGoal] = React.useState("");
-  const [intentType, setIntentType] = React.useState<CampaignIntent | "">("");
-  const [selectedLeads, setSelectedLeads] = React.useState<Set<string>>(preselected);
+  // Sync form state when loader data arrives (handles client-side navigation)
+  React.useEffect(() => {
+    if (existing) {
+      setName(existing.campaign.name);
+      setChannels(existing.campaign.channels);
+      setGoal(existing.campaign.goal ?? "");
+      setIntentType(existing.campaign.intentType ?? "");
+      setSelectedLeads(new Set(existing.leadIds));
+    }
+  }, [existing]);
   const [search, setSearch] = React.useState("");
+  const [fitFilter, setFitFilter] = React.useState<
+    "all" | "HIGH" | "MEDIUM" | "LOW"
+  >("all");
+  const [scoreSort, setScoreSort] = React.useState<"default" | "asc" | "desc">(
+    "default",
+  );
   const [saving, setSaving] = React.useState(false);
 
-  const filteredLeads = leads.filter(
-    (l) =>
-      l.company.toLowerCase().includes(search.toLowerCase()) ||
-      l.ceo.toLowerCase().includes(search.toLowerCase()) ||
-      l.email.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredLeads = React.useMemo(() => {
+    let result = leads.filter(
+      (l) =>
+        l.company.toLowerCase().includes(search.toLowerCase()) ||
+        l.ceo.toLowerCase().includes(search.toLowerCase()) ||
+        l.email.toLowerCase().includes(search.toLowerCase()),
+    );
+    if (fitFilter !== "all") result = result.filter((l) => l.fit === fitFilter);
+    if (scoreSort === "desc")
+      result = [...result].sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
+    if (scoreSort === "asc")
+      result = [...result].sort((a, b) => (a.score ?? 0) - (b.score ?? 0));
+    return result;
+  }, [leads, search, fitFilter, scoreSort]);
 
   function toggleLead(id: string) {
     setSelectedLeads((prev) => {
@@ -86,26 +178,48 @@ function NewCampaignPage() {
     }
   }
 
-  async function handleCreate() {
+  async function handleSave() {
     setSaving(true);
     try {
-      const res = await fetch("/api/campaigns/", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          organizationId: workspaceId,
-          name,
-          channel: channel || undefined,
-          goal: goal || undefined,
-          intentType: intentType || undefined,
-          leadIds: Array.from(selectedLeads),
-        }),
-      });
-      if (!res.ok) throw new Error("Failed");
-      toast.success("Campaign created");
-      navigate({ to: "/$workspaceId/campaigns", params: { workspaceId } });
+      if (isEditing && editingId) {
+        const res = await fetch(`/api/campaigns/${editingId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name,
+            channels: channels.length ? channels : [],
+            goal: goal || null,
+            intentType: intentType || null,
+            leadIds: Array.from(selectedLeads),
+          }),
+        });
+        if (!res.ok) throw new Error("Failed");
+        toast.success("Campaign updated");
+        navigate({
+          to: "/$workspaceId/campaigns/$id",
+          params: { workspaceId, id: editingId },
+        });
+      } else {
+        const res = await fetch("/api/campaigns/", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            organizationId: workspaceId,
+            name,
+            channels: channels.length ? channels : undefined,
+            goal: goal || undefined,
+            intentType: intentType || undefined,
+            leadIds: Array.from(selectedLeads),
+          }),
+        });
+        if (!res.ok) throw new Error("Failed");
+        toast.success("Campaign created");
+        navigate({ to: "/$workspaceId/campaigns", params: { workspaceId } });
+      }
     } catch {
-      toast.error("Failed to create campaign");
+      toast.error(
+        isEditing ? "Failed to update campaign" : "Failed to create campaign",
+      );
     } finally {
       setSaving(false);
     }
@@ -116,24 +230,31 @@ function NewCampaignPage() {
   return (
     <>
       <Header
-        title="New Campaign"
-        subtitle="Set up an outreach sequence for a group of leads."
-        actions={
-          <Button
-            variant="ghost"
-            onClick={() => navigate({ to: "/$workspaceId/campaigns", params: { workspaceId } })}
-          >
-            <ArrowLeft01Icon size={14} />
-            Back
-          </Button>
+        title={isEditing ? "Edit Campaign" : "New Campaign"}
+        subtitle={
+          isEditing
+            ? "Update your campaign details and leads."
+            : "Set up an outreach sequence for a group of leads."
         }
       />
       <div className="page-content" style={{ maxWidth: 680 }}>
         {/* Step indicator */}
-        <div style={{ display: "flex", alignItems: "center", gap: 0, marginBottom: 28 }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 0,
+            marginBottom: 28,
+          }}
+        >
           {(["details", "leads", "review"] as Step[]).map((s, i) => {
-            const labels: Record<Step, string> = { details: "Details", leads: "Select Leads", review: "Review" };
-            const done = step === "leads" ? i === 0 : step === "review" ? i < 2 : false;
+            const labels: Record<Step, string> = {
+              details: "Details",
+              leads: "Select Leads",
+              review: "Review",
+            };
+            const done =
+              step === "leads" ? i === 0 : step === "review" ? i < 2 : false;
             const active = step === s;
             return (
               <React.Fragment key={s}>
@@ -143,8 +264,15 @@ function NewCampaignPage() {
                       width: 24,
                       height: 24,
                       borderRadius: "50%",
-                      background: done ? "var(--accent)" : active ? "var(--accent)" : "var(--muted)",
-                      color: done || active ? "var(--accent-foreground)" : "var(--muted-foreground)",
+                      background: done
+                        ? "var(--accent)"
+                        : active
+                          ? "var(--accent)"
+                          : "var(--muted)",
+                      color:
+                        done || active
+                          ? "var(--accent-foreground)"
+                          : "var(--muted-foreground)",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
@@ -159,14 +287,24 @@ function NewCampaignPage() {
                     style={{
                       fontSize: 13,
                       fontWeight: active ? 600 : 400,
-                      color: active ? "var(--foreground)" : "var(--muted-foreground)",
+                      color: active
+                        ? "var(--foreground)"
+                        : "var(--muted-foreground)",
                     }}
                   >
                     {labels[s]}
                   </span>
                 </div>
                 {i < 2 && (
-                  <div style={{ flex: 1, height: 1, background: "var(--border)", margin: "0 12px", minWidth: 24 }} />
+                  <div
+                    style={{
+                      flex: 1,
+                      height: 1,
+                      background: "var(--border)",
+                      margin: "0 12px",
+                      minWidth: 24,
+                    }}
+                  />
                 )}
               </React.Fragment>
             );
@@ -175,53 +313,78 @@ function NewCampaignPage() {
 
         {/* Step: Details */}
         {step === "details" && (
-          <div className="card" style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-            <div className="form-group" style={{ margin: 0 }}>
-              <label className="form-label">Campaign Name *</label>
-              <input
-                className="input"
+          <div
+            className="card"
+            style={{ display: "flex", flexDirection: "column", gap: 18 }}
+          >
+            <div className="flex flex-col gap-y-2" style={{ margin: 0 }}>
+              <Label>Campaign Name *</Label>
+              <Input
                 placeholder="e.g. Q2 SaaS Founders Outreach"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                autoFocus
               />
             </div>
 
             <div className="form-group" style={{ margin: 0 }}>
-              <label className="form-label">Channel</label>
-              <div style={{ display: "flex", gap: 8 }}>
-                {CHANNELS.map((c) => (
-                  <button
-                    key={c.value}
-                    type="button"
-                    onClick={() => setChannel(channel === c.value ? "" : c.value)}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 6,
-                      padding: "8px 14px",
-                      borderRadius: "var(--radius)",
-                      border: `1px solid ${channel === c.value ? "var(--accent)" : "var(--border)"}`,
-                      background: channel === c.value ? "var(--accent-subtle)" : "var(--input-bg)",
-                      color: channel === c.value ? "var(--accent)" : "var(--muted-foreground)",
-                      fontSize: 13,
-                      fontWeight: 500,
-                      cursor: "pointer",
-                      fontFamily: "Inter, sans-serif",
-                      transition: "all 0.15s",
-                    }}
-                  >
-                    {c.icon}
-                    {c.label}
-                  </button>
-                ))}
+              <label className="form-label">Channels</label>
+              <p
+                style={{
+                  fontSize: 11,
+                  color: "var(--muted-foreground)",
+                  marginBottom: 8,
+                  marginTop: 2,
+                }}
+              >
+                Select all channels this campaign will use. Sequence steps will
+                only show these options.
+              </p>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                {CHANNEL_LIST.map((c) => {
+                  const { label, Icon } = CHANNEL_META[c];
+                  const selected = channels.includes(c);
+                  return (
+                    <button
+                      key={c}
+                      type="button"
+                      onClick={() =>
+                        setChannels((prev) =>
+                          prev.includes(c)
+                            ? prev.filter((x) => x !== c)
+                            : [...prev, c],
+                        )
+                      }
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 6,
+                        padding: "8px 14px",
+                        borderRadius: "var(--radius)",
+                        border: `1px solid ${selected ? "var(--accent)" : "var(--border)"}`,
+                        background: selected
+                          ? "var(--accent-subtle)"
+                          : "var(--input-bg)",
+                        color: selected
+                          ? "var(--accent)"
+                          : "var(--muted-foreground)",
+                        fontSize: 13,
+                        fontWeight: 500,
+                        cursor: "pointer",
+                        fontFamily: "Inter, sans-serif",
+                        transition: "all 0.15s",
+                      }}
+                    >
+                      <Icon size={16} />
+                      {label}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
-            <div className="form-group" style={{ margin: 0 }}>
-              <label className="form-label">Goal</label>
-              <textarea
-                className="input"
+            <div className="flex flex-col gap-y-2" style={{ margin: 0 }}>
+              <Label>Goal</Label>
+              <Textarea
                 placeholder="What does success look like for this campaign? e.g. Book 5 discovery calls with B2B SaaS founders"
                 value={goal}
                 onChange={(e) => setGoal(e.target.value)}
@@ -231,8 +394,16 @@ function NewCampaignPage() {
 
             <div className="form-group" style={{ margin: 0 }}>
               <label className="form-label">Outreach intent</label>
-              <p style={{ fontSize: 11, color: "var(--muted-foreground)", marginBottom: 8, marginTop: 2 }}>
-                Sets the tone for AI-generated drafts. Choose how you want to come across.
+              <p
+                style={{
+                  fontSize: 11,
+                  color: "var(--muted-foreground)",
+                  marginBottom: 8,
+                  marginTop: 2,
+                }}
+              >
+                Sets the tone for AI-generated drafts. Choose how you want to
+                come across.
               </p>
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                 {INTENTS.map((intent) => {
@@ -241,7 +412,9 @@ function NewCampaignPage() {
                     <button
                       key={intent.value}
                       type="button"
-                      onClick={() => setIntentType(selected ? "" : intent.value)}
+                      onClick={() =>
+                        setIntentType(selected ? "" : intent.value)
+                      }
                       style={{
                         display: "flex",
                         alignItems: "center",
@@ -249,21 +422,43 @@ function NewCampaignPage() {
                         padding: "10px 14px",
                         borderRadius: "var(--radius)",
                         border: `1px solid ${selected ? "var(--accent)" : "var(--border)"}`,
-                        background: selected ? "var(--accent-subtle)" : "var(--input-bg)",
+                        background: selected
+                          ? "var(--accent-subtle)"
+                          : "var(--input-bg)",
                         cursor: "pointer",
                         textAlign: "left",
                         transition: "all 0.15s",
                       }}
                     >
                       <div style={{ flex: 1 }}>
-                        <p style={{ fontSize: 13, fontWeight: 600, color: selected ? "var(--accent)" : "var(--foreground)", margin: 0 }}>
+                        <p
+                          style={{
+                            fontSize: 13,
+                            fontWeight: 600,
+                            color: selected
+                              ? "var(--accent)"
+                              : "var(--foreground)",
+                            margin: 0,
+                          }}
+                        >
                           {intent.label}
                         </p>
-                        <p style={{ fontSize: 11, color: "var(--muted-foreground)", margin: "2px 0 0" }}>
+                        <p
+                          style={{
+                            fontSize: 11,
+                            color: "var(--muted-foreground)",
+                            margin: "2px 0 0",
+                          }}
+                        >
                           {intent.description}
                         </p>
                       </div>
-                      {selected && <CheckmarkCircle01Icon size={16} style={{ color: "var(--accent)", flexShrink: 0 }} />}
+                      {selected && (
+                        <CheckmarkCircle01Icon
+                          size={16}
+                          style={{ color: "var(--accent)", flexShrink: 0 }}
+                        />
+                      )}
                     </button>
                   );
                 })}
@@ -271,7 +466,10 @@ function NewCampaignPage() {
             </div>
 
             <div style={{ display: "flex", justifyContent: "flex-end" }}>
-              <Button onClick={() => setStep("leads")} disabled={!canProceedDetails}>
+              <Button
+                onClick={() => setStep("leads")}
+                disabled={!canProceedDetails}
+              >
                 Next: Select Leads
               </Button>
             </div>
@@ -280,31 +478,99 @@ function NewCampaignPage() {
 
         {/* Step: Select Leads */}
         {step === "leads" && (
-          <div className="card" style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+          <div
+            className="card"
+            style={{ display: "flex", flexDirection: "column", gap: 14 }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 8,
+              }}
+            >
               <div>
-                <span style={{ fontSize: 13, fontWeight: 600 }}>Select Leads</span>
-                <span style={{ fontSize: 12, color: "var(--muted-foreground)", marginLeft: 8 }}>
+                <span style={{ fontSize: 13, fontWeight: 600 }}>
+                  Select Leads
+                </span>
+                <span
+                  style={{
+                    fontSize: 12,
+                    color: "var(--muted-foreground)",
+                    marginLeft: 8,
+                  }}
+                >
                   {selectedLeads.size} selected
                 </span>
               </div>
               <button className="btn btn-ghost btn-sm" onClick={toggleAll}>
-                {selectedLeads.size === filteredLeads.length && filteredLeads.length > 0 ? "Deselect All" : "Select All"}
+                {selectedLeads.size === filteredLeads.length &&
+                filteredLeads.length > 0
+                  ? "Deselect All"
+                  : "Select All"}
               </button>
             </div>
 
-            <input
-              className="input"
-              placeholder="Search leads..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
+            <div className="flex gap-2">
+              <Input
+                placeholder="Search leads..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                style={{ flex: 1 }}
+              />
+              <Select
+                value={fitFilter}
+                onValueChange={(v) => setFitFilter(v as typeof fitFilter)}
+              >
+                <SelectTrigger size="default" className="w-32">
+                  <SelectValue placeholder="Fit" />
+                </SelectTrigger>
+                <SelectContent align="end">
+                  <SelectItem value="all">All fits</SelectItem>
+                  <SelectItem value="HIGH">High</SelectItem>
+                  <SelectItem value="MEDIUM">Medium</SelectItem>
+                  <SelectItem value="LOW">Low</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select
+                value={scoreSort}
+                onValueChange={(v) => setScoreSort(v as typeof scoreSort)}
+              >
+                <SelectTrigger size="default" className="w-36">
+                  <SelectValue placeholder="Score" />
+                </SelectTrigger>
+                <SelectContent align="end">
+                  <SelectItem value="default">Default order</SelectItem>
+                  <SelectItem value="desc">Score: high → low</SelectItem>
+                  <SelectItem value="asc">Score: low → high</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-            <div style={{ maxHeight: 360, overflowY: "auto", display: "flex", flexDirection: "column", gap: 1 }}>
+            <div
+              style={{
+                maxHeight: 360,
+                overflowY: "auto",
+                display: "flex",
+                flexDirection: "column",
+                gap: 1,
+              }}
+            >
               {filteredLeads.length === 0 && (
                 <EmptyState
-                  icon={search ? <FilterIcon /> : <UserGroupIcon />}
-                  title={search ? "No leads match your search" : "No leads in pipeline yet"}
+                  icon={
+                    search || fitFilter !== "all" ? (
+                      <FilterIcon />
+                    ) : (
+                      <UserGroupIcon />
+                    )
+                  }
+                  title={
+                    search || fitFilter !== "all"
+                      ? "No leads match your filters"
+                      : "No leads in pipeline yet"
+                  }
                   size="sm"
                 />
               )}
@@ -320,27 +586,55 @@ function NewCampaignPage() {
                       padding: "10px 12px",
                       borderRadius: "var(--radius)",
                       cursor: "pointer",
-                      background: checked ? "var(--accent-subtle)" : "transparent",
+                      background: checked
+                        ? "var(--accent-subtle)"
+                        : "transparent",
                       transition: "background 0.1s",
                     }}
                   >
-                    <input
-                      type="checkbox"
+                    <Checkbox
                       checked={checked}
-                      onChange={() => toggleLead(lead.id)}
-                      style={{ accentColor: "var(--accent)", width: 14, height: 14, flexShrink: 0 }}
+                      onCheckedChange={() => toggleLead(lead.id)}
                     />
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        <span style={{ fontSize: 13, fontWeight: 600 }}>{lead.company}</span>
-                        {lead.fit && <span className={FIT_BADGE[lead.fit] ?? "badge badge-gray"}>{lead.fit}</span>}
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 8,
+                        }}
+                      >
+                        <span style={{ fontSize: 13, fontWeight: 600 }}>
+                          {lead.company}
+                        </span>
+                        {lead.fit && (
+                          <span
+                            className={
+                              FIT_BADGE[lead.fit] ?? "badge badge-gray"
+                            }
+                          >
+                            {lead.fit}
+                          </span>
+                        )}
                       </div>
-                      <div style={{ fontSize: 11, color: "var(--muted-foreground)", marginTop: 2 }}>
+                      <div
+                        style={{
+                          fontSize: 11,
+                          color: "var(--muted-foreground)",
+                          marginTop: 2,
+                        }}
+                      >
                         {lead.ceo} · {lead.email || "no email"}
                       </div>
                     </div>
                     {lead.score != null && (
-                      <span style={{ fontSize: 12, color: "var(--muted-foreground)", flexShrink: 0 }}>
+                      <span
+                        style={{
+                          fontSize: 12,
+                          color: "var(--muted-foreground)",
+                          flexShrink: 0,
+                        }}
+                      >
                         {lead.score}
                       </span>
                     )}
@@ -349,42 +643,72 @@ function NewCampaignPage() {
               })}
             </div>
 
-            <div style={{ display: "flex", justifyContent: "space-between", borderTop: "1px solid var(--border)", paddingTop: 14 }}>
-              <button className="btn btn-ghost" onClick={() => setStep("details")}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                borderTop: "1px solid var(--border)",
+                paddingTop: 14,
+              }}
+            >
+              <button
+                className="btn btn-ghost"
+                onClick={() => setStep("details")}
+              >
                 Back
               </button>
-              <Button onClick={() => setStep("review")}>
-                Next: Review
-              </Button>
+              <Button onClick={() => setStep("review")}>Next: Review</Button>
             </div>
           </div>
         )}
 
         {/* Step: Review */}
         {step === "review" && (
-          <div className="card" style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+          <div
+            className="card"
+            style={{ display: "flex", flexDirection: "column", gap: 18 }}
+          >
             <div>
-              <p className="form-label" style={{ marginBottom: 4 }}>Campaign Name</p>
+              <p className="form-label" style={{ marginBottom: 4 }}>
+                Campaign Name
+              </p>
               <p style={{ fontSize: 15, fontWeight: 600, margin: 0 }}>{name}</p>
             </div>
 
-            {channel && (
+            {channels.length > 0 && (
               <div>
-                <p className="form-label" style={{ marginBottom: 4 }}>Channel</p>
-                <p style={{ fontSize: 13, margin: 0, textTransform: "capitalize" }}>{channel}</p>
+                <p className="form-label" style={{ marginBottom: 4 }}>
+                  Channels
+                </p>
+                <p style={{ fontSize: 13, margin: 0 }}>
+                  {channels.map((c) => CHANNEL_META[c].label).join(", ")}
+                </p>
               </div>
             )}
 
             {goal && (
               <div>
-                <p className="form-label" style={{ marginBottom: 4 }}>Goal</p>
-                <p style={{ fontSize: 13, margin: 0, color: "var(--muted-foreground)", lineHeight: 1.5 }}>{goal}</p>
+                <p className="form-label" style={{ marginBottom: 4 }}>
+                  Goal
+                </p>
+                <p
+                  style={{
+                    fontSize: 13,
+                    margin: 0,
+                    color: "var(--muted-foreground)",
+                    lineHeight: 1.5,
+                  }}
+                >
+                  {goal}
+                </p>
               </div>
             )}
 
             {intentType && (
               <div>
-                <p className="form-label" style={{ marginBottom: 4 }}>Outreach intent</p>
+                <p className="form-label" style={{ marginBottom: 4 }}>
+                  Outreach intent
+                </p>
                 <p style={{ fontSize: 13, margin: 0 }}>
                   {INTENTS.find((i) => i.value === intentType)?.label}
                 </p>
@@ -392,25 +716,57 @@ function NewCampaignPage() {
             )}
 
             <div>
-              <p className="form-label" style={{ marginBottom: 8 }}>Leads ({selectedLeads.size})</p>
+              <p className="form-label" style={{ marginBottom: 8 }}>
+                Leads ({selectedLeads.size})
+              </p>
               {selectedLeads.size === 0 ? (
-                <p style={{ fontSize: 13, color: "var(--muted-foreground)", margin: 0 }}>
+                <p
+                  style={{
+                    fontSize: 13,
+                    color: "var(--muted-foreground)",
+                    margin: 0,
+                  }}
+                >
                   No leads selected — you can add them later.
                 </p>
               ) : (
-                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                <div
+                  style={{ display: "flex", flexDirection: "column", gap: 6 }}
+                >
                   {Array.from(selectedLeads)
                     .map((id) => leads.find((l) => l.id === id))
                     .filter((l): l is Lead => !!l)
                     .slice(0, 5)
                     .map((l) => (
-                      <div key={l.id} style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        <span style={{ fontSize: 13, fontWeight: 500 }}>{l.company}</span>
-                        <span style={{ fontSize: 11, color: "var(--muted-foreground)" }}>{l.ceo}</span>
+                      <div
+                        key={l.id}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 8,
+                        }}
+                      >
+                        <span style={{ fontSize: 13, fontWeight: 500 }}>
+                          {l.company}
+                        </span>
+                        <span
+                          style={{
+                            fontSize: 11,
+                            color: "var(--muted-foreground)",
+                          }}
+                        >
+                          {l.ceo}
+                        </span>
                       </div>
                     ))}
                   {selectedLeads.size > 5 && (
-                    <p style={{ fontSize: 12, color: "var(--muted-foreground)", margin: 0 }}>
+                    <p
+                      style={{
+                        fontSize: 12,
+                        color: "var(--muted-foreground)",
+                        margin: 0,
+                      }}
+                    >
                       +{selectedLeads.size - 5} more
                     </p>
                   )}
@@ -418,12 +774,28 @@ function NewCampaignPage() {
               )}
             </div>
 
-            <div style={{ display: "flex", justifyContent: "space-between", borderTop: "1px solid var(--border)", paddingTop: 14 }}>
-              <button className="btn btn-ghost" onClick={() => setStep("leads")}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                borderTop: "1px solid var(--border)",
+                paddingTop: 14,
+              }}
+            >
+              <button
+                className="btn btn-ghost"
+                onClick={() => setStep("leads")}
+              >
                 Back
               </button>
-              <Button onClick={handleCreate} disabled={saving}>
-                {saving ? "Creating..." : "Create Campaign"}
+              <Button onClick={handleSave} disabled={saving}>
+                {saving
+                  ? isEditing
+                    ? "Saving..."
+                    : "Creating..."
+                  : isEditing
+                    ? "Save Changes"
+                    : "Create Campaign"}
               </Button>
             </div>
           </div>

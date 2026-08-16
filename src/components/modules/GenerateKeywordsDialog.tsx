@@ -5,7 +5,6 @@ import {
   SheetHeader,
   SheetTitle,
   SheetDescription,
-  SheetBody,
   SheetFooter,
 } from "~/components/ui/sheet";
 import { Button } from "~/components/ui/button";
@@ -127,7 +126,7 @@ export function GenerateKeywordsDialog({
           </SheetDescription>
         </SheetHeader>
 
-        <SheetBody>
+        <div className="flex-1 overflow-y-auto p-4">
           {loading ? (
             <div className="flex flex-col items-center justify-center gap-3 py-16 text-muted-foreground">
               <span className="spinner" style={{ width: 18, height: 18 }} />
@@ -213,7 +212,7 @@ export function GenerateKeywordsDialog({
               </div>
             </div>
           ) : null}
-        </SheetBody>
+        </div>
 
         <SheetFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={adding}>

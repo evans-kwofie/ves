@@ -4,7 +4,8 @@ import { getStep, updateStep, deleteStep } from "~/db/queries/steps";
 
 const updateSchema = z.object({
   delayDays: z.number().int().min(0).optional(),
-  channel: z.enum(["email", "linkedin"]).optional(),
+  channel: z.enum(["email", "linkedin", "instagram", "reddit"]).optional(),
+  linkedinType: z.enum(["dm", "connect"]).nullable().optional(),
   context: z.string().nullable().optional(),
   templateId: z.string().nullable().optional(),
 });

@@ -126,7 +126,7 @@ async function tick() {
 
         const activeSteps = steps.length > 0
           ? steps
-          : [{ stepNumber: 1, channel: campaign.channel ?? "email", context: null, delayDays: 0, templateId: null, id: "", campaignId: campaign.id, createdAt: "" }];
+          : [{ stepNumber: 1, channel: campaign.channels[0] ?? "email", context: null, delayDays: 0, templateId: null, id: "", campaignId: campaign.id, createdAt: "" }];
 
         const productContext = [
           orgProfile.description ? `Product: ${orgProfile.description}` : null,

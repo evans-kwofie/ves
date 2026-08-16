@@ -16,7 +16,6 @@ import {
   SheetContent,
   SheetHeader,
   SheetTitle,
-  SheetBody,
   SheetFooter,
 } from "~/components/ui/sheet";
 import { toast } from "sonner";
@@ -316,7 +315,7 @@ function EditSheet({
         <SheetHeader>
           <SheetTitle>Edit post</SheetTitle>
         </SheetHeader>
-        <SheetBody>
+        <div className="flex-1 overflow-y-auto p-4">
           <textarea
             value={content}
             onChange={(e) => setContent(e.target.value)}
@@ -329,7 +328,7 @@ function EditSheet({
             }}
             autoFocus
           />
-        </SheetBody>
+        </div>
         <SheetFooter className="flex-row gap-2">
           <Button variant="ghost" onClick={onClose}>
             <Cancel01Icon size={13} /> Cancel
@@ -487,7 +486,7 @@ function GeneratorSheet({
           <SheetTitle>New post</SheetTitle>
         </SheetHeader>
 
-        <SheetBody className="flex flex-col gap-5">
+        <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-5">
           <div className="flex flex-col gap-2">
             <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
               Topic
@@ -566,7 +565,7 @@ function GeneratorSheet({
               ))}
             </div>
           </div>
-        </SheetBody>
+        </div>
 
         <SheetFooter className="flex flex-col gap-2">
           {linkedinConnected && (

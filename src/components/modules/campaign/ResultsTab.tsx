@@ -41,11 +41,16 @@ export function ResultsTab({
   }
 
   const contactedLeads = leads.filter((l) => sentByLead.has(l.id));
+  console.log("contacted leads", contactedLeads);
   const repliedCount = contactedLeads.filter((l) => l.repliedAt != null).length;
   const openedCount = sent.filter((d) => d.openedAt != null).length;
   const clickedCount = sent.filter((d) => d.clickedAt != null).length;
-  const replyRate = contactedLeads.length > 0 ? Math.round((repliedCount / contactedLeads.length) * 100) : 0;
-  const openRate = sent.length > 0 ? Math.round((openedCount / sent.length) * 100) : 0;
+  const replyRate =
+    contactedLeads.length > 0
+      ? Math.round((repliedCount / contactedLeads.length) * 100)
+      : 0;
+  const openRate =
+    sent.length > 0 ? Math.round((openedCount / sent.length) * 100) : 0;
 
   // A/B split — only show when both variants exist
   const sentA = sent.filter((d) => d.abVariant === "a");
@@ -64,7 +69,11 @@ export function ResultsTab({
         <Divider />
         <Stat value={clickedCount} label="Clicks" />
         <Divider />
-        <Stat value={`${replyRate}%`} label="Reply rate" accent={replyRate > 0} />
+        <Stat
+          value={`${replyRate}%`}
+          label="Reply rate"
+          accent={replyRate > 0}
+        />
         {skipped.length > 0 && (
           <>
             <Divider />
@@ -74,9 +83,7 @@ export function ResultsTab({
       </div>
 
       {/* A/B breakdown */}
-      {showAB && (
-        <ABSection sentA={sentA} sentB={sentB} leads={leads} />
-      )}
+      {showAB && <ABSection sentA={sentA} sentB={sentB} leads={leads} />}
 
       {/* Per-lead rows */}
       {contactedLeads.map((lead, i) => {
@@ -87,7 +94,10 @@ export function ResultsTab({
         const variant = leadDrafts[0]?.abVariant;
         const lastSent = leadDrafts
           .filter((d) => d.sentAt)
-          .sort((a, b) => new Date(b.sentAt!).getTime() - new Date(a.sentAt!).getTime())[0];
+          .sort(
+            (a, b) =>
+              new Date(b.sentAt!).getTime() - new Date(a.sentAt!).getTime(),
+          )[0];
 
         return (
           <div
@@ -96,15 +106,20 @@ export function ResultsTab({
           >
             {/* Lead info */}
             <div className="flex flex-col min-w-0 flex-1">
-              <span className="text-[13px] font-semibold leading-tight">{lead.company}</span>
+              <span className="text-[13px] font-semibold leading-tight">
+                {lead.company}
+              </span>
               <span className="text-[11px] text-muted-foreground">
-                {lead.ceo}{lead.email ? ` · ${lead.email}` : ""}
+                {lead.ceo}
+                {lead.email ? ` · ${lead.email}` : ""}
               </span>
             </div>
 
             {/* A/B variant badge */}
             {showAB && variant && (
-              <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded shrink-0 ${variant === "a" ? "bg-blue-500/10 text-blue-500" : "bg-purple-500/10 text-purple-500"}`}>
+              <span
+                className={`text-[10px] font-bold px-1.5 py-0.5 rounded shrink-0 ${variant === "a" ? "bg-blue-500/10 text-blue-500" : "bg-purple-500/10 text-purple-500"}`}
+              >
                 {variant.toUpperCase()}
               </span>
             )}
@@ -116,7 +131,9 @@ export function ResultsTab({
                   key={s.id}
                   title={`Step ${s.stepNumber}`}
                   className={`inline-flex items-center justify-center rounded-full text-[10px] font-bold w-5 h-5 ${
-                    sentStepNums.has(s.stepNumber) ? "bg-accent text-white" : "bg-muted text-muted-foreground"
+                    sentStepNums.has(s.stepNumber)
+                      ? "bg-accent text-white"
+                      : "bg-muted text-muted-foreground"
                   }`}
                 >
                   {s.stepNumber}
@@ -144,7 +161,9 @@ export function ResultsTab({
               {lead.repliedAt ? (
                 <span className="badge badge-green">Replied</span>
               ) : (
-                <span className="text-[11px] text-muted-foreground">Waiting</span>
+                <span className="text-[11px] text-muted-foreground">
+                  Waiting
+                </span>
               )}
             </div>
           </div>
@@ -168,8 +187,12 @@ function ABSection({
     const contactedLeads = leads.filter((l) => leadIds.has(l.id));
     const replies = contactedLeads.filter((l) => l.repliedAt != null).length;
     const opens = drafts.filter((d) => d.openedAt != null).length;
-    const replyRate = contactedLeads.length > 0 ? Math.round((replies / contactedLeads.length) * 100) : 0;
-    const openRate = drafts.length > 0 ? Math.round((opens / drafts.length) * 100) : 0;
+    const replyRate =
+      contactedLeads.length > 0
+        ? Math.round((replies / contactedLeads.length) * 100)
+        : 0;
+    const openRate =
+      drafts.length > 0 ? Math.round((opens / drafts.length) * 100) : 0;
     return { sent: drafts.length, replies, opens, replyRate, openRate };
   }
 
@@ -185,50 +208,93 @@ function ABSection({
         A/B Test results
       </p>
       <div className="grid grid-cols-2 gap-3">
-        {([["a", a, aWins], ["b", b, bWins]] as const).map(([label, m, wins]) => (
+        {(
+          [
+            ["a", a, aWins],
+            ["b", b, bWins],
+          ] as const
+        ).map(([label, m, wins]) => (
           <div
             key={label}
             className={`p-3 rounded-lg border ${wins && !tied ? "border-accent/40 bg-accent/5" : "border-border bg-muted/30"}`}
           >
             <div className="flex items-center justify-between mb-2">
-              <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded ${label === "a" ? "bg-blue-500/10 text-blue-500" : "bg-purple-500/10 text-purple-500"}`}>
+              <span
+                className={`text-[11px] font-bold px-1.5 py-0.5 rounded ${label === "a" ? "bg-blue-500/10 text-blue-500" : "bg-purple-500/10 text-purple-500"}`}
+              >
                 Variant {label.toUpperCase()}
               </span>
               {wins && !tied && (
-                <span className="text-[10px] font-semibold text-accent">Winning</span>
+                <span className="text-[10px] font-semibold text-accent">
+                  Winning
+                </span>
               )}
             </div>
             <div className="flex flex-col gap-1">
               <Row label="Sent" value={m.sent} />
-              <Row label="Open rate" value={`${m.openRate}%`} highlight={m.openRate > 0} />
-              <Row label="Reply rate" value={`${m.replyRate}%`} highlight={m.replyRate > 0} />
+              <Row
+                label="Open rate"
+                value={`${m.openRate}%`}
+                highlight={m.openRate > 0}
+              />
+              <Row
+                label="Reply rate"
+                value={`${m.replyRate}%`}
+                highlight={m.replyRate > 0}
+              />
             </div>
           </div>
         ))}
       </div>
       {tied && a.replyRate === 0 && (
-        <p className="text-[11px] text-muted-foreground mt-2">No replies yet — winner will appear once leads start responding.</p>
+        <p className="text-[11px] text-muted-foreground mt-2">
+          No replies yet — winner will appear once leads start responding.
+        </p>
       )}
     </div>
   );
 }
 
-function Row({ label, value, highlight }: { label: string; value: string | number; highlight?: boolean }) {
+function Row({
+  label,
+  value,
+  highlight,
+}: {
+  label: string;
+  value: string | number;
+  highlight?: boolean;
+}) {
   return (
     <div className="flex items-center justify-between">
       <span className="text-[11px] text-muted-foreground">{label}</span>
-      <span className={`text-[12px] font-semibold ${highlight ? "text-accent" : "text-foreground"}`}>{value}</span>
+      <span
+        className={`text-[12px] font-semibold ${highlight ? "text-accent" : "text-foreground"}`}
+      >
+        {value}
+      </span>
     </div>
   );
 }
 
-function Stat({ value, label, accent }: { value: string | number; label: string; accent?: boolean }) {
+function Stat({
+  value,
+  label,
+  accent,
+}: {
+  value: string | number;
+  label: string;
+  accent?: boolean;
+}) {
   return (
     <div>
-      <div className={`text-[24px] font-bold tracking-tight leading-none ${accent ? "text-accent" : ""}`}>
+      <div
+        className={`text-[24px] font-bold tracking-tight leading-none ${accent ? "text-accent" : ""}`}
+      >
         {value}
       </div>
-      <div className="text-[11px] text-muted-foreground uppercase tracking-wider mt-1">{label}</div>
+      <div className="text-[11px] text-muted-foreground uppercase tracking-wider mt-1">
+        {label}
+      </div>
     </div>
   );
 }

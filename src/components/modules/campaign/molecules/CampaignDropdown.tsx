@@ -8,6 +8,7 @@ import {
   PlayIcon,
   PlusSignIcon,
   Loading03Icon,
+  Pen01Icon,
 } from "hugeicons-react";
 import { toast } from "sonner";
 import {
@@ -25,6 +26,7 @@ interface CampaignDropdownMenuProps {
   campaignId: string;
   workspaceId: string;
   status: CampaignStatus;
+  stepCount?: number;
   existingLeadIds?: string[];
   onDelete: (id: string) => void;
   onStatusChange: (id: string, status: CampaignStatus) => void;
@@ -35,6 +37,7 @@ export default function CampaignDropdownMenu({
   campaignId,
   workspaceId,
   status,
+  stepCount,
   existingLeadIds = [],
   onDelete,
   onStatusChange,
@@ -71,6 +74,16 @@ export default function CampaignDropdownMenu({
   }
 
   async function handleToggleActive() {
+    if (!isActive) {
+      if (stepCount === 0) {
+        toast.error("No sequence steps yet. Without steps, there's nothing to send. Go to the Sequence tab and add at least one step first.");
+        return;
+      }
+      if (stepCount === undefined) {
+        toast.warning("Campaigns need at least one sequence step to run. Without steps, no messages will be sent. Open the campaign and set up your sequence first.");
+        return;
+      }
+    }
     const next: CampaignStatus = isActive ? "draft" : "active";
     setToggling(true);
     try {
@@ -98,29 +111,60 @@ export default function CampaignDropdownMenu({
           }
         />
 
-        <DropdownMenuContent>
+        <DropdownMenuContent className="sm:min-w-50">
           <DropdownMenuItem
-            onClick={() => navigate({ to: "/$workspaceId/campaigns/$id", params: { workspaceId, id: campaignId } })}
+            className="cursor-pointer"
+            onClick={() =>
+              navigate({
+                to: "/$workspaceId/campaigns/$id",
+                params: { workspaceId, id: campaignId },
+              })
+            }
           >
             <ArrowRight01Icon size={13} />
             Open Campaign
           </DropdownMenuItem>
 
-          <DropdownMenuItem onClick={handleAddLead}>
+          <DropdownMenuItem className="cursor-pointer" onClick={handleAddLead}>
             <PlusSignIcon size={13} />
             Add Contact
           </DropdownMenuItem>
 
-          <DropdownMenuItem onClick={handleToggleActive} disabled={toggling}>
-            {toggling
-              ? <Loading03Icon size={13} className="animate-spin" />
-              : isActive ? <PauseIcon size={13} /> : <PlayIcon size={13} />}
+          <DropdownMenuItem
+            className="cursor-pointer"
+            onClick={handleToggleActive}
+            disabled={toggling}
+          >
+            {toggling ? (
+              <Loading03Icon size={13} className="animate-spin" />
+            ) : isActive ? (
+              <PauseIcon size={13} />
+            ) : (
+              <PlayIcon size={13} />
+            )}
             {isActive ? "Pause Campaign" : "Activate Campaign"}
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            className="cursor-pointer"
+            onClick={() =>
+              navigate({
+                to: "/$workspaceId/campaigns/new",
+                params: { workspaceId },
+                search: { campaignId },
+              })
+            }
+          >
+            <Pen01Icon size={13} />
+            Edit Campaign
           </DropdownMenuItem>
 
           <DropdownMenuSeparator />
 
-          <DropdownMenuItem destructive onClick={() => setConfirmOpen(true)}>
+          <DropdownMenuItem
+            className="cursor-pointer"
+            variant="destructive"
+            onClick={() => setConfirmOpen(true)}
+          >
             <Delete02Icon size={13} />
             Delete
           </DropdownMenuItem>

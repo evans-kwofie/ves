@@ -2,6 +2,9 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
+@import "@fontsource-variable/inter";
+
+@custom-variant dark (&:is(.dark *));
 
 /* Dark (default) */
 :root,
@@ -1311,7 +1314,6 @@ select.input {
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -1322,4 +1324,8 @@ select.input {
   html {
     @apply font-sans;
   }
+  button:not(:disabled), [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
 }
+

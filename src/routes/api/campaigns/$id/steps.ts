@@ -2,16 +2,20 @@ import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { listSteps, createStep, updateStep, deleteStep } from "~/db/queries/steps";
 
+const linkedinTypeSchema = z.enum(["dm", "connect"]).nullable().optional();
+
 const createSchema = z.object({
   stepNumber: z.number().int().min(1),
   delayDays: z.number().int().min(0).default(0),
-  channel: z.enum(["email", "linkedin"]).default("email"),
+  channel: z.enum(["email", "linkedin", "instagram", "reddit"]).default("email"),
+  linkedinType: linkedinTypeSchema,
   context: z.string().nullable().optional(),
 });
 
 const updateSchema = z.object({
   delayDays: z.number().int().min(0).optional(),
-  channel: z.enum(["email", "linkedin"]).optional(),
+  channel: z.enum(["email", "linkedin", "instagram", "reddit"]).optional(),
+  linkedinType: linkedinTypeSchema,
   context: z.string().nullable().optional(),
 });
 

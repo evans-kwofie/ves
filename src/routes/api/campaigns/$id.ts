@@ -5,9 +5,11 @@ import { getCampaign, updateCampaign, deleteCampaign } from "~/db/queries/campai
 const updateSchema = z.object({
   name: z.string().min(1).max(200).optional(),
   status: z.enum(["draft", "active", "scheduled", "completed"]).optional(),
-  channel: z.enum(["email", "linkedin", "both"]).optional(),
-  goal: z.string().optional(),
+  channels: z.array(z.enum(["email", "linkedin", "instagram", "reddit"])).optional(),
+  goal: z.string().nullable().optional(),
+  intentType: z.enum(["advice_seeking", "product_review", "audit_offer", "direct_pitch"]).nullable().optional(),
   runFrequency: z.enum(["daily", "every_3_days", "weekly"]).nullable().optional(),
+  leadIds: z.array(z.string()).optional(),
 });
 
 export const Route = createFileRoute("/api/campaigns/$id")({

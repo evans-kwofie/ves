@@ -11,7 +11,7 @@ export async function generateDraftForLead(opts: {
   orgProfile: Record<string, unknown>;
 }): Promise<CampaignDraft> {
   const { campaign, lead, step, orgProfile } = opts;
-  const stepChannel = step.channel ?? (campaign.channel === "linkedin" ? "linkedin" : campaign.channel === "instagram" ? "instagram" : "email");
+  const stepChannel = step.channel ?? (campaign.channels[0] ?? "email");
   const isFollowUp = step.stepNumber > 1;
 
   // Extract default signature if any
@@ -51,6 +51,15 @@ Rules:
 - End with a super low-friction CTA (e.g. "Worth a chat?", "Curious to hear more?")
 - Never start with "Hey!" or generic openers
 - No emojis unless they feel completely natural${followUpNote}`
+      : stepChannel === "linkedin" && step.linkedinType === "connect"
+      ? `You are writing a LinkedIn Connection Request note for cold outreach. This is NOT a DM — it accompanies the connection request itself.
+Rules:
+- STRICT maximum of 300 characters total (LinkedIn's limit for connection notes)
+- Do not waste characters on "Hi [name]," — get to the point immediately
+- One specific reason why connecting makes sense, tied to their actual business
+- No CTA beyond the implicit one of accepting the connection
+- Zero filler, zero corpo-speak
+- No subject line${followUpNote}`
       : stepChannel === "linkedin"
       ? `You are a concise, direct outreach writer writing a LinkedIn DM for cold outreach.
 Rules:
