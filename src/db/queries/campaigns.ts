@@ -1,12 +1,21 @@
 import { v4 as uuidv4 } from "uuid";
 import { db } from "../client";
-import type { Campaign, CampaignChannel, CreateCampaignInput, UpdateCampaignInput } from "~/types/campaign";
+import type {
+  Campaign,
+  CampaignChannel,
+  CreateCampaignInput,
+  UpdateCampaignInput,
+} from "~/types/campaign";
 
 function parseChannels(raw: unknown): CampaignChannel[] {
   if (!raw) return [];
   const s = raw as string;
   if (s.startsWith("[")) {
-    try { return JSON.parse(s) as CampaignChannel[]; } catch { return []; }
+    try {
+      return JSON.parse(s) as CampaignChannel[];
+    } catch {
+      return [];
+    }
   }
   // backward compat: single-value or "both"
   if (s === "both") return ["email", "linkedin"];
@@ -37,9 +46,18 @@ function rowToCampaign(row: Record<string, unknown>): Campaign {
 async function attachStats(campaigns: Campaign[]): Promise<Campaign[]> {
   for (const c of campaigns) {
     const [lc, sc, rc] = await Promise.all([
-      db.execute({ sql: "SELECT COUNT(*)::int as count FROM campaign_leads WHERE campaign_id = ?", args: [c.id] }),
-      db.execute({ sql: "SELECT COUNT(*)::int as count FROM outreach_events WHERE campaign_id = ? AND status = 'email_sent'", args: [c.id] }),
-      db.execute({ sql: "SELECT COUNT(*)::int as count FROM outreach_events WHERE campaign_id = ? AND status = 'replied'", args: [c.id] }),
+      db.execute({
+        sql: "SELECT COUNT(*)::int as count FROM campaign_leads WHERE campaign_id = ?",
+        args: [c.id],
+      }),
+      db.execute({
+        sql: "SELECT COUNT(*)::int as count FROM outreach_events WHERE campaign_id = ? AND status = 'email_sent'",
+        args: [c.id],
+      }),
+      db.execute({
+        sql: "SELECT COUNT(*)::int as count FROM outreach_events WHERE campaign_id = ? AND status = 'replied'",
+        args: [c.id],
+      }),
     ]);
     c.leadCount = (lc.rows[0] as Record<string, unknown>).count as number;
     c.sentCount = (sc.rows[0] as Record<string, unknown>).count as number;
@@ -53,24 +71,44 @@ export async function listCampaigns(orgId: string): Promise<Campaign[]> {
     sql: "SELECT * FROM campaigns WHERE organization_id = ? ORDER BY created_at DESC",
     args: [orgId],
   });
-  const campaigns = result.rows.map((r) => rowToCampaign(r as Record<string, unknown>));
+  const campaigns = result.rows.map((r) =>
+    rowToCampaign(r as Record<string, unknown>),
+  );
   return attachStats(campaigns);
 }
 
 export async function getCampaign(id: string): Promise<Campaign | null> {
-  const result = await db.execute({ sql: "SELECT * FROM campaigns WHERE id = ?", args: [id] });
+  const result = await db.execute({
+    sql: "SELECT * FROM campaigns WHERE id = ?",
+    args: [id],
+  });
   if (result.rows.length === 0) return null;
-  const [campaign] = await attachStats([rowToCampaign(result.rows[0] as Record<string, unknown>)]);
+  const [campaign] = await attachStats([
+    rowToCampaign(result.rows[0] as Record<string, unknown>),
+  ]);
   return campaign;
 }
 
-export async function createCampaign(orgId: string, input: CreateCampaignInput): Promise<Campaign> {
+export async function createCampaign(
+  orgId: string,
+  input: CreateCampaignInput,
+): Promise<Campaign> {
   const id = uuidv4();
   const now = new Date().toISOString();
   await db.execute({
     sql: `INSERT INTO campaigns (id, organization_id, name, status, channel, goal, intent_type, created_at, updated_at)
           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    args: [id, orgId, input.name, input.status ?? "draft", input.channels?.length ? JSON.stringify(input.channels) : null, input.goal ?? null, input.intentType ?? null, now, now],
+    args: [
+      id,
+      orgId,
+      input.name,
+      input.status ?? "draft",
+      input.channels?.length ? JSON.stringify(input.channels) : null,
+      input.goal ?? null,
+      input.intentType ?? null,
+      now,
+      now,
+    ],
   });
 
   if (input.leadIds && input.leadIds.length > 0) {
@@ -85,23 +123,50 @@ export async function createCampaign(orgId: string, input: CreateCampaignInput):
   return (await getCampaign(id))!;
 }
 
-export async function updateCampaign(id: string, input: UpdateCampaignInput): Promise<Campaign> {
+export async function updateCampaign(
+  id: string,
+  input: UpdateCampaignInput,
+): Promise<Campaign> {
   const now = new Date().toISOString();
   const fields: string[] = ["updated_at = ?"];
   const args: (string | null)[] = [now];
 
-  if (input.name !== undefined) { fields.push("name = ?"); args.push(input.name); }
-  if (input.status !== undefined) { fields.push("status = ?"); args.push(input.status); }
-  if (input.channels !== undefined) { fields.push("channel = ?"); args.push(input.channels.length ? JSON.stringify(input.channels) : null); }
-  if (input.goal !== undefined) { fields.push("goal = ?"); args.push(input.goal ?? null); }
-  if (input.intentType !== undefined) { fields.push("intent_type = ?"); args.push(input.intentType ?? null); }
-  if (input.runFrequency !== undefined) { fields.push("run_frequency = ?"); args.push(input.runFrequency ?? null); }
+  if (input.name !== undefined) {
+    fields.push("name = ?");
+    args.push(input.name);
+  }
+  if (input.status !== undefined) {
+    fields.push("status = ?");
+    args.push(input.status);
+  }
+  if (input.channels !== undefined) {
+    fields.push("channel = ?");
+    args.push(input.channels.length ? JSON.stringify(input.channels) : null);
+  }
+  if (input.goal !== undefined) {
+    fields.push("goal = ?");
+    args.push(input.goal ?? null);
+  }
+  if (input.intentType !== undefined) {
+    fields.push("intent_type = ?");
+    args.push(input.intentType ?? null);
+  }
+  if (input.runFrequency !== undefined) {
+    fields.push("run_frequency = ?");
+    args.push(input.runFrequency ?? null);
+  }
 
   args.push(id);
-  await db.execute({ sql: `UPDATE campaigns SET ${fields.join(", ")} WHERE id = ?`, args });
+  await db.execute({
+    sql: `UPDATE campaigns SET ${fields.join(", ")} WHERE id = ?`,
+    args,
+  });
 
   if (input.leadIds !== undefined) {
-    await db.execute({ sql: "DELETE FROM campaign_leads WHERE campaign_id = ?", args: [id] });
+    await db.execute({
+      sql: "DELETE FROM campaign_leads WHERE campaign_id = ?",
+      args: [id],
+    });
     for (const leadId of input.leadIds) {
       await db.execute({
         sql: "INSERT INTO campaign_leads (id, campaign_id, lead_id) VALUES (?, ?, ?) ON CONFLICT DO NOTHING",
@@ -117,29 +182,43 @@ export async function deleteCampaign(id: string): Promise<void> {
   await db.execute({ sql: "DELETE FROM campaigns WHERE id = ?", args: [id] });
 }
 
-export async function getCampaignLeadIds(campaignId: string): Promise<string[]> {
+export async function getCampaignLeadIds(
+  campaignId: string,
+): Promise<string[]> {
   const result = await db.execute({
     sql: "SELECT lead_id FROM campaign_leads WHERE campaign_id = ?",
     args: [campaignId],
   });
-  return result.rows.map((r) => (r as Record<string, unknown>).lead_id as string);
+  return result.rows.map(
+    (r) => (r as Record<string, unknown>).lead_id as string,
+  );
 }
 
-export async function addLeadToCampaign(campaignId: string, leadId: string): Promise<void> {
+export async function addLeadToCampaign(
+  campaignId: string,
+  leadId: string,
+): Promise<void> {
   await db.execute({
     sql: "INSERT INTO campaign_leads (id, campaign_id, lead_id) VALUES (?, ?, ?) ON CONFLICT DO NOTHING",
     args: [uuidv4(), campaignId, leadId],
   });
 }
 
-export async function removeLeadFromCampaign(campaignId: string, leadId: string): Promise<void> {
+export async function removeLeadFromCampaign(
+  campaignId: string,
+  leadId: string,
+): Promise<void> {
   await db.execute({
     sql: "DELETE FROM campaign_leads WHERE campaign_id = ? AND lead_id = ?",
     args: [campaignId, leadId],
   });
 }
 
-export async function getCampaignLeadsWithData(campaignId: string): Promise<Lead[]> {
+type LeadWithoutOrgId = Omit<Lead, "organizationId">;
+
+export async function getCampaignLeadsWithData(
+  campaignId: string,
+): Promise<LeadWithoutOrgId[]> {
   const result = await db.execute({
     sql: `SELECT l.* FROM leads l
           INNER JOIN campaign_leads cl ON cl.lead_id = l.id
@@ -161,7 +240,8 @@ export async function getCampaignLeadsWithData(campaignId: string): Promise<Lead
       fitReason: (row.fit_reason as string | null) ?? null,
       score: (row.score as number | null) ?? null,
       status: (row.status as Lead["status"]) ?? "not_contacted",
-      pipelineStage: (row.pipeline_stage as Lead["pipelineStage"]) ?? "discovered",
+      pipelineStage:
+        (row.pipeline_stage as Lead["pipelineStage"]) ?? "discovered",
       enrichmentAttempts: (row.enrichment_attempts as number) ?? 0,
       source: (row.source as string | null) ?? null,
       emailSentAt: (row.email_sent_at as string | null) ?? null,
@@ -186,7 +266,9 @@ export async function listCampaignsDueToRun(): Promise<Campaign[]> {
     sql: "SELECT * FROM campaigns WHERE status = 'active' AND run_frequency IS NOT NULL",
     args: [],
   });
-  const candidates = result.rows.map((r) => rowToCampaign(r as Record<string, unknown>));
+  const candidates = result.rows.map((r) =>
+    rowToCampaign(r as Record<string, unknown>),
+  );
 
   const now = Date.now();
   const frequencyMs: Record<string, number> = {
@@ -196,7 +278,9 @@ export async function listCampaignsDueToRun(): Promise<Campaign[]> {
   };
 
   return candidates.filter((c) => {
-    const row = result.rows.find((r) => (r as Record<string, unknown>).id === c.id) as Record<string, unknown>;
+    const row = result.rows.find(
+      (r) => (r as Record<string, unknown>).id === c.id,
+    ) as Record<string, unknown>;
     const lastRun = row.last_run_at as string | null;
     const freq = row.run_frequency as string;
     const interval = frequencyMs[freq];

@@ -24,6 +24,8 @@ export function ResultsTab({
   leads: Lead[];
   steps: CampaignStep[];
 }) {
+  console.log("[leads data]", leads);
+  console.log("[sent data]", sent);
   if (sent.length === 0 && skipped.length === 0) {
     return (
       <EmptyState
@@ -41,7 +43,7 @@ export function ResultsTab({
   }
 
   const contactedLeads = leads.filter((l) => sentByLead.has(l.id));
-  console.log("contacted leads", contactedLeads);
+  // console.log("contacted leads", contactedLeads);
   const repliedCount = contactedLeads.filter((l) => l.repliedAt != null).length;
   const openedCount = sent.filter((d) => d.openedAt != null).length;
   const clickedCount = sent.filter((d) => d.clickedAt != null).length;
@@ -59,29 +61,6 @@ export function ResultsTab({
 
   return (
     <div className="flex flex-col gap-1">
-      {/* Summary strip */}
-      <div className="flex items-center gap-5 pb-4 mb-2 border-b border-border flex-wrap">
-        <Stat value={sent.length} label="Sent" />
-        <Divider />
-        <Stat value={contactedLeads.length} label="Leads reached" />
-        <Divider />
-        <Stat value={`${openRate}%`} label="Open rate" accent={openRate > 0} />
-        <Divider />
-        <Stat value={clickedCount} label="Clicks" />
-        <Divider />
-        <Stat
-          value={`${replyRate}%`}
-          label="Reply rate"
-          accent={replyRate > 0}
-        />
-        {skipped.length > 0 && (
-          <>
-            <Divider />
-            <Stat value={skipped.length} label="Skipped" />
-          </>
-        )}
-      </div>
-
       {/* A/B breakdown */}
       {showAB && <ABSection sentA={sentA} sentB={sentB} leads={leads} />}
 

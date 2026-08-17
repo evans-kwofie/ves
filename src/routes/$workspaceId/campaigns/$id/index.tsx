@@ -20,7 +20,7 @@ import type { EmailSignature } from "~/types/signature";
 import type { Campaign } from "~/types/campaign";
 import type { Lead } from "~/types/lead";
 import type { CampaignDraft } from "~/db/queries/drafts";
-import CampaignDropdownMenu from "~/components/modules/campaign/molecules/CampaignDropdown";
+import CampaignDetailheader from "~/components/modules/campaign/molecules/CampaignDetailsHeader";
 
 const getCampaignDetail = createServerFn({ method: "GET" })
   .inputValidator(z.string())
@@ -55,9 +55,13 @@ type Tab = "sequence" | "queue" | "leads" | "results";
 
 function CampaignDetailPage() {
   const initial = Route.useLoaderData();
+  console.log("initial", initial);
   const { workspaceId, id } = Route.useParams();
 
-  const [campaign, setCampaign] = React.useState<Campaign | null>(initial?.campaign ?? null);
+  const [campaign, setCampaign] = React.useState<Campaign | null>(
+    initial?.campaign ?? null,
+  );
+  // @ts-ignore
   const [leads, setLeads] = React.useState<Lead[]>(initial?.leads ?? []);
   const [drafts, setDrafts] = React.useState<CampaignDraft[]>(
     initial?.drafts ?? [],
@@ -95,32 +99,40 @@ function CampaignDetailPage() {
   }
 
   const tabs: { value: Tab; label: string; count: number }[] = [
-    { value: "sequence", label: "Sequence",     count: steps.length },
-    { value: "queue",    label: "Review Queue", count: drafts.length },
-    { value: "leads",    label: "Contacts",     count: leads.length },
-    { value: "results",  label: "Results",      count: sent.length },
+    { value: "sequence", label: "Sequence", count: steps.length },
+    { value: "queue", label: "Review Queue", count: drafts.length },
+    { value: "leads", label: "Contacts", count: leads.length },
+    { value: "results", label: "Results", count: sent.length },
   ];
 
   return (
     <>
-      <Header
+      <CampaignDetailheader campaign={campaign} workspaceId={workspaceId} />
+
+      {/* <Header
         title={campaign.name}
         subtitle={campaign.goal ?? "Outreach campaign"}
         actions={
           campaign && (
-            <CampaignDropdownMenu
+            <CampaignDetailDropdown
               workspaceId={workspaceId}
               campaignId={id as string}
               status={campaign.status}
               stepCount={steps.length}
               existingLeadIds={leads.map((l) => l.id)}
               onDelete={() => window.history.back()}
-              onStatusChange={(_, status) => setCampaign((c) => c ? { ...c, status } : c)}
-              onLeadAdded={(lead) => setLeads((prev) => prev.some((l) => l.id === lead.id) ? prev : [...prev, lead])}
+              onStatusChange={(_, status) =>
+                setCampaign((c) => (c ? { ...c, status } : c))
+              }
+              onLeadAdded={(lead) =>
+                setLeads((prev) =>
+                  prev.some((l) => l.id === lead.id) ? prev : [...prev, lead],
+                )
+              }
             />
           )
         }
-      />
+      /> */}
 
       <div className="page-content">
         <div className="tab-list">
@@ -143,7 +155,13 @@ function CampaignDetailPage() {
 
         <div key={tab} className="tab-reveal">
           {tab === "sequence" && (
-            <SequenceTab campaignId={id} steps={steps} templates={templates} channels={campaign.channels} onStepsChange={setSteps} />
+            <SequenceTab
+              campaignId={id}
+              steps={steps}
+              templates={templates}
+              channels={campaign.channels}
+              onStepsChange={setSteps}
+            />
           )}
           {tab === "queue" && (
             <ReviewQueue
