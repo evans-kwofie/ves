@@ -37,17 +37,35 @@ export async function geminiSearch(
 
 export async function geminiJSON<T>(
   prompt: string,
-  opts?: { model?: string; maxTokens?: number; system?: string; thinkingBudget?: number },
+  opts?: {
+    model?: string;
+    maxTokens?: number;
+    system?: string;
+    thinkingBudget?: number;
+    /** Constrains the model response beyond JSON mode when the shape is known. */
+    responseJsonSchema?: unknown;
+  },
 ): Promise<T> {
-  const response = await ai.models.generateContent({
-    model: opts?.model ?? DEFAULT_MODEL,
-    contents: prompt,
-    config: {
-      responseMimeType: "application/json",
-      ...(opts?.system ? { systemInstruction: opts.system } : {}),
-      ...(opts?.maxTokens ? { maxOutputTokens: opts.maxTokens } : {}),
-      ...(opts?.thinkingBudget !== undefined ? { thinkingConfig: { thinkingBudget: opts.thinkingBudget } } : {}),
-    },
-  });
-  return JSON.parse(response.text ?? "{}") as T;
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    const response = await ai.models.generateContent({
+      model: opts?.model ?? DEFAULT_MODEL,
+      contents: prompt,
+      config: {
+        responseMimeType: "application/json",
+        ...(opts?.responseJsonSchema ? { responseJsonSchema: opts.responseJsonSchema } : {}),
+        ...(opts?.system ? { systemInstruction: opts.system } : {}),
+        ...(opts?.maxTokens ? { maxOutputTokens: opts.maxTokens } : {}),
+        ...(opts?.thinkingBudget !== undefined ? { thinkingConfig: { thinkingBudget: opts.thinkingBudget } } : {}),
+      },
+    });
+
+    try {
+      return JSON.parse(response.text ?? "{}") as T;
+    } catch (error) {
+      if (attempt === 1 || !(error instanceof SyntaxError)) throw error;
+    }
+  }
+
+  // The loop either returns a parsed response or throws on its final attempt.
+  throw new Error("Unreachable Gemini JSON parse state");
 }

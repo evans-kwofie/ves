@@ -9,7 +9,6 @@ import {
   Cancel01Icon,
 } from "hugeicons-react";
 import { Button } from "~/components/ui/button";
-import { Tip } from "~/components/ui/tooltip";
 import { toast } from "sonner";
 import type { RedditPost, IntentType, EngagementType } from "~/types/reddit";
 
@@ -161,25 +160,23 @@ export function ReplyCard({ orgId, post, onSuggestionSaved, onDismiss }: ReplyCa
           {post.title}
         </a>
         <div className="flex items-center gap-3 shrink-0 mt-0.5">
-          <Tip label="View on Reddit">
-            <a
-              href={post.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <LinkCircleIcon size={13} />
-            </a>
-          </Tip>
-          <Tip label="Dismiss post">
-            <button
-              onClick={dismiss}
-              disabled={dismissing}
-              className="text-muted-foreground/50 hover:text-foreground opacity-0 group-hover:opacity-100 transition-all disabled:opacity-20 -m-1 p-1"
-            >
-              <Cancel01Icon size={15} />
-            </button>
-          </Tip>
+          <a
+            href={post.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            title="View on Reddit"
+            className="text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <LinkCircleIcon size={13} />
+          </a>
+          <button
+            onClick={dismiss}
+            disabled={dismissing}
+            title="Dismiss post"
+            className="text-muted-foreground/50 hover:text-foreground opacity-0 group-hover:opacity-100 transition-all disabled:opacity-20 -m-1 p-1"
+          >
+            <Cancel01Icon size={15} />
+          </button>
         </div>
       </div>
 
@@ -264,19 +261,18 @@ export function ReplyCard({ orgId, post, onSuggestionSaved, onDismiss }: ReplyCa
                 </span>
               )}
               {leadId && (
-                <Tip label="Remove from pipeline">
-                  <button
-                    onClick={removeLead}
-                    disabled={pipelineState === "removing"}
-                    className="text-muted-foreground hover:text-foreground transition-colors disabled:opacity-40"
-                  >
-                    {pipelineState === "removing" ? (
-                      <span className="w-2.5 h-2.5 rounded-full border border-muted-foreground/20 border-t-muted-foreground animate-spin inline-block" />
-                    ) : (
-                      <Cancel01Icon size={12} />
-                    )}
-                  </button>
-                </Tip>
+                <button
+                  onClick={removeLead}
+                  disabled={pipelineState === "removing"}
+                  title="Remove from pipeline"
+                  className="text-muted-foreground hover:text-foreground transition-colors disabled:opacity-40"
+                >
+                  {pipelineState === "removing" ? (
+                    <span className="w-2.5 h-2.5 rounded-full border border-muted-foreground/20 border-t-muted-foreground animate-spin inline-block" />
+                  ) : (
+                    <Cancel01Icon size={12} />
+                  )}
+                </button>
               )}
             </div>
           ) : (

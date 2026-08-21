@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { geminiJSON } from "~/agent/tools/gemini";
 import { getCampaign, getCampaignLeadsWithData } from "~/db/queries/campaigns";
-import { upsertDraft } from "~/db/queries/drafts";
+import { getLatestDraftBeforeStep, upsertDraft } from "~/db/queries/drafts";
 import { listSteps } from "~/db/queries/steps";
 import { getTemplate } from "~/db/queries/templates";
 import { auth } from "~/lib/auth";
@@ -10,6 +10,8 @@ import type { Lead } from "~/types/lead";
 import type { Template } from "~/db/queries/templates";
 import type { CampaignIntent } from "~/types/campaign";
 import { notifyDraftsReady } from "~/lib/slack-notifications";
+import { listProductProfiles } from "~/db/queries/products";
+import { explainProductMatch } from "~/lib/product-matching";
 
 
 function resolveTokens(text: string, lead: Lead): string {
@@ -47,10 +49,11 @@ Return JSON: { "subject": null, "body": "connection note under 300 chars" }`;
   }
 
   const isEmail = channel === "email";
-  const medium = isEmail ? "email" : "LinkedIn DM";
+  const isInstagram = channel === "instagram";
+  const medium = isEmail ? "email" : isInstagram ? "Instagram DM" : "LinkedIn DM";
   const subjectRule = isEmail
     ? (isFollowUp ? "\n- Subject line: 5 words max, different from the first" : "\n- Subject line: 6 words max, specific to them — not generic")
-    : "";
+    : isInstagram ? "\n- Under 1,000 characters. Keep it natural enough for a message request." : "";
   const jsonShape = `{ "subject": ${isEmail ? '"short subject"' : "null"}, "body": "message" }`;
 
   if (isFollowUp) {
@@ -128,8 +131,9 @@ async function generateWithAI(opts: {
   stepContext: string | null | undefined;
   isFollowUp: boolean;
   intentType: CampaignIntent | null;
+  priorMessage?: string | null;
 }): Promise<{ subject: string | null; body: string }> {
-  const { channel, lead, productContext, campaignGoal, stepContext, isFollowUp, intentType } = opts;
+  const { channel, lead, productContext, campaignGoal, stepContext, isFollowUp, intentType, priorMessage } = opts;
 
   const leadContext = [
     `Company: ${lead.company}`,
@@ -146,7 +150,8 @@ async function generateWithAI(opts: {
 
   const systemPrompt = buildSystemPrompt({ channel, isFollowUp, intentType });
 
-  const userPrompt = `${productContext ? `OUR PRODUCT\n${productContext}\n\n` : ""}LEAD\n${leadContext}${campaignGoal ? `\n\nCAMPAIGN GOAL\n${campaignGoal}` : ""}${stepHint}`;
+  const priorContext = isFollowUp && priorMessage ? `\n\nPREVIOUS MESSAGE — do not reuse its opening, phrasing, benefit, or CTA\n${priorMessage.slice(0, 1_200)}` : "";
+  const userPrompt = `${productContext ? `OUR PRODUCT\n${productContext}\n\n` : ""}LEAD\n${leadContext}${campaignGoal ? `\n\nCAMPAIGN GOAL\n${campaignGoal}` : ""}${stepHint}${priorContext}`;
 
   const parsed = await geminiJSON<{ subject?: string | null; body?: string }>(userPrompt, {
     maxTokens: 1024,
@@ -209,12 +214,26 @@ export const Route = createFileRoute("/api/campaigns/$id/generate-drafts")({
           orgProfile.website ? `Website: ${orgProfile.website}` : null,
           orgProfile.industry ? `Industry: ${orgProfile.industry}` : null,
           orgProfile.useCases ? `Use cases: ${orgProfile.useCases}` : null,
+          orgProfile.agentVoice ? (() => { try {
+            const voice = JSON.parse(orgProfile.agentVoice) as { senderName?: string; senderTitle?: string; tone?: string; avoidPhrases?: string };
+            return [voice.senderName ? `Sender: ${voice.senderName}${voice.senderTitle ? `, ${voice.senderTitle}` : ""}` : null, voice.tone ? `Voice: ${voice.tone}` : null, voice.avoidPhrases ? `Never use: ${voice.avoidPhrases}` : null].filter(Boolean).join("\n");
+          } catch { return null; } })() : null,
         ].filter(Boolean).join("\n");
+        const products = await listProductProfiles(campaign.organizationId);
 
         const generated: { leadId: string; stepNumber: number; ok: boolean }[] = [];
 
         for (const step of stepsToRun) {
-          const channel = (step.channel === "linkedin" || step.channel === "linkedin_connect") ? step.channel : "email";
+          // Reddit campaign publishing is intentionally deferred. Never turn an
+          // unsupported social action into an email, which could send via the
+          // wrong channel without the user's knowledge.
+          if (step.channel === "reddit") {
+            for (const lead of leads) generated.push({ leadId: lead.id, stepNumber: step.stepNumber, ok: false });
+            continue;
+          }
+          const channel = step.channel === "linkedin" && "linkedinType" in step && step.linkedinType === "connect"
+            ? "linkedin_connect"
+            : step.channel;
           const isFollowUp = step.stepNumber > 1;
 
           // Load template if this step has one
@@ -227,6 +246,9 @@ export const Route = createFileRoute("/api/campaigns/$id/generate-drafts")({
 
           for (let i = 0; i < leads.length; i++) {
             const lead = leads[i];
+            const priorDraft = isFollowUp ? await getLatestDraftBeforeStep(id, lead.id, step.stepNumber) : null;
+            const productMatch = explainProductMatch(products, lead);
+            const matchedProduct = productMatch?.product;
             // Assign variant: even-indexed → 'a', odd-indexed → 'b' (only when template has variant B)
             const abVariant: "a" | "b" = (hasVariantB && i % 2 === 1) ? "b" : "a";
 
@@ -246,11 +268,12 @@ export const Route = createFileRoute("/api/campaigns/$id/generate-drafts")({
                 const result = await generateWithAI({
                   channel,
                   lead: lead as Lead,
-                  productContext,
+                  productContext: [productContext, matchedProduct ? `SELECTED PRODUCT\n${matchedProduct.name}: ${matchedProduct.description}\nBenefits: ${matchedProduct.benefits.join(", ")}` : null].filter(Boolean).join("\n\n"),
                   campaignGoal: campaign.goal,
                   stepContext: "context" in step ? step.context as string | null : null,
                   isFollowUp,
                   intentType: campaign.intentType,
+                  priorMessage: priorDraft?.body,
                 });
                 subject = result.subject;
                 body = result.body;
@@ -264,6 +287,7 @@ export const Route = createFileRoute("/api/campaigns/$id/generate-drafts")({
                 body,
                 stepNumber: step.stepNumber,
                 abVariant,
+                generationContext: { company: lead.company, contact: lead.ceo, whatTheyDo: lead.whatTheyDo, fitReason: lead.fitReason, score: lead.score, campaignGoal: campaign.goal, stepContext: "context" in step ? step.context : null, selectedProduct: matchedProduct?.name ?? null, productMatchReason: productMatch?.reason ?? null, productMatchTerms: productMatch?.matchedTerms ?? [] },
               });
 
               generated.push({ leadId: lead.id, stepNumber: step.stepNumber, ok: true });

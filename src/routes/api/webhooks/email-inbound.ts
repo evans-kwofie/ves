@@ -13,8 +13,9 @@
 
 import { createFileRoute } from "@tanstack/react-router";
 import { getLead, updateLead, createOutreachEvent } from "~/db/queries/leads";
-import { getDraftByResendMessageId } from "~/db/queries/drafts";
+import { getDraftByResendMessageId, skipScheduledDraftsForLead } from "~/db/queries/drafts";
 import { notifyReply } from "~/lib/slack-notifications";
+import { routeInboundReply } from "~/agent/reply-router";
 
 function extractLeadId(toAddress: string): string | null {
   // Parses reply+{leadId}@domain → leadId
@@ -76,8 +77,11 @@ export const Route = createFileRoute("/api/webhooks/email-inbound")({
           return Response.json({ ok: true, skipped: true, reason: "lead_not_found" });
         }
 
-        // Idempotent — skip if already marked replied
-        if (lead.repliedAt) {
+        const messageText = String(payload.text ?? payload.body ?? payload.html ?? "").toLowerCase();
+        const isUnsubscribe = /\bunsubscribe\b|\bremove me\b|\bremove my (email|address)\b|\btake me off\b|\bstop (emailing|sending)\b|\bdo not contact\b|\bdon't contact\b|\bcease (contact|email)\b/.test(messageText);
+
+        // Idempotent for ordinary replies; an unsubscribe must still be honoured.
+        if (lead.repliedAt && !isUnsubscribe) {
           return Response.json({ ok: true, skipped: true, reason: "already_replied" });
         }
 
@@ -90,12 +94,26 @@ export const Route = createFileRoute("/api/webhooks/email-inbound")({
           campaignId = draft?.campaignId ?? null;
         }
 
+        let outcome = "replied";
+        let nextStatus: "replied" | "call_scheduled" | "converted" = "replied";
+        if (!isUnsubscribe) {
+          try {
+            const routed = await routeInboundReply(messageText);
+            if (routed.confidence >= 0.85 && routed.outcome === "meeting_intent") { outcome = "meeting_intent"; nextStatus = "call_scheduled"; }
+            if (routed.confidence >= 0.9 && routed.outcome === "conversion_intent") { outcome = "conversion_intent"; nextStatus = "converted"; }
+            if (routed.outcome === "positive_reply") outcome = "positive_reply";
+            if (routed.outcome === "objection") outcome = "objection";
+          } catch { /* fall back to a normal reply; never block suppression */ }
+        }
         await Promise.all([
-          updateLead(leadId, { repliedAt: now, status: "replied" }),
+          updateLead(leadId, isUnsubscribe
+            ? { optedOutAt: now, status: "not_interested" }
+            : { repliedAt: now, status: nextStatus }),
+          skipScheduledDraftsForLead(leadId),
           createOutreachEvent({
             leadId,
             channel: "email",
-            status: "replied",
+            status: isUnsubscribe ? "unsubscribed" : outcome,
             repliedAt: now,
             campaignId,
           }),
@@ -108,8 +126,8 @@ export const Route = createFileRoute("/api/webhooks/email-inbound")({
           source: lead.source,
         });
 
-        console.log(`[email-inbound] Marked lead ${leadId} as replied (campaign: ${campaignId ?? "unknown"})`);
-        return Response.json({ ok: true, leadId });
+        console.log(`[email-inbound] Marked lead ${leadId} as ${isUnsubscribe ? "unsubscribed" : "replied"} (campaign: ${campaignId ?? "unknown"})`);
+        return Response.json({ ok: true, leadId, unsubscribed: isUnsubscribe, outcome });
       },
     },
   },

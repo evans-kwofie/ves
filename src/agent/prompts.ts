@@ -79,13 +79,10 @@ ${channelInstruction}
 CAMPAIGN LEADS (${leads.length} total):
 ${leadLines.join("\n")}
 
-YOUR TASKS — work through them in order:
-1. For leads with status "not_contacted" — send outreach emails (HIGH fit first). Personalise every message using what you know about their company.
-2. For leads where email was sent 3+ days ago with no reply — draft a LinkedIn follow-up and log it in notes using update_lead.
-3. After every action, immediately update the lead status using update_lead with campaignId: "${campaign.id}".
-4. When calling send_email, always include campaignId: "${campaign.id}" so the event is tagged to this campaign.
-5. Leads with a missing email (marked MISSING) — update their notes to flag that manual LinkedIn outreach is needed, then skip.
-6. Do NOT read the full pipeline. Do NOT add new leads. Focus only on the leads listed above.
+YOUR TASKS:
+1. Review the listed leads and identify any that need human review: missing contact data, a follow-up due, or an unusual status.
+2. Send a concise Slack summary of those findings. Do not send outreach, add leads, or change lead records.
+3. The reviewed campaign sequence engine owns draft generation, approval, sending, and follow-up scheduling.
 
 Current date: ${new Date().toISOString()}`;
 }

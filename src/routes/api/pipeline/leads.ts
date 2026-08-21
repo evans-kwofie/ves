@@ -7,11 +7,12 @@ const createSchema = z.object({
   company: z.string().min(1),
   website: z.string().optional(),
   whatTheyDo: z.string().optional(),
-  ceo: z.string().min(1),
-  email: z.string().email(),
+  ceo: z.string().optional(),
+  email: z.string().email().optional(),
   linkedin: z.string().optional(),
   fit: z.enum(["HIGH", "MEDIUM", "LOW"]),
   notes: z.string().optional(),
+  source: z.string().min(1).optional(),
 });
 
 export const Route = createFileRoute("/api/pipeline/leads")({

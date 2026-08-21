@@ -89,7 +89,7 @@ export default function CampaignDetailsDropdown({
         return;
       }
     }
-    const next: CampaignStatus = isActive ? "draft" : "active";
+    const next: CampaignStatus = isActive ? "paused" : "active";
     setToggling(true);
     try {
       await fetch(`/api/campaigns/${campaignId}`, {

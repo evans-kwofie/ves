@@ -34,7 +34,9 @@ export function ComposeDraftPanel({ onDraftAdded }: { onDraftAdded: (draft: Camp
           leadId,
           subject: subject.trim() || undefined,
           body: body.trim(),
-          channel: selectedStep?.channel ?? "email",
+          channel: selectedStep?.channel === "linkedin" && selectedStep.linkedinType === "connect"
+            ? "linkedin_connect"
+            : selectedStep?.channel ?? "email",
           stepNumber: stepNumber ?? undefined,
         }),
       });

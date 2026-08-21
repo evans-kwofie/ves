@@ -14,6 +14,7 @@ import { Webhook } from "svix";
 import { getDraftByResendMessageId, updateDraft } from "~/db/queries/drafts";
 import { getLead, updateLead } from "~/db/queries/leads";
 import { notifyBounce } from "~/lib/slack-notifications";
+import { recordProviderAuditEvent } from "~/db/queries/provider-audit";
 
 interface ResendEmailEvent {
   type: string;
@@ -66,6 +67,7 @@ export const Route = createFileRoute("/api/webhooks/resend")({
         console.log(`[webhook/resend] event=${type} email_id=${data.email_id}`);
 
         const draft = type !== "email.sent" ? await getDraftByResendMessageId(data.email_id) : null;
+        await recordProviderAuditEvent({ provider: "resend", eventType: type, outcome: "received", leadId: draft?.leadId, campaignDraftId: draft?.id, providerMessageId: data.email_id, detail: { createdAt: event.created_at } });
 
         if (type === "email.opened" && draft && !draft.openedAt) {
           await updateDraft(draft.id, { openedAt: new Date().toISOString() });
@@ -79,6 +81,10 @@ export const Route = createFileRoute("/api/webhooks/resend")({
             ...(!draft.openedAt ? { openedAt: now } : {}),
           });
           console.log(`[webhook/resend] Marked draft ${draft.id} as clicked`);
+        }
+
+        if (type === "email.delivered" && draft && !draft.deliveredAt) {
+          await updateDraft(draft.id, { deliveredAt: new Date().toISOString() });
         }
 
         if (type === "email.bounced" || type === "email.complained") {

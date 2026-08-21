@@ -54,9 +54,18 @@ export function ResultsTab({
   const openRate =
     sent.length > 0 ? Math.round((openedCount / sent.length) * 100) : 0;
 
-  // A/B split — only show when both variants exist
-  const sentA = sent.filter((d) => d.abVariant === "a");
-  const sentB = sent.filter((d) => d.abVariant === "b");
+  // Attribute an A/B outcome to each lead's first sent test exposure. A later
+  // follow-up may use a different variant, but must not double-count the reply.
+  const firstSentByLead = new Map<string, CampaignDraft>();
+  for (const draft of sent) {
+    const current = firstSentByLead.get(draft.leadId);
+    if (!current || new Date(draft.sentAt ?? 0).getTime() < new Date(current.sentAt ?? 0).getTime()) {
+      firstSentByLead.set(draft.leadId, draft);
+    }
+  }
+  const firstTestExposures = Array.from(firstSentByLead.values());
+  const sentA = firstTestExposures.filter((d) => d.abVariant === "a");
+  const sentB = firstTestExposures.filter((d) => d.abVariant === "b");
   const showAB = sentA.length > 0 && sentB.length > 0;
 
   return (

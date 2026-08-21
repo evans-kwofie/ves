@@ -40,6 +40,13 @@ function rowToCampaign(row: Record<string, unknown>): Campaign {
     leadCount: 0,
     sentCount: 0,
     replyCount: 0,
+    batchSize: Number(row.batch_size ?? 25),
+    timezone: (row.timezone as string | null) ?? "UTC",
+    sendWindowStart: Number(row.send_window_start ?? 8),
+    sendWindowEnd: Number(row.send_window_end ?? 18),
+    weekdaysOnly: row.weekdays_only == null ? true : Boolean(row.weekdays_only),
+    channelSendRules: typeof row.channel_send_rules === "string" ? JSON.parse(row.channel_send_rules) as Record<string, unknown> : (row.channel_send_rules as Record<string, unknown>) ?? {},
+    scheduledStartAt: (row.scheduled_start_at as string | null) ?? null,
   };
 }
 
@@ -51,11 +58,14 @@ async function attachStats(campaigns: Campaign[]): Promise<Campaign[]> {
         args: [c.id],
       }),
       db.execute({
-        sql: "SELECT COUNT(*)::int as count FROM outreach_events WHERE campaign_id = ? AND status = 'email_sent'",
+        sql: `SELECT COUNT(*)::int as count FROM outreach_events
+              WHERE campaign_id = ? AND status IN ('email_sent', 'linkedin_sent', 'instagram_sent', 'sent')`,
         args: [c.id],
       }),
       db.execute({
-        sql: "SELECT COUNT(*)::int as count FROM outreach_events WHERE campaign_id = ? AND status = 'replied'",
+        sql: `SELECT COUNT(*)::int as count FROM outreach_events oe
+              JOIN campaign_leads cl ON cl.lead_id = oe.lead_id
+              WHERE cl.campaign_id = ? AND oe.status = 'replied'`,
         args: [c.id],
       }),
     ]);
@@ -96,8 +106,8 @@ export async function createCampaign(
   const id = uuidv4();
   const now = new Date().toISOString();
   await db.execute({
-    sql: `INSERT INTO campaigns (id, organization_id, name, status, channel, goal, intent_type, created_at, updated_at)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    sql: `INSERT INTO campaigns (id, organization_id, name, status, channel, goal, intent_type, batch_size, timezone, send_window_start, send_window_end, weekdays_only, channel_send_rules, scheduled_start_at, created_at, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     args: [
       id,
       orgId,
@@ -106,6 +116,13 @@ export async function createCampaign(
       input.channels?.length ? JSON.stringify(input.channels) : null,
       input.goal ?? null,
       input.intentType ?? null,
+      input.batchSize ?? 25,
+      input.timezone ?? "UTC",
+      input.sendWindowStart ?? 8,
+      input.sendWindowEnd ?? 18,
+      input.weekdaysOnly ?? true,
+      JSON.stringify(input.channelSendRules ?? {}),
+      input.scheduledStartAt ?? null,
       now,
       now,
     ],
@@ -155,6 +172,13 @@ export async function updateCampaign(
     fields.push("run_frequency = ?");
     args.push(input.runFrequency ?? null);
   }
+  if (input.batchSize !== undefined) { fields.push("batch_size = ?"); args.push(String(input.batchSize)); }
+  if (input.timezone !== undefined) { fields.push("timezone = ?"); args.push(input.timezone); }
+  if (input.sendWindowStart !== undefined) { fields.push("send_window_start = ?"); args.push(String(input.sendWindowStart)); }
+  if (input.sendWindowEnd !== undefined) { fields.push("send_window_end = ?"); args.push(String(input.sendWindowEnd)); }
+  if (input.weekdaysOnly !== undefined) { fields.push("weekdays_only = ?"); args.push(input.weekdaysOnly ? "true" : "false"); }
+  if (input.channelSendRules !== undefined) { fields.push("channel_send_rules = ?"); args.push(JSON.stringify(input.channelSendRules)); }
+  if (input.scheduledStartAt !== undefined) { fields.push("scheduled_start_at = ?"); args.push(input.scheduledStartAt); }
 
   args.push(id);
   await db.execute({
@@ -214,11 +238,9 @@ export async function removeLeadFromCampaign(
   });
 }
 
-type LeadWithoutOrgId = Omit<Lead, "organizationId">;
-
 export async function getCampaignLeadsWithData(
   campaignId: string,
-): Promise<LeadWithoutOrgId[]> {
+): Promise<Lead[]> {
   const result = await db.execute({
     sql: `SELECT l.* FROM leads l
           INNER JOIN campaign_leads cl ON cl.lead_id = l.id
@@ -230,6 +252,7 @@ export async function getCampaignLeadsWithData(
     const row = r as Record<string, unknown>;
     return {
       id: row.id as string,
+      organizationId: row.organization_id as string,
       company: row.company as string,
       website: row.website as string,
       whatTheyDo: row.what_they_do as string,
@@ -243,9 +266,22 @@ export async function getCampaignLeadsWithData(
       pipelineStage:
         (row.pipeline_stage as Lead["pipelineStage"]) ?? "discovered",
       enrichmentAttempts: (row.enrichment_attempts as number) ?? 0,
+      isValid: row.is_valid == null ? null : Boolean(row.is_valid),
+      validationErrors: (() => {
+        try {
+          return JSON.parse((row.validation_errors as string | null) ?? "[]") as string[];
+        } catch {
+          return [];
+        }
+      })(),
+      websiteValid: row.website_valid == null ? null : Boolean(row.website_valid),
+      personValid: row.person_valid == null ? null : Boolean(row.person_valid),
+      companyValid: row.company_valid == null ? null : Boolean(row.company_valid),
+      validatedAt: (row.validated_at as string | null) ?? null,
       source: (row.source as string | null) ?? null,
       emailSentAt: (row.email_sent_at as string | null) ?? null,
       linkedinSentAt: (row.linkedin_sent_at as string | null) ?? null,
+      instagramSentAt: (row.instagram_sent_at as string | null) ?? null,
       repliedAt: (row.replied_at as string | null) ?? null,
       notes: (row.notes as string) ?? "",
       addedAt: row.added_at as string,
@@ -263,7 +299,7 @@ export async function updateCampaignLastRun(id: string): Promise<void> {
 
 export async function listCampaignsDueToRun(): Promise<Campaign[]> {
   const result = await db.execute({
-    sql: "SELECT * FROM campaigns WHERE status = 'active' AND run_frequency IS NOT NULL",
+    sql: "SELECT * FROM campaigns WHERE status IN ('active', 'scheduled') AND run_frequency IS NOT NULL",
     args: [],
   });
   const candidates = result.rows.map((r) =>
@@ -278,6 +314,7 @@ export async function listCampaignsDueToRun(): Promise<Campaign[]> {
   };
 
   return candidates.filter((c) => {
+    if (c.status === "scheduled" && (!c.scheduledStartAt || new Date(c.scheduledStartAt).getTime() > now)) return false;
     const row = result.rows.find(
       (r) => (r as Record<string, unknown>).id === c.id,
     ) as Record<string, unknown>;

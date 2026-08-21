@@ -1,18 +1,43 @@
 import { geminiJSON } from "~/agent/tools/gemini";
-import { upsertDraft, type CampaignDraft } from "~/db/queries/drafts";
+import { getLatestDraftBeforeStep, upsertDraft, type CampaignDraft } from "~/db/queries/drafts";
 import type { CampaignStep } from "~/db/queries/steps";
 import type { Campaign } from "~/types/campaign";
 import type { Lead } from "~/types/lead";
+import { explainProductMatch, type ProductProfile } from "~/lib/product-matching";
+import { getBusinessMaterialSummary } from "~/db/queries/business-materials";
+
+const draftResponseSchema = {
+  type: "object",
+  properties: {
+    subject: { anyOf: [{ type: "string" }, { type: "null" }] },
+    body: { type: "string" },
+  },
+  required: ["subject", "body"],
+  additionalProperties: false,
+} as const;
 
 export async function generateDraftForLead(opts: {
   campaign: Campaign;
   lead: Lead;
   step: CampaignStep;
   orgProfile: Record<string, unknown>;
+  products?: ProductProfile[];
 }): Promise<CampaignDraft> {
-  const { campaign, lead, step, orgProfile } = opts;
-  const stepChannel = step.channel ?? (campaign.channels[0] ?? "email");
+  const { campaign, lead, step, orgProfile, products = [] } = opts;
+  const rawChannel = step.channel ?? (campaign.channels[0] ?? "email");
+  if (rawChannel === "reddit") {
+    throw new Error("Reddit campaign publishing is not supported yet");
+  }
+  // Material enrichment must never prevent a user from generating a draft if
+  // a legacy deployment has not yet applied the materials migration.
+  const materialProfile = await getBusinessMaterialSummary(campaign.organizationId).catch(() => ({ positioning: [], terminology: [], proofPoints: [], idealCustomers: [], problemsSolved: [], voice: [] }));
+  const stepChannel = rawChannel === "linkedin" && step.linkedinType === "connect"
+    ? "linkedin_connect"
+    : rawChannel;
   const isFollowUp = step.stepNumber > 1;
+  const priorDraft = isFollowUp
+    ? await getLatestDraftBeforeStep(campaign.id, lead.id, step.stepNumber)
+    : null;
 
   // Extract default signature if any
   const signatures = (orgProfile.emailSignatures ?? []) as import("~/types/signature").EmailSignature[];
@@ -23,6 +48,15 @@ export async function generateDraftForLead(opts: {
     orgProfile.website ? `Website: ${orgProfile.website}` : null,
     orgProfile.industry ? `Industry: ${orgProfile.industry}` : null,
     orgProfile.useCases ? `Use cases: ${orgProfile.useCases}` : null,
+    orgProfile.icp ? `Ideal customer profile: ${orgProfile.icp}` : null,
+    orgProfile.messaging ? `Positioning and proof: ${orgProfile.messaging}` : null,
+    materialProfile.positioning.length ? `Source-backed positioning: ${materialProfile.positioning.join(" | ")}` : null,
+    materialProfile.terminology.length ? `Use this terminology where relevant: ${materialProfile.terminology.join(", ")}` : null,
+    materialProfile.proofPoints.length ? `Source-backed proof: ${materialProfile.proofPoints.join(" | ")}` : null,
+    (() => { try {
+      const voice = typeof orgProfile.agentVoice === "string" ? JSON.parse(orgProfile.agentVoice) as { senderName?: string; senderTitle?: string; tone?: string; avoidPhrases?: string } : null;
+      return voice ? [voice.senderName ? `Sender: ${voice.senderName}${voice.senderTitle ? `, ${voice.senderTitle}` : ""}` : null, voice.tone ? `Voice: ${voice.tone}` : null, voice.avoidPhrases ? `Never use: ${voice.avoidPhrases}` : null].filter(Boolean).join("\n") : null;
+    } catch { return null; } })(),
   ].filter(Boolean).join("\n");
 
   const leadContext = [
@@ -37,7 +71,7 @@ export async function generateDraftForLead(opts: {
   ].filter(Boolean).join("\n");
 
   const followUpNote = isFollowUp
-    ? `\nThis is follow-up #${step.stepNumber - 1}. They haven't replied to the previous message. Keep it short — 2-3 sentences max. Reference that you reached out before but don't be pushy. Different angle if possible.${step.context ? `\nStep context: ${step.context}` : ""}`
+    ? `\nThis is follow-up #${step.stepNumber - 1}. They haven't replied to the previous message. Keep it short — 2-3 sentences max. Reference that you reached out before but don't be pushy. Use a genuinely different angle, benefit, opening, and CTA.${step.context ? `\nStep context: ${step.context}` : ""}`
     : step.context ? `\nAdditional context for this step: ${step.context}` : "";
 
   const channelRules =
@@ -51,7 +85,7 @@ Rules:
 - End with a super low-friction CTA (e.g. "Worth a chat?", "Curious to hear more?")
 - Never start with "Hey!" or generic openers
 - No emojis unless they feel completely natural${followUpNote}`
-      : stepChannel === "linkedin" && step.linkedinType === "connect"
+      : stepChannel === "linkedin_connect"
       ? `You are writing a LinkedIn Connection Request note for cold outreach. This is NOT a DM — it accompanies the connection request itself.
 Rules:
 - STRICT maximum of 300 characters total (LinkedIn's limit for connection notes)
@@ -82,11 +116,17 @@ Rules:
 Respond with JSON only: { "subject": "...", "body": "..." }
 For non-email channels, set subject to null.`;
 
-  const userPrompt = `${productContext ? `OUR PRODUCT\n${productContext}\n\n` : ""}LEAD\n${leadContext}${campaign.goal ? `\n\nCAMPAIGN GOAL\n${campaign.goal}` : ""}`;
+  const productMatch = explainProductMatch(products, lead);
+  const matchedProductContext = productMatch ? `\n\nSELECTED PRODUCT\n${productMatch.product.name}: ${productMatch.product.description}\nBenefits: ${productMatch.product.benefits.join(", ")}\nWhy it matches: ${productMatch.reason}` : "";
+  const priorContext = priorDraft?.body
+    ? `\n\nPREVIOUS MESSAGE — do not repeat its opening, phrasing, benefit, or CTA\n${priorDraft.body.slice(0, 1_200)}`
+    : "";
+  const userPrompt = `${productContext ? `OUR PRODUCT\n${productContext}\n\n` : ""}LEAD\n${leadContext}${campaign.goal ? `\n\nCAMPAIGN GOAL\n${campaign.goal}` : ""}${matchedProductContext}${priorContext}`;
 
-  const parsed = await geminiJSON<{ subject?: string; body?: string }>(userPrompt, {
+  const parsed = await geminiJSON<{ subject: string | null; body: string }>(userPrompt, {
     maxTokens: 512,
     system: systemPrompt,
+    responseJsonSchema: draftResponseSchema,
   });
   if (!parsed.body) throw new Error("No body in response");
 
@@ -97,7 +137,8 @@ For non-email channels, set subject to null.`;
     leadId: lead.id,
     stepNumber: step.stepNumber,
     channel: stepChannel,
-    subject: parsed.subject ?? null,
+    subject: stepChannel === "email" ? parsed.subject ?? null : null,
     body: finalBody,
+    generationContext: { company: lead.company, contact: lead.ceo, whatTheyDo: lead.whatTheyDo, fitReason: lead.fitReason, score: lead.score, campaignGoal: campaign.goal, stepContext: step.context, selectedProduct: productMatch?.product.name ?? null, productMatchReason: productMatch?.reason ?? null, productMatchTerms: productMatch?.matchedTerms ?? [], previousDraftId: priorDraft?.id ?? null },
   });
 }

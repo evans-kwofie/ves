@@ -1,16 +1,23 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
-import { v4 as uuidv4 } from "uuid";
-import { db } from "~/db/client";
+import { createLead } from "~/db/queries/leads";
 import type { Lead } from "~/types/lead";
 
 const leadSchema = z.object({
   company: z.string().min(1),
-  ceo: z.string().min(1),
+  ceo: z.string().default(""),
   email: z.string().email().nullable().optional(),
   website: z.string().default(""),
+  linkedin: z.string().default(""),
   whatTheyDo: z.string().default(""),
   notes: z.string().default(""),
+  role: z.string().default(""),
+  industry: z.string().default(""),
+  companySize: z.string().default(""),
+  location: z.string().default(""),
+  intentSignals: z.array(z.string()).default([]),
+  engagementHistory: z.array(z.string()).default([]),
+  sourceDetails: z.record(z.string(), z.string()).default({}),
 });
 
 const bodySchema = z.object({
@@ -33,52 +40,33 @@ export const Route = createFileRoute("/api/pipeline/import")({
         }
 
         const { orgId, leads } = parsed.data;
-        const now = new Date().toISOString();
         const imported: Lead[] = [];
         let skipped = 0;
 
         for (const lead of leads) {
           try {
-            const id = uuidv4();
-
-            // Skip duplicate email if already exists
-            if (lead.email) {
-              const existing = await db.execute({
-                sql: "SELECT id FROM leads WHERE email = ? AND organization_id = ?",
-                args: [lead.email, orgId],
-              });
-              if (existing.rows.length > 0) { skipped++; continue; }
-            }
-
-            await db.execute({
-              sql: `INSERT INTO leads
-                      (id, organization_id, company, ceo, email, website, what_they_do, notes,
-                       status, pipeline_stage, added_at, discovered_at, updated_at)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'not_contacted', 'discovered', ?, ?, ?)`,
-              args: [id, orgId, lead.company, lead.ceo, lead.email ?? null, lead.website, lead.whatTheyDo, lead.notes, now, now, now],
-            });
-
-            imported.push({
-              id,
+            imported.push(await createLead(orgId, {
               company: lead.company,
               ceo: lead.ceo,
-              email: lead.email ?? "",
+              email: lead.email ?? undefined,
               website: lead.website,
+              linkedin: lead.linkedin,
               whatTheyDo: lead.whatTheyDo,
-              linkedin: "",
               notes: lead.notes,
-              status: "not_contacted",
-              pipelineStage: "discovered",
+              role: lead.role || undefined,
+              industry: lead.industry || undefined,
+              companySize: lead.companySize || undefined,
+              location: lead.location || undefined,
+              intentSignals: lead.intentSignals,
+              engagementHistory: lead.engagementHistory.map((summary) => ({
+                type: "imported",
+                summary,
+                recordedAt: new Date().toISOString(),
+              })),
               fit: "MEDIUM",
-              fitReason: null,
-              score: null,
-              source: null,
-              enrichmentAttempts: 0,
-              addedAt: now,
-              emailSentAt: null,
-              linkedinSentAt: null,
-              repliedAt: null,
-            } as Lead);
+              source: "import",
+              sourceDetails: { importSource: "csv", originalRow: lead.sourceDetails },
+            }));
           } catch {
             skipped++;
           }

@@ -6,7 +6,8 @@ const createSchema = z.object({
   leadId: z.string().min(1),
   subject: z.string().optional(),
   body: z.string().min(1),
-  channel: z.enum(["email", "linkedin"]).default("email"),
+  channel: z.enum(["email", "linkedin", "linkedin_connect", "instagram"]).default("email"),
+  stepNumber: z.number().int().min(1).default(1),
 });
 
 export const Route = createFileRoute("/api/campaigns/$id/drafts")({
@@ -28,6 +29,7 @@ export const Route = createFileRoute("/api/campaigns/$id/drafts")({
         const draft = await upsertDraft({
           campaignId: params.id,
           leadId: parsed.data.leadId,
+          stepNumber: parsed.data.stepNumber,
           channel: parsed.data.channel,
           subject: parsed.data.subject ?? null,
           body: parsed.data.body,

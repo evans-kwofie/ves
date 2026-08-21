@@ -1,5 +1,6 @@
 import { UserAdd01Icon } from "hugeicons-react";
 import { EmptyState } from "~/components/ui/empty-state";
+import { FitIndicator } from "~/components/ui/fit-indicator";
 import type { Lead } from "~/types/lead";
 import type { CampaignDraft } from "~/db/queries/drafts";
 
@@ -37,11 +38,7 @@ export function LeadsTab({ leads, drafts }: { leads: Lead[]; drafts: CampaignDra
                 <td className="text-muted-foreground">{lead.ceo}</td>
                 <td className="text-muted-foreground text-[12px]">{lead.email || "—"}</td>
                 <td>
-                  {lead.fit && (
-                    <span className={`badge badge-${lead.fit === "HIGH" ? "green" : lead.fit === "MEDIUM" ? "yellow" : "red"}`}>
-                      {lead.fit}
-                    </span>
-                  )}
+                  <FitIndicator fit={lead.fit} />
                 </td>
                 <td>
                   {!draft && <span className="badge badge-gray">No draft</span>}

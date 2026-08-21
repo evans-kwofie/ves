@@ -266,6 +266,10 @@ export const Route = createFileRoute("/api/reddit/search")({
                             linkedin: "",
                             fit: fit as "HIGH" | "MEDIUM",
                             notes: `"${post.title.slice(0, 200)}"\nhttps://reddit.com${post.permalink}`,
+                            source: "reddit",
+                            sourceDetails: { author: post.author, subreddit: post.subreddit, postUrl: `https://reddit.com${post.permalink}`, intentType: classification.intent_type, intentScore: classification.intent_score },
+                            intentSignals: [classification.intent_type],
+                            engagementHistory: [{ channel: "reddit", subreddit: post.subreddit, postUrl: `https://reddit.com${post.permalink}`, capturedAt: new Date().toISOString() }],
                           });
                           seenAuthors.add(authorKey);
                           leadsCreated++;

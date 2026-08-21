@@ -1,5 +1,6 @@
 import * as React from "react";
 import { Button } from "~/components/ui/button";
+import { ConfirmDialog } from "~/components/ui/confirm-dialog";
 import {
   Loading03Icon,
   Mail01Icon,
@@ -12,6 +13,7 @@ import { SentIcon, PencilEdit02Icon, LinkSquare01Icon } from "@hugeicons/core-fr
 import { toast } from "sonner";
 import type { CampaignDraft } from "~/db/queries/drafts";
 import type { Lead } from "~/types/lead";
+import { checkDraftQuality } from "~/lib/draft-quality";
 
 export function DraftCard({
   draft,
@@ -31,12 +33,14 @@ export function DraftCard({
   const [approving, setApproving] = React.useState(false);
   const [skipping, setSkipping] = React.useState(false);
   const [copied, setCopied] = React.useState(false);
+  const [confirmRiskySend, setConfirmRiskySend] = React.useState(false);
 
   const isLinkedIn = draft.channel === "linkedin";
   const isLinkedInConnect = draft.channel === "linkedin_connect";
   const isInstagram = draft.channel === "instagram";
   const isSocial = isLinkedIn || isLinkedInConnect || isInstagram;
   const CONNECT_LIMIT = 300;
+  const qualityIssues = checkDraftQuality({ body, channel: draft.channel, prospect: { company: lead?.company, firstName: lead?.ceo?.split(/\s+/)[0], whatTheyDo: lead?.whatTheyDo } });
 
   async function saveEdit() {
     setSaving(true);
@@ -66,7 +70,30 @@ export function DraftCard({
         body: JSON.stringify({ action: "approve" }),
       });
       const data = (await res.json()) as { ok?: boolean; draft?: CampaignDraft; error?: string; message?: string };
-      if (!res.ok) { toast.error(data.message ?? data.error ?? "Failed to send"); return; }
+      if (!res.ok) { toast.error(data.message ?? data.error ?? "Failed to approve"); return; }
+      onUpdate(data.draft!);
+      toast.success("Draft approved and ready to send");
+    } catch {
+      toast.error("Network error");
+    } finally {
+      setApproving(false);
+    }
+  }
+
+  async function send(allowRiskyEmail = false) {
+    setApproving(true);
+    try {
+      const res = await fetch(`/api/campaigns/${campaignId}/drafts/${draft.id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "send", allowRiskyEmail }),
+      });
+      const data = (await res.json()) as { ok?: boolean; draft?: CampaignDraft; error?: string; message?: string };
+      if (!res.ok) {
+        if (data.error === "accept_all_requires_confirmation") setConfirmRiskySend(true);
+        else toast.error(data.message ?? data.error ?? "Failed to send");
+        return;
+      }
       onUpdate(data.draft!);
       toast.success(`Sent to ${lead?.email ?? "lead"}`);
     } catch {
@@ -121,9 +148,9 @@ export function DraftCard({
 
   return (
     <div className="card flex flex-col gap-3">
-      {/* Channel badge */}
+      {/* Channel */}
       <div className="flex justify-end">
-        <span className="badge badge-gray inline-flex items-center gap-1">
+        <span className="inline-flex items-center gap-1.5 text-[12px] text-muted-foreground capitalize">
           {(isLinkedIn || isLinkedInConnect) && <Linkedin01Icon size={11} />}
           {isInstagram && <InstagramIcon size={11} />}
           {!isSocial && <Mail01Icon size={11} />}
@@ -179,9 +206,26 @@ export function DraftCard({
         </div>
       )}
 
+      {qualityIssues.length > 0 && !editing && (
+        <p className="text-[11px] text-amber-500">Check: {qualityIssues.join(" · ")}</p>
+      )}
+      {Boolean(draft.generationContext.whatTheyDo) && !editing && (
+        <p className="text-[11px] text-muted-foreground">Based on: {String(draft.generationContext.whatTheyDo)}</p>
+      )}
+      {Boolean(draft.generationContext.selectedProduct) && !editing && (
+        <p className="text-[11px] text-muted-foreground">Offer: {String(draft.generationContext.selectedProduct)}{draft.generationContext.productMatchReason ? ` — ${String(draft.generationContext.productMatchReason)}` : ""}</p>
+      )}
+      {draft.status === "failed" && !editing && (
+        <p className="text-[11px] text-destructive">The last send failed. Review the draft and try again.</p>
+      )}
+
       {/* Actions */}
       {!editing && (
         <div className="flex gap-2 pt-3 border-t border-border">
+          {draft.status === "sending" ? (
+            <span className="inline-flex items-center gap-2 text-[12px] text-muted-foreground"><Loading03Icon size={14} className="animate-spin" />Sending…</span>
+          ) : (
+            <>
           {isSocial ? (
             <>
               <Button onClick={copyMessage} variant="outline">
@@ -195,9 +239,9 @@ export function DraftCard({
                 </Button>
               )}
               {isInstagram && (
-                <Button variant="outline" onClick={() => window.open("https://www.instagram.com/direct/new/", "_blank", "noopener")}>
+                <Button variant="outline" disabled={!lead?.website} onClick={() => lead?.website && window.open(lead.website, "_blank", "noopener,noreferrer")}>
                   <HugeiconsIcon icon={LinkSquare01Icon} size={13} />
-                  Open Instagram
+                  Open Profile
                 </Button>
               )}
               <Button onClick={markSent} disabled={approving || skipping}>
@@ -207,10 +251,10 @@ export function DraftCard({
               </Button>
             </>
           ) : (
-            <Button onClick={approve} disabled={approving || skipping}>
+            <Button onClick={draft.status === "approved" ? send : approve} disabled={approving || skipping}>
               {approving
                 ? <><Loading03Icon size={13} className="animate-spin" />Sending...</>
-                : <><HugeiconsIcon icon={SentIcon} size={13} />Approve & Send</>}
+                : <><HugeiconsIcon icon={SentIcon} size={13} />{draft.status === "approved" ? "Send now" : draft.status === "failed" ? "Approve retry" : "Approve"}</>}
             </Button>
           )}
           <Button variant="ghost" onClick={() => setEditing(true)}>
@@ -223,8 +267,11 @@ export function DraftCard({
           >
             Skip
           </button>
+            </>
+          )}
         </div>
       )}
+      <ConfirmDialog open={confirmRiskySend} onOpenChange={setConfirmRiskySend} title="Send to a catch-all address?" description="This domain accepts every address, so the recipient cannot be fully verified. Sending may increase bounce risk." confirmLabel="Send anyway" loading={approving} onConfirm={() => { setConfirmRiskySend(false); void send(true); }} />
     </div>
   );
 }

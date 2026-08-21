@@ -1,5 +1,5 @@
 import { listCampaignsDueToRun, getCampaignLeadsWithData, updateCampaignLastRun } from "~/db/queries/campaigns";
-import { upsertDraft } from "~/db/queries/drafts";
+import { getLatestDraftBeforeStep, upsertDraft } from "~/db/queries/drafts";
 import { listSteps } from "~/db/queries/steps";
 import { getTemplate } from "~/db/queries/templates";
 import { db } from "~/db/client";
@@ -148,6 +148,7 @@ async function tick() {
           for (let i = 0; i < leads.length; i++) {
             const lead = leads[i];
             if (lead.repliedAt) continue;
+            const priorDraft = isFollowUp ? await getLatestDraftBeforeStep(campaign.id, lead.id, step.stepNumber) : null;
 
             const abVariant: "a" | "b" = hasVariantB && i % 2 === 1 ? "b" : "a";
 
@@ -178,7 +179,8 @@ async function tick() {
                   ? `You are writing a short, human follow-up ${channel === "email" ? "email" : "LinkedIn DM"} from a founder to a prospect who didn't reply.\n\nRules:\n- Acknowledge you reached out before — casually, not apologetically\n- One new angle; don't repeat yourself\n- Under 50 words. CTA: softer than the first.\n\nReturn JSON: { "subject": ${channel === "email" ? '"short subject"' : "null"}, "body": "message" }`
                   : null;
 
-                const userPrompt = `${productContext ? `OUR PRODUCT\n${productContext}\n\n` : ""}LEAD\n${leadContext}${campaign.goal ? `\n\nCAMPAIGN GOAL\n${campaign.goal}` : ""}${"context" in step && step.context ? `\n\nSTEP CONTEXT\n${step.context}` : ""}`;
+                const priorContext = isFollowUp && priorDraft?.body ? `\n\nPREVIOUS MESSAGE — do not reuse its opening, phrasing, benefit, or CTA\n${priorDraft.body.slice(0, 1_200)}` : "";
+                const userPrompt = `${productContext ? `OUR PRODUCT\n${productContext}\n\n` : ""}LEAD\n${leadContext}${campaign.goal ? `\n\nCAMPAIGN GOAL\n${campaign.goal}` : ""}${"context" in step && step.context ? `\n\nSTEP CONTEXT\n${step.context}` : ""}${priorContext}`;
 
                 const parsed = await geminiJSON<{ subject?: string | null; body?: string }>(userPrompt, {
                   maxTokens: 1024,

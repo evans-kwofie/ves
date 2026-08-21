@@ -9,6 +9,7 @@ interface SettingsTab {
 const TABS: SettingsTab[] = [
   { to: "/$workspaceId/settings/profile", label: "Profile" },
   { to: "/$workspaceId/settings/workspace", label: "Workspace" },
+  { to: "/$workspaceId/settings/products", label: "Products" },
   { to: "/$workspaceId/settings/agent", label: "Agent voice" },
   { to: "/$workspaceId/settings/email", label: "Email / SMTP" },
   { to: "/$workspaceId/settings/notifications", label: "Notifications" },

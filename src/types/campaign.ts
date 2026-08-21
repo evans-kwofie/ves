@@ -1,4 +1,4 @@
-export type CampaignStatus = 'draft' | 'active' | 'scheduled' | 'completed';
+export type CampaignStatus = 'draft' | 'active' | 'paused' | 'scheduled' | 'completed';
 export type CampaignChannel = 'email' | 'linkedin' | 'instagram' | 'reddit';
 export type CampaignIntent = 'advice_seeking' | 'product_review' | 'audit_offer' | 'direct_pitch';
 
@@ -19,6 +19,13 @@ export interface Campaign {
   leadCount: number;
   sentCount: number;
   replyCount: number;
+  batchSize: number;
+  timezone: string;
+  sendWindowStart: number;
+  sendWindowEnd: number;
+  weekdaysOnly: boolean;
+  channelSendRules: Record<string, unknown>;
+  scheduledStartAt: string | null;
 }
 
 export interface CreateCampaignInput {
@@ -28,6 +35,13 @@ export interface CreateCampaignInput {
   goal?: string;
   intentType?: CampaignIntent;
   leadIds?: string[];
+  batchSize?: number;
+  timezone?: string;
+  sendWindowStart?: number;
+  sendWindowEnd?: number;
+  weekdaysOnly?: boolean;
+  channelSendRules?: Record<string, unknown>;
+  scheduledStartAt?: string | null;
 }
 
 export interface UpdateCampaignInput {
@@ -38,4 +52,11 @@ export interface UpdateCampaignInput {
   intentType?: CampaignIntent | null;
   runFrequency?: RunFrequency | null;
   leadIds?: string[];
+  batchSize?: number;
+  timezone?: string;
+  sendWindowStart?: number;
+  sendWindowEnd?: number;
+  weekdaysOnly?: boolean;
+  channelSendRules?: Record<string, unknown>;
+  scheduledStartAt?: string | null;
 }

@@ -130,7 +130,7 @@ async function executeTool(name: string, args: Record<string, unknown>, orgId: s
 
 export async function runAgent(
   prompt: string,
-  opts?: { maxIterations?: number; orgId?: string; voice?: Partial<AgentVoiceConfig> },
+  opts?: { maxIterations?: number; orgId?: string; voice?: Partial<AgentVoiceConfig>; allowedTools?: string[] },
 ): Promise<string[]> {
   const logs: string[] = [];
   const log = (line: string) => { logs.push(line); console.log(line); };
@@ -154,7 +154,7 @@ export async function runAgent(
       config: {
         systemInstruction: buildSystemPrompt(opts?.voice),
         tools: [
-          { functionDeclarations: FUNCTION_DECLARATIONS as never },
+          { functionDeclarations: FUNCTION_DECLARATIONS.filter((tool) => !opts?.allowedTools || opts.allowedTools.includes(tool.name)) as never },
           { googleSearch: {} },
         ],
         maxOutputTokens: 8192,

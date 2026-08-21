@@ -28,8 +28,15 @@ interface ParsedRow {
   ceo: string;
   email: string;
   website: string;
+  linkedin: string;
   whatTheyDo: string;
   notes: string;
+  role: string;
+  industry: string;
+  companySize: string;
+  location: string;
+  intentSignals: string;
+  engagementHistory: string;
   _raw: Record<string, string>;
   _errors: string[];
 }
@@ -41,7 +48,14 @@ const FIELD_OPTIONS = [
   { value: "ceo", label: "Contact name" },
   { value: "email", label: "Email" },
   { value: "website", label: "Website" },
+  { value: "linkedin", label: "LinkedIn URL" },
   { value: "whatTheyDo", label: "What they do" },
+  { value: "role", label: "Job title / role" },
+  { value: "industry", label: "Industry" },
+  { value: "companySize", label: "Company size" },
+  { value: "location", label: "Location" },
+  { value: "intentSignals", label: "Intent signals" },
+  { value: "engagementHistory", label: "Engagement history" },
   { value: "notes", label: "Notes" },
   { value: "_skip", label: "— Skip column —" },
 ] as const;
@@ -51,8 +65,15 @@ type FieldKey =
   | "ceo"
   | "email"
   | "website"
+  | "linkedin"
   | "whatTheyDo"
   | "notes"
+  | "role"
+  | "industry"
+  | "companySize"
+  | "location"
+  | "intentSignals"
+  | "engagementHistory"
   | "_skip";
 
 function guessMapping(headers: string[]): Record<string, FieldKey> {
@@ -60,7 +81,11 @@ function guessMapping(headers: string[]): Record<string, FieldKey> {
   const lower = (s: string) => s.toLowerCase().trim();
   for (const h of headers) {
     const l = lower(h);
-    if (
+    if (l.includes("source") || l.includes("reference") || l.includes("evidence"))
+      map[h] = "_skip";
+    else if (l.includes("company size") || l.includes("employee") || l.includes("headcount"))
+      map[h] = "companySize";
+    else if (
       l.includes("company") ||
       l.includes("organization") ||
       l.includes("account")
@@ -75,13 +100,21 @@ function guessMapping(headers: string[]): Record<string, FieldKey> {
     )
       map[h] = "ceo";
     else if (l.includes("email")) map[h] = "email";
+    else if (l.includes("linkedin") || l.includes("linked in")) map[h] = "linkedin";
     else if (l.includes("website") || l.includes("url") || l.includes("domain"))
       map[h] = "website";
+    else if (l.includes("title") || l.includes("job") || l.includes("role") || l.includes("position"))
+      map[h] = "role";
+    else if (l.includes("industry") || l.includes("sector")) map[h] = "industry";
+    else if (l.includes("location") || l.includes("city") || l.includes("region") || l.includes("country"))
+      map[h] = "location";
+    else if (l.includes("intent") || l.includes("signal")) map[h] = "intentSignals";
+    else if (l.includes("engagement") || l.includes("activity") || l.includes("interaction"))
+      map[h] = "engagementHistory";
     else if (
       l.includes("description") ||
       l.includes("what") ||
-      l.includes("about") ||
-      l.includes("industry")
+      l.includes("about")
     )
       map[h] = "whatTheyDo";
     else if (l.includes("note")) map[h] = "notes";
@@ -100,8 +133,15 @@ function applyMapping(
       ceo: "",
       email: "",
       website: "",
+      linkedin: "",
       whatTheyDo: "",
       notes: "",
+      role: "",
+      industry: "",
+      companySize: "",
+      location: "",
+      intentSignals: "",
+      engagementHistory: "",
       _raw: raw,
       _errors: [],
     };
@@ -110,7 +150,6 @@ function applyMapping(
       row[field] = (raw[col] ?? "").trim();
     }
     if (!row.company) row._errors.push("Company required");
-    if (!row.ceo) row._errors.push("Contact name required");
     return row;
   });
 }
@@ -279,8 +318,16 @@ export function ImportLeadsModal({
             ceo: r.ceo,
             email: r.email || null,
             website: r.website || "",
+            linkedin: r.linkedin || "",
             whatTheyDo: r.whatTheyDo || "",
             notes: r.notes || "",
+            role: r.role || "",
+            industry: r.industry || "",
+            companySize: r.companySize || "",
+            location: r.location || "",
+            intentSignals: r.intentSignals.split(/[,;|]/).map((signal) => signal.trim()).filter(Boolean),
+            engagementHistory: r.engagementHistory.split(/[,;|]/).map((event) => event.trim()).filter(Boolean),
+            sourceDetails: r._raw,
           })),
         }),
       });
@@ -460,10 +507,17 @@ export function ImportLeadsModal({
                   <div className="p-4 grid grid-cols-3 gap-3">
                     {[
                       { col: "Company", req: true, desc: "Company name" },
-                      { col: "Contact", req: true, desc: "CEO / founder name" },
+                      { col: "Contact", req: false, desc: "CEO / founder name" },
                       { col: "Email", req: false, desc: "Contact email" },
                       { col: "Website", req: false, desc: "Company URL" },
+                      { col: "LinkedIn URL", req: false, desc: "Prospect profile" },
                       { col: "Description", req: false, desc: "What they do" },
+                      { col: "Job title", req: false, desc: "Prospect role" },
+                      { col: "Industry", req: false, desc: "Company sector" },
+                      { col: "Company size", req: false, desc: "Employee range" },
+                      { col: "Location", req: false, desc: "Company or prospect location" },
+                      { col: "Intent signals", req: false, desc: "Separate multiple values with commas" },
+                      { col: "Engagement history", req: false, desc: "Separate multiple values with commas" },
                       { col: "Notes", req: false, desc: "Internal notes" },
                     ].map((f) => (
                       <div key={f.col} className="flex flex-col gap-0.5">
@@ -693,7 +747,7 @@ export function ImportLeadsModal({
         </div>
 
         {/* Footer — pinned action buttons */}
-        <div className="px-6 py-4 border-t border-[var(--border)] shrink-0 flex items-center gap-3">
+        <div className="flex shrink-0 items-center gap-3 border-t border-[var(--border)] bg-muted/50 px-6 py-4">
           {step === "upload" && (
             <p className="text-[12px] text-[var(--muted-foreground)]">
               Upload a CSV file to get started.

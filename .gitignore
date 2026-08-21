@@ -22,3 +22,7 @@ yarn.lock
 
 designs
 /designs
+
+instagram-discovery/venv
+instagram-discovery/__pycache__
+instagram-discovery/**/__pycache__

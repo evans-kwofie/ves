@@ -17,7 +17,6 @@ import { getSessionFn } from "~/lib/session";
 import { auth } from "~/lib/auth";
 import { getRequestHeaders } from "@tanstack/react-start/server";
 import {
-  BarChartIcon,
   Mail01Icon,
   Linkedin01Icon,
   InstagramIcon,
@@ -28,6 +27,7 @@ import {
 } from "hugeicons-react";
 import { InsightsDrawer } from "~/components/modules/analytics/InsightsDrawer";
 import { EmptyState } from "~/components/ui/empty-state";
+import { DateRangePicker, type DateRange } from "~/components/ui/date-range-picker";
 
 // ─── Server fn ────────────────────────────────────────────────────────────────
 
@@ -180,6 +180,14 @@ function AnalyticsPage() {
   }
 
   const { stats, campaigns, volume, stepDropoff, abSummary, topSubjects, sourcePerformance } = data;
+  const [activityRange, setActivityRange] = React.useState<DateRange | undefined>(() => {
+    if (!volume.length) return undefined;
+    return { from: new Date(`${volume[0].date}T00:00:00`), to: new Date(`${volume[volume.length - 1].date}T00:00:00`) };
+  });
+  const filteredVolume = React.useMemo(() => volume.filter((point) => {
+    const date = new Date(`${point.date}T00:00:00`);
+    return (!activityRange?.from || date >= activityRange.from) && (!activityRange?.to || date <= activityRange.to);
+  }), [activityRange, volume]);
 
   const totalSent = stats.emailSent + stats.linkedinSent + stats.instagramSent;
   const hasAnyData = totalSent > 0 || stats.totalLeads > 0;
@@ -210,10 +218,7 @@ function AnalyticsPage() {
             stepDropoff={stepDropoff}
             abSummary={abSummary}
           />
-          <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground bg-muted px-3 py-1.5 rounded-lg">
-            <BarChartIcon size={12} />
-            All time
-          </div>
+          <DateRangePicker value={activityRange} onChange={setActivityRange} className="hidden sm:inline-flex" />
         </div>
       </div>
 
@@ -287,13 +292,13 @@ function AnalyticsPage() {
       <div className="grid gap-4" style={{ gridTemplateColumns: "1fr 260px" }}>
         <div className="card p-5">
           <p className="text-[13px] font-semibold">Send Volume</p>
-          <p className="text-[11px] text-muted-foreground mt-0.5 mb-4">Emails sent per day — last 30 days</p>
-          {volume.every((v) => v.sent === 0) ? (
+          <p className="text-[11px] text-muted-foreground mt-0.5 mb-4">Emails sent per day for the selected range</p>
+          {filteredVolume.length === 0 || filteredVolume.every((v) => v.sent === 0) ? (
             <div className="h-28 flex items-center justify-center text-[12px] text-muted-foreground">
-              No emails sent in the last 30 days
+              No emails sent in this range
             </div>
           ) : (
-            <BarChart data={volume} />
+            <BarChart data={filteredVolume} />
           )}
         </div>
 
@@ -346,6 +351,10 @@ function AnalyticsPage() {
           <FunnelBar label="Clicked link" value={stats.emailClicked} total={stats.emailOpened} color="var(--accent)" />
           <DropArrow pct={stats.totalContacted > 0 ? stats.replyRate : 0} label="replied" />
           <FunnelBar label="Replied" value={stats.totalReplied} total={stats.totalContacted} color="var(--accent)" />
+          <DropArrow pct={stats.totalReplied > 0 ? Math.round((stats.positiveReplies / stats.totalReplied) * 100) : 0} label="positive" />
+          <FunnelBar label="Positive replies" value={stats.positiveReplies} total={stats.totalReplied} color="var(--accent)" />
+          <DropArrow pct={stats.positiveReplies > 0 ? Math.round((stats.meetings / stats.positiveReplies) * 100) : 0} label="meetings" />
+          <FunnelBar label="Meetings" value={stats.meetings} total={stats.positiveReplies} color="var(--accent)" />
         </div>
       </div>
 

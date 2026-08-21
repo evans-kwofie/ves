@@ -94,6 +94,8 @@ export const Route = createFileRoute("/api/linkedin/search")({
                 linkedin: r.linkedinHint ? `https://linkedin.com/in/${r.linkedinHint}` : "",
                 fit: "MEDIUM",
                 notes: `Discovered via keyword search: ${kw}${!email ? " — email not verified, needs manual lookup" : ` — email verified via Hunter (confidence: ${hunterResult.confidence})`}`,
+                source: "linkedin",
+                sourceDetails: { keyword: kw, linkedinHint: r.linkedinHint || null, emailProvider: email ? "hunter" : null, emailConfidence: hunterResult.confidence ?? null },
               });
               saved = true;
               totalSaved++;

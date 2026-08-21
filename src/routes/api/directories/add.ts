@@ -75,6 +75,7 @@ export const Route = createFileRoute("/api/directories/add")({
                 .filter(Boolean)
                 .join("\n"),
               source: "directory",
+              sourceDetails: { directory, listingUrl: r.directoryUrl ?? null, launchedAt: r.launchedAt ?? null },
             });
             saved++;
           } catch {

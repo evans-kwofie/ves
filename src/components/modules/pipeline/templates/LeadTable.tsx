@@ -15,6 +15,13 @@ import {
 } from "hugeicons-react";
 import { toast } from "sonner";
 import type { Lead, LeadStatus, FitRating, PipelineStage } from "~/types/lead";
+import { filterPriorityQueue, type LeadPriorityQueue } from "~/lib/lead-priority";
+
+function sourceLabel(source: string): string {
+  return source.replace(/[_-]/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+const KNOWN_SOURCES = ["instagram", "linkedin", "reddit"];
 
 interface LeadTableProps {
   leads: Lead[];
@@ -26,23 +33,60 @@ interface LeadTableProps {
 export function LeadTable({ leads, onChange, orgId, onBulkCampaign }: LeadTableProps) {
   const [search, setSearch] = React.useState("");
   const [fitFilter, setFitFilter] = React.useState<FitRating | "ALL">("ALL");
+  const [sourceFilter, setSourceFilter] = React.useState<string>("ALL");
   const [statusFilter, setStatusFilter] = React.useState<LeadStatus | "ALL">("ALL");
   const [stageFilter, setStageFilter] = React.useState<PipelineStage | "ALL">("ALL");
+  const [verificationFilter, setVerificationFilter] = React.useState<"ALL" | "verified" | "needs_attention">("ALL");
+  const [freshnessFilter, setFreshnessFilter] = React.useState<"ALL" | "fresh" | "stale">("ALL");
+  const [priorityQueue, setPriorityQueue] = React.useState<LeadPriorityQueue | null>(null);
+  const [filtersOpen, setFiltersOpen] = React.useState(false);
   const [selectedIds, setSelectedIds] = React.useState<Set<string>>(new Set());
   const [enriching, setEnriching] = React.useState(false);
   const [deleting, setDeleting] = React.useState(false);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = React.useState(false);
 
-  const filtered = leads.filter((l) => {
+  const hasQueuedEnrichment = leads.some((lead) => lead.pipelineStage === "enriching");
+  const availableSources = React.useMemo(
+    () => [
+      ...KNOWN_SOURCES,
+      ...Array.from(new Set(leads.flatMap((lead) => lead.source?.trim() ? [lead.source.trim()] : [])))
+        .filter((source) => !KNOWN_SOURCES.includes(source))
+        .sort(),
+    ],
+    [leads],
+  );
+  const hasManualLeads = leads.some((lead) => !lead.source?.trim());
+  const activeFilterCount = [fitFilter, sourceFilter, statusFilter, stageFilter, verificationFilter, freshnessFilter].filter((filter) => filter !== "ALL").length;
+
+  React.useEffect(() => {
+    if (!hasQueuedEnrichment) return;
+    const timer = window.setInterval(() => {
+      void fetch(`/api/pipeline/leads?orgId=${orgId}`)
+        .then((response) => response.ok ? response.json() as Promise<Lead[]> : null)
+        .then((refreshed) => { if (refreshed) onChange(refreshed); })
+        .catch(() => undefined);
+    }, 10_000);
+    return () => window.clearInterval(timer);
+  }, [hasQueuedEnrichment, orgId, onChange]);
+
+  const priorityLeads = priorityQueue ? filterPriorityQueue(leads, priorityQueue) : leads;
+  const filtered = priorityLeads.filter((l) => {
     const matchSearch =
       !search ||
       l.company.toLowerCase().includes(search.toLowerCase()) ||
       l.email.toLowerCase().includes(search.toLowerCase()) ||
       l.ceo.toLowerCase().includes(search.toLowerCase());
     const matchFit = fitFilter === "ALL" || l.fit === fitFilter;
+    const normalizedSource = l.source?.trim() || null;
+    const matchSource = sourceFilter === "ALL"
+      || (sourceFilter === "manual" ? normalizedSource === null : normalizedSource === sourceFilter);
     const matchStatus = statusFilter === "ALL" || l.status === statusFilter;
     const matchStage = stageFilter === "ALL" || l.pipelineStage === stageFilter;
-    return matchSearch && matchFit && matchStatus && matchStage;
+    const matchVerification = verificationFilter === "ALL" || (verificationFilter === "verified" ? l.isValid === true : l.isValid !== true);
+    const freshnessDate = l.enrichedAt ?? l.lastVerifiedAt ?? l.addedAt;
+    const isFresh = Date.now() - new Date(freshnessDate).getTime() < 30 * 86400000;
+    const matchFreshness = freshnessFilter === "ALL" || (freshnessFilter === "fresh" ? isFresh : !isFresh);
+    return matchSearch && matchFit && matchSource && matchStatus && matchStage && matchVerification && matchFreshness;
   });
 
   function handleLeadChange(updated: Lead) {
@@ -73,7 +117,12 @@ export function LeadTable({ leads, onChange, orgId, onBulkCampaign }: LeadTableP
   async function handleBulkEnrich() {
     if (enrichableIds.length === 0) return;
     setEnriching(true);
+    onChange(leads.map((lead) =>
+      enrichableIds.includes(lead.id) ? { ...lead, pipelineStage: "enriching" } : lead,
+    ));
+    const toastId = toast.loading(`Researching ${enrichableIds.length} lead${enrichableIds.length === 1 ? "" : "s"}...`);
     let enriched = 0;
+    let failed = 0;
     try {
       await Promise.all(
         enrichableIds.map(async (leadId) => {
@@ -82,14 +131,23 @@ export function LeadTable({ leads, onChange, orgId, onBulkCampaign }: LeadTableP
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ organizationId: orgId, leadId }),
           });
-          if (res.ok) enriched++;
+          if (res.ok) {
+            const data = (await res.json()) as { queued?: number; enriched?: number; failed?: number };
+            enriched += data.queued ?? 0;
+            enriched += data.enriched ?? 0;
+            failed += data.failed ?? 0;
+          }
         })
       );
-      toast.success(`${enriched} lead${enriched !== 1 ? "s" : ""} enriched`);
+      if (failed > 0) {
+        toast.error(`${failed} lead${failed !== 1 ? "s" : ""} could not be enriched — add details and retry.`, { id: toastId });
+      } else {
+        toast.success(`${enriched} lead${enriched !== 1 ? "s" : ""} queued for background enrichment`, { id: toastId });
+      }
       const refreshed = await fetch(`/api/pipeline/leads?orgId=${orgId}`).catch(() => null);
       if (refreshed?.ok) onChange(await refreshed.json() as Lead[]);
     } catch {
-      toast.error("Enrichment failed");
+      toast.error("Enrichment failed", { id: toastId });
     } finally {
       setEnriching(false);
     }
@@ -122,6 +180,35 @@ export function LeadTable({ leads, onChange, orgId, onBulkCampaign }: LeadTableP
           onChange={(e) => setSearch(e.target.value)}
           className="max-w-60"
         />
+        <Button className="ml-auto" size="sm" variant="outline" onClick={() => setFiltersOpen((open) => !open)} aria-expanded={filtersOpen}>
+          <FilterIcon size={14} />
+          Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}
+        </Button>
+      </div>
+      <div className="filter-row mt-2" aria-label="Lead priority queues">
+        {([
+          ["highest_fit", "Highest fit"],
+          ["stale", "Stale"],
+          ["verification_needed", "Verification needed"],
+        ] as const).map(([queue, label]) => (
+          <Button key={queue} size="sm" variant={priorityQueue === queue ? "default" : "outline"} onClick={() => setPriorityQueue((current) => current === queue ? null : queue)}>
+            {label} ({filterPriorityQueue(leads, queue).length})
+          </Button>
+        ))}
+      </div>
+      {filtersOpen && <div className="filter-row mt-2 rounded-lg border border-border bg-muted/30 p-3">
+        <select
+          className="input max-w-35"
+          value={sourceFilter}
+          onChange={(e) => setSourceFilter(e.target.value)}
+          aria-label="Filter by lead source"
+        >
+          <option value="ALL">All Sources</option>
+          {hasManualLeads && <option value="manual">Manual</option>}
+          {availableSources.map((source) => (
+            <option key={source} value={source}>{sourceLabel(source)}</option>
+          ))}
+        </select>
         <select
           className="input max-w-35"
           value={fitFilter}
@@ -141,6 +228,7 @@ export function LeadTable({ leads, onChange, orgId, onBulkCampaign }: LeadTableP
           <option value="not_contacted">Not Contacted</option>
           <option value="email_sent">Emailed</option>
           <option value="linkedin_sent">LinkedIn DM</option>
+          <option value="instagram_sent">Instagram DM</option>
           <option value="replied">Replied</option>
           <option value="call_scheduled">Call Scheduled</option>
           <option value="converted">Converted</option>
@@ -156,12 +244,20 @@ export function LeadTable({ leads, onChange, orgId, onBulkCampaign }: LeadTableP
           <option value="enriching">Enriching</option>
           <option value="enriched">Enriched</option>
           <option value="validated">Validated</option>
+          <option value="enrichment_failed">Enrichment Failed</option>
           <option value="failed">Failed</option>
         </select>
-        <span className="text-[12px] text-muted-foreground ml-auto">
-          {filtered.length} of {leads.length}
-        </span>
-      </div>
+        <select className="input max-w-40" value={verificationFilter} onChange={(e) => setVerificationFilter(e.target.value as typeof verificationFilter)} aria-label="Filter by verification">
+          <option value="ALL">All Verification</option>
+          <option value="verified">Verified</option>
+          <option value="needs_attention">Needs Attention</option>
+        </select>
+        <select className="input max-w-35" value={freshnessFilter} onChange={(e) => setFreshnessFilter(e.target.value as typeof freshnessFilter)} aria-label="Filter by freshness">
+          <option value="ALL">All Freshness</option>
+          <option value="fresh">Fresh</option>
+          <option value="stale">Stale</option>
+        </select>
+      </div>}
 
       {filtered.length === 0 ? (
         <EmptyState
@@ -185,6 +281,7 @@ export function LeadTable({ leads, onChange, orgId, onBulkCampaign }: LeadTableP
                 </th>
                 <th>Company</th>
                 <th>Contact</th>
+                <th>Source</th>
                 <th>Fit</th>
                 <th>Status</th>
                 <th>Stage</th>

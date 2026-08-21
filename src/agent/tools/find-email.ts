@@ -4,6 +4,27 @@ export interface FindEmailResult {
   status: "verified" | "accept_all" | "not_found";
 }
 
+/** Verifies an existing address before sending. Returns null when Hunter is unavailable or still resolving. */
+export async function verifyEmail(email: string): Promise<Pick<FindEmailResult, "status" | "confidence"> | null> {
+  const apiKey = process.env.HUNTER_API_KEY;
+  if (!apiKey) return null;
+
+  try {
+    const params = new URLSearchParams({ email: email.trim(), api_key: apiKey });
+    const res = await fetch(`https://api.hunter.io/v2/email-verifier?${params}`);
+    if (!res.ok) return null;
+    const json = await res.json() as { data?: { status?: string; score?: number } };
+    const status = json.data?.status;
+    const confidence = Number(json.data?.score ?? 0);
+    if (status === "valid" || status === "webmail") return { status: "verified", confidence };
+    if (status === "accept_all") return { status: "accept_all", confidence };
+    if (status === "invalid" || status === "disposable") return { status: "not_found", confidence };
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Uses Hunter.io to find a verified email for a person at a given domain.
  * Falls back to null rather than guessing — a missing email is better than a wrong one.

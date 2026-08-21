@@ -10,6 +10,7 @@ import { getSessionFn } from "~/lib/session";
 import { ArrowUpRight01Icon, MinusSignIcon } from "hugeicons-react";
 import type { Lead } from "~/types/lead";
 import { WelcomeDashboard } from "~/components/modules/WelcomeDashboard";
+import { DateRangePicker, type DateRange } from "~/components/ui/date-range-picker";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -24,11 +25,13 @@ const getDashboard = createServerFn({ method: "GET" })
   .inputValidator(z.object({
     orgId: z.string(),
     period: z.string().optional(),
+    from: z.string().date().optional(),
+    to: z.string().date().optional(),
     source: z.string().optional(),
     fit: z.string().optional(),
   }))
   .handler(async ({ data }) => {
-    const { orgId, period = "7d", source, fit } = data;
+    const { orgId, period = "7d", from, to, source, fit } = data;
     const days = PERIOD_DAYS[(period as Period)] ?? 7;
     const [session, leadStats, redditCount, keywords, campaigns, recentLeads, leadGrowth, recentActivity, availableSources] =
       await Promise.all([
@@ -38,7 +41,7 @@ const getDashboard = createServerFn({ method: "GET" })
         listKeywords(orgId),
         listCampaigns(orgId),
         getRecentLeads(orgId, 12, { source, fit }),
-        getLeadGrowth(orgId, days, { source }),
+        getLeadGrowth(orgId, days, { source, from, to }),
         getRecentRedditActivity(orgId, 4),
         getDistinctSources(orgId),
       ]);
@@ -58,6 +61,8 @@ const getDashboard = createServerFn({ method: "GET" })
 
 const searchSchema = z.object({
   period: z.enum(PERIODS).optional().catch("7d"),
+  from: z.string().date().optional(),
+  to: z.string().date().optional(),
   source: z.string().optional(),
   fit: z.string().optional(),
 });
@@ -66,11 +71,13 @@ export const Route = createFileRoute("/$workspaceId/")({
   validateSearch: searchSchema,
   loaderDeps: ({ search }) => ({
     period: search.period ?? "7d",
+    from: search.from,
+    to: search.to,
     source: search.source,
     fit: search.fit,
   }),
   loader: ({ params, deps }) =>
-    getDashboard({ data: { orgId: params.workspaceId, period: deps.period, source: deps.source, fit: deps.fit } }),
+    getDashboard({ data: { orgId: params.workspaceId, period: deps.period, from: deps.from, to: deps.to, source: deps.source, fit: deps.fit } }),
   component: DashboardPage,
 });
 
@@ -188,6 +195,20 @@ function capitalize(s: string) {
   return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
 }
 
+function dateKey(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function formatRangeLabel(range: DateRange) {
+  if (!range.from) return "selected dates";
+  const from = range.from.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  const to = range.to?.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  return to ? `${from} – ${to}` : from;
+}
+
 const INTENT_DOT: Record<string, string> = {
   buying: "bg-accent",
   pain: "bg-amber-400",
@@ -254,12 +275,16 @@ function DropdownFilter({
 
 function FilterBar({
   period,
+  dateRange,
+  onDateRangeChange,
   source,
   fit,
   availableSources,
   workspaceId,
 }: {
   period: Period;
+  dateRange: DateRange | undefined;
+  onDateRangeChange: (range: DateRange | undefined) => void;
   source: string | undefined;
   fit: string | undefined;
   availableSources: string[];
@@ -282,29 +307,13 @@ function FilterBar({
     { value: "MEDIUM", label: "Medium" },
     { value: "LOW", label: "Low" },
   ];
+  const rangeSearch = dateRange?.from && dateRange.to
+    ? { from: dateKey(dateRange.from), to: dateKey(dateRange.to) }
+    : { period };
 
   return (
     <div className="flex items-center gap-2.5">
-      {/* Segmented period control */}
-      <div className="inline-flex items-stretch h-7.5 border border-border rounded-md overflow-hidden">
-        {PERIODS.map((p, i) => (
-          <Link
-            key={p}
-            to="/$workspaceId"
-            params={{ workspaceId }}
-            search={{ period: p, source: source || undefined, fit: activeFit }}
-            className={[
-              "px-3 text-[11px] font-semibold flex items-center transition-colors select-none",
-              i > 0 ? "border-l border-border" : "",
-              period === p
-                ? "bg-accent-subtle text-accent"
-                : "text-muted-foreground hover:bg-muted hover:text-foreground",
-            ].join(" ")}
-          >
-            {p === "7d" ? "7D" : p === "30d" ? "30D" : "90D"}
-          </Link>
-        ))}
-      </div>
+      <DateRangePicker value={dateRange} onChange={onDateRangeChange} placeholder="Select date range" className="h-7.5 min-w-0 text-[11px]" />
 
       <div className="w-px h-4 bg-border shrink-0" />
 
@@ -326,7 +335,7 @@ function FilterBar({
                   key={opt.value}
                   to="/$workspaceId"
                   params={{ workspaceId }}
-                  search={{ period, source: opt.value || undefined, fit: activeFit }}
+                  search={{ ...rangeSearch, source: opt.value || undefined, fit: activeFit }}
                   onClick={close}
                   className={[
                     "flex items-center gap-2.5 w-full px-3 py-1.75 text-[12px] transition-colors no-underline",
@@ -361,7 +370,7 @@ function FilterBar({
                 key={opt.value}
                 to="/$workspaceId"
                 params={{ workspaceId }}
-                search={{ period, source: source || undefined, fit: opt.value !== "ALL" ? opt.value : undefined }}
+                search={{ ...rangeSearch, source: source || undefined, fit: opt.value !== "ALL" ? opt.value : undefined }}
                 onClick={close}
                 className={[
                   "flex items-center gap-2.5 w-full px-3 py-1.75 text-[12px] transition-colors no-underline",
@@ -385,7 +394,7 @@ function FilterBar({
           <Link
             to="/$workspaceId"
             params={{ workspaceId }}
-            search={{ period }}
+            search={rangeSearch}
             className="text-[11px] text-muted-foreground hover:text-foreground transition-colors no-underline"
           >
             Reset
@@ -401,7 +410,8 @@ function FilterBar({
 function DashboardPage() {
   const data = Route.useLoaderData();
   const { workspaceId } = Route.useParams();
-  const { period = "7d", source, fit } = Route.useSearch();
+  const { period = "7d", from, to, source, fit } = Route.useSearch();
+  const navigate = Route.useNavigate();
 
   const isEmpty = data.totalLeads === 0 && !data.hasCampaigns && !data.hasKeywords;
 
@@ -425,6 +435,27 @@ function DashboardPage() {
   const growthCounts = data.leadGrowth.map((d) => d.count);
   const totalInPeriod = growthCounts.reduce((a, b) => a + b, 0);
   const resolvedPeriod = (period as Period) ?? "7d";
+  const dateRange = React.useMemo<DateRange>(() => {
+    if (from && to) return { from: new Date(`${from}T00:00:00`), to: new Date(`${to}T00:00:00`) };
+    const to = new Date();
+    const start = new Date(to);
+    start.setDate(to.getDate() - (PERIOD_DAYS[resolvedPeriod] - 1));
+    return { from: start, to };
+  }, [from, to, resolvedPeriod]);
+
+  function handleDateRangeChange(range: DateRange | undefined) {
+    void navigate({
+      to: "/$workspaceId",
+      params: { workspaceId },
+      search: {
+        period: range?.from && range.to ? undefined : resolvedPeriod,
+        from: range?.from && range.to ? dateKey(range.from) : undefined,
+        to: range?.from && range.to ? dateKey(range.to) : undefined,
+        source,
+        fit,
+      },
+    });
+  }
 
   return (
     <div className="page-content flex flex-col gap-6">
@@ -441,6 +472,8 @@ function DashboardPage() {
         </div>
         <FilterBar
           period={resolvedPeriod}
+          dateRange={dateRange}
+          onDateRangeChange={handleDateRangeChange}
           source={source}
           fit={fit}
           availableSources={data.availableSources}
@@ -453,7 +486,7 @@ function DashboardPage() {
         <StatCard
           label="Total Leads"
           value={fmt(data.totalLeads)}
-          sub={`+${totalInPeriod} in ${PERIOD_LABEL[resolvedPeriod]}`}
+          sub={`+${totalInPeriod} in ${formatRangeLabel(dateRange)}`}
           trend={totalInPeriod > 0 ? "up" : "flat"}
           sparkline={growthCounts}
         />
@@ -487,7 +520,7 @@ function DashboardPage() {
             <div>
               <p className="text-[13px] font-semibold text-foreground">Lead Growth</p>
               <p className="text-[11px] text-muted-foreground mt-0.5">
-                New leads per day — last {PERIOD_LABEL[resolvedPeriod]}
+                New leads per day — {formatRangeLabel(dateRange)}
                 {source ? ` · ${capitalize(source)}` : ""}
               </p>
             </div>

@@ -1,0 +1,5 @@
+scrapy>=2.11
+scrapy-playwright>=0.0.34
+playwright>=1.44
+requests>=2.31
+python-dotenv>=1.0

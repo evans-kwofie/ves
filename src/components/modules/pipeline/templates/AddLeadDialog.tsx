@@ -60,7 +60,11 @@ export function AddLeadDialog({ orgId, open, onOpenChange, onSuccess }: AddLeadD
       const res = await fetch("/api/pipeline/leads", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, organizationId: orgId }),
+        body: JSON.stringify({
+          ...form,
+          email: form.email.trim() || undefined,
+          organizationId: orgId,
+        }),
       });
       if (!res.ok) {
         const data = (await res.json()) as { error?: string };
@@ -106,12 +110,12 @@ export function AddLeadDialog({ orgId, open, onOpenChange, onSuccess }: AddLeadD
 
           <div className="two-col">
             <div className="form-group">
-              <Label>CEO / Founder *</Label>
-              <Input value={form.ceo} onChange={update("ceo")} required disabled={loading} />
+              <Label>Contact name</Label>
+              <Input value={form.ceo} onChange={update("ceo")} disabled={loading} placeholder="Add later during enrichment" />
             </div>
             <div className="form-group">
-              <Label>Email *</Label>
-              <Input type="email" value={form.email} onChange={update("email")} required disabled={loading} />
+              <Label>Email</Label>
+              <Input type="email" value={form.email} onChange={update("email")} disabled={loading} placeholder="name@company.com" />
             </div>
           </div>
 

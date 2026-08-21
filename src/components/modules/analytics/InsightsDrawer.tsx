@@ -70,35 +70,41 @@ function generateInsights(
       insights.push({
         icon: <ChartDecreaseIcon size={16} />,
         title: "Open rate needs attention",
-        body: `Your open rate is ${stats.openRate}% — industry average is 20–30%. A/B test shorter subject lines or add the recipient's first name. Personalised subjects consistently outperform generic ones.`,
+        body: `${stats.emailOpened} of ${stats.emailDelivered} delivered emails were opened (${stats.openRate}%). Test a shorter subject line against your current sample.`,
       });
     } else if (stats.openRate >= 30) {
       insights.push({
         icon: <ChartIncreaseIcon size={16} />,
         title: "Strong open rate",
-        body: `${stats.openRate}% open rate puts you well above average. Whatever you're doing in subject lines is working — keep it consistent across new campaigns.`,
+        body: `${stats.emailOpened} of ${stats.emailDelivered} delivered emails were opened (${stats.openRate}%). Preserve the subject-line pattern in your next controlled test.`,
         accent: true,
       });
     }
 
-    if (stats.replyRate === 0 && stats.totalContacted >= 5) {
+    if (stats.openRate >= 30 && stats.replyRate < 3 && stats.totalContacted >= 5) {
+      insights.push({
+        icon: <AiIdeaIcon size={16} />,
+        title: "Opens without replies",
+        body: `${stats.emailOpened} delivered emails were opened (${stats.openRate}%), but only ${stats.totalReplied} of ${stats.totalContacted} contacted leads replied (${stats.replyRate}%). Keep the subject-line pattern, then test a more specific first sentence and one simpler CTA.`,
+      });
+    } else if (stats.replyRate === 0 && stats.totalContacted >= 5) {
       insights.push({
         icon: <AiIdeaIcon size={16} />,
         title: "No replies yet — check deliverability",
-        body: "You've sent emails but no one has replied. Verify your domain SPF/DKIM is set up, shorten your opening message, and end with a single direct question rather than a pitch.",
+        body: `${stats.totalContacted} leads were contacted with no recorded replies. Check the delivery and bounce cards first, then test one clearer opening and CTA on the next batch.`,
       });
     } else if (stats.replyRate >= 10) {
       insights.push({
         icon: <ChartIncreaseIcon size={16} />,
         title: "Exceptional reply rate",
-        body: `${stats.replyRate}% reply rate is exceptional — most cold outreach averages 1–5%. Your personalisation is clearly landing. Consider increasing lead volume to scale this.`,
+        body: `${stats.totalReplied} of ${stats.totalContacted} contacted leads replied (${stats.replyRate}%). Preserve this targeting and copy pattern before increasing volume.`,
         accent: true,
       });
     } else if (stats.replyRate > 0 && stats.replyRate < 3) {
       insights.push({
         icon: <AiIdeaIcon size={16} />,
         title: "Boost replies with follow-up steps",
-        body: `Only ${stats.replyRate}% of contacted leads replied. Most conversions happen on the 2nd or 3rd touchpoint — add follow-up steps to your active campaigns and keep them under 5 sentences.`,
+        body: `${stats.totalReplied} of ${stats.totalContacted} contacted leads replied (${stats.replyRate}%). Compare the step funnel, then test a shorter follow-up with a distinct value point.`,
       });
     }
 
@@ -150,6 +156,26 @@ function generateInsights(
           icon: <AiIdeaIcon size={16} />,
           title: "Your follow-ups outperform first touches",
           body: `In "${step1.campaignName}", step 2 has a ${step2.replyRate}% reply rate vs step 1's ${step1.replyRate}%. Rewrite step 1 to be shorter and mirror the approach that's working in step 2.`,
+        });
+        break;
+      }
+    }
+
+    for (const [, steps] of bycamp) {
+      if (steps.length < 2) continue;
+      const step1 = steps.find((s) => s.stepNumber === 1);
+      const step2 = steps.find((s) => s.stepNumber === 2);
+      if (
+        step1 &&
+        step2 &&
+        step1.sent >= 5 &&
+        step2.sent >= 5 &&
+        step2.replyRate < step1.replyRate
+      ) {
+        insights.push({
+          icon: <ChartDecreaseIcon size={16} />,
+          title: "Your second step is losing momentum",
+          body: `In "${step1.campaignName}", step 2 converts at ${step2.replyRate}% versus ${step1.replyRate}% for step 1. Test one shorter follow-up with a new value point and a softer CTA.`,
         });
         break;
       }
@@ -224,7 +250,7 @@ export function InsightsDrawer({
             Recommendations based on your outreach performance
           </SheetDescription>
         </SheetHeader>
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-3 px-4 pb-4">
           {insights.map((insight, i) => (
             <div
               key={i}

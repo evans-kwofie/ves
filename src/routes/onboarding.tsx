@@ -1,13 +1,16 @@
 import * as React from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { getRequestHeaders } from "@tanstack/react-start/server";
-import { ArrowRight01Icon, ArrowLeft01Icon, Tick01Icon } from "hugeicons-react";
+import { ArrowRight01Icon, ArrowLeft01Icon } from "hugeicons-react";
+import { useForm } from "react-hook-form";
 import { auth } from "~/lib/auth";
 import { getSessionFn } from "~/lib/session";
 import { authClient } from "~/lib/auth-client";
-import { Input } from "~/components/ui/input";
 import { toast } from "sonner";
+import { Button } from "~/components/ui/button";
+import { z } from "zod";
 
 // ─── Server ─────────────────────────────────────────────────────────────────
 
@@ -45,15 +48,6 @@ const INDUSTRIES = [
 
 const COMPANY_SIZES = ["Solo", "2–10", "11–50", "51–200", "200+"];
 
-const USE_CASES = [
-  "Lead generation",
-  "Content marketing",
-  "Brand awareness",
-  "Community building",
-  "Outreach automation",
-  "Competitive research",
-];
-
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function slugify(v: string) {
@@ -63,19 +57,29 @@ function slugify(v: string) {
     .replace(/-+/g, "-");
 }
 
-type Step = 1 | 2 | 3 | 4 | 5;
+type Step = 1 | 2 | 3 | 4 | 5 | 6;
 
-interface FormState {
-  name: string;
-  slug: string;
-  slugTouched: boolean;
-  logo: string;
-  website: string;
-  industry: string;
-  companySize: string;
-  useCases: string[];
-  description: string;
-}
+const importedProductSchema = z.object({
+  name: z.string(),
+  description: z.string(),
+  benefits: z.array(z.string()),
+  idealCustomer: z.string().nullable().optional(),
+  pricingModel: z.enum(["custom", "fixed", "starting_at", "usage_based"]),
+  priceAmount: z.number().nullable().optional(),
+  priceCurrency: z.string().nullable().optional(),
+  offerTerms: z.string().nullable().optional(),
+  qualificationConstraints: z.string().nullable().optional(),
+  proofPoints: z.array(z.string()),
+});
+
+const onboardingSchema = z.object({
+  name: z.string(), slug: z.string(), slugTouched: z.boolean(), logo: z.string(),
+  website: z.string(), industry: z.string(), companySize: z.string(), description: z.string(),
+  icp: z.string(), messaging: z.string(), importedProducts: z.array(importedProductSchema),
+});
+
+type ImportedProduct = z.infer<typeof importedProductSchema>;
+type FormState = z.infer<typeof onboardingSchema>;
 
 // ─── Root component ───────────────────────────────────────────────────────────
 
@@ -88,34 +92,27 @@ function OnboardingPage() {
   const [createdOrgId, setCreatedOrgId] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState(false);
 
-  const [form, setForm] = React.useState<FormState>({
-    name: "", slug: "", slugTouched: false, logo: "",
-    website: "", industry: "", companySize: "", useCases: [], description: "",
+  const { getValues, setValue, watch } = useForm<FormState>({
+    resolver: zodResolver(onboardingSchema),
+    defaultValues: {
+      name: "", slug: "", slugTouched: false, logo: "",
+      website: "", industry: "", companySize: "", description: "", icp: "", messaging: "", importedProducts: [],
+    },
   });
+  const form = watch();
 
   function update<K extends keyof FormState>(key: K, val: FormState[K]) {
-    setForm(p => ({ ...p, [key]: val }));
+    setValue(key as never, val as never, { shouldDirty: true, shouldValidate: true });
   }
 
   function handleNameChange(val: string) {
-    setForm(p => ({
-      ...p,
-      name: val,
-      slug: p.slugTouched ? p.slug : slugify(val),
-    }));
+    update("name", val);
+    if (!getValues("slugTouched")) update("slug", slugify(val));
   }
 
   function handleSlugChange(val: string) {
-    setForm(p => ({ ...p, slug: slugify(val), slugTouched: true }));
-  }
-
-  function toggleUseCase(uc: string) {
-    setForm(p => {
-      const has = p.useCases.includes(uc);
-      if (has) return { ...p, useCases: p.useCases.filter(u => u !== uc) };
-      if (p.useCases.length >= 3) return p;
-      return { ...p, useCases: [...p.useCases, uc] };
-    });
+    update("slug", slugify(val));
+    update("slugTouched", true);
   }
 
   function advance(to: Step) {
@@ -133,8 +130,9 @@ function OnboardingPage() {
         ...(form.website ? { website: form.website } : {}),
         ...(form.industry ? { industry: form.industry } : {}),
         ...(form.companySize ? { companySize: form.companySize } : {}),
-        ...(form.useCases.length ? { useCases: form.useCases } : {}),
         ...(form.description ? { description: form.description } : {}),
+        ...(form.icp ? { icp: form.icp } : {}),
+        ...(form.messaging ? { messaging: form.messaging } : {}),
       },
     });
     setLoading(false);
@@ -144,24 +142,34 @@ function OnboardingPage() {
       return;
     }
 
+    if (form.importedProducts.length) {
+      const imports = await Promise.allSettled(form.importedProducts.map((product) => fetch("/api/products", {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...product, organizationId: result.data.id }),
+      })));
+      if (imports.some((item) => item.status === "rejected" || (item.status === "fulfilled" && !item.value.ok))) {
+        toast.error("Your workspace was created, but some imported products need to be added manually.");
+      }
+    }
     setCreatedOrgId(result.data.id);
-    advance(5);
+    advance(6);
   }
 
   const step2Valid = form.name.trim().length > 0 && form.slug.trim().length > 0;
+  const targetingValid = form.icp.trim().length >= 12 && form.messaging.trim().length >= 12;
+  const productsValid = form.importedProducts.length > 0 && form.importedProducts.every((product) => product.name.trim() && product.description.trim());
 
-  const TOTAL = 3; // form steps: 2, 3, 4
+  const TOTAL = 4; // form steps: 2, 3, 4, 5
   const progress = step - 1; // 0 on welcome, 1–3 on form steps
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="flex h-dvh flex-col overflow-hidden bg-background">
       {/* Header */}
       <header className="h-[60px] flex items-center justify-between px-8 border-b border-[var(--border)] bg-[var(--background)] shrink-0">
         <span className="text-[15px] font-bold tracking-tight">
           nextreach<span className="text-[var(--accent)]">.</span>
         </span>
 
-        {step > 1 && step < 5 && (
+        {step > 1 && step < 6 && (
           <div className="flex items-center gap-2">
             {Array.from({ length: TOTAL }).map((_, i) => (
               <div
@@ -181,10 +189,10 @@ function OnboardingPage() {
       </header>
 
       {/* Step content */}
-      <main className="flex-1 flex items-center justify-center px-6 py-10">
+      <main className="min-h-0 flex-1 overflow-y-auto px-6 py-10">
         <div
           key={animKey}
-          className="w-full max-w-[560px]"
+          className="mx-auto flex min-h-full w-full max-w-[560px] flex-col justify-center"
           style={{ animation: "stepEnter 0.35s cubic-bezier(0.16,1,0.3,1) forwards" }}
         >
           {step === 1 && <StepWelcome firstName={firstName} onNext={() => advance(2)} />}
@@ -209,52 +217,53 @@ function OnboardingPage() {
               onIndustryChange={v => update("industry", v)}
               onCompanySizeChange={v => update("companySize", v)}
               onDescriptionChange={v => update("description", v)}
+              onProductsFound={v => update("importedProducts", v)}
+              importedProducts={form.importedProducts}
             />
           )}
           {step === 4 && (
-            <StepFocus useCases={form.useCases} onToggle={toggleUseCase} />
+            <StepTargeting
+              icp={form.icp}
+              messaging={form.messaging}
+              onIcpChange={v => update("icp", v)}
+              onMessagingChange={v => update("messaging", v)}
+            />
           )}
-          {step === 5 && <StepDone orgName={form.name} orgId={createdOrgId} />}
+          {step === 5 && <StepProducts products={form.importedProducts} onChange={(products) => update("importedProducts", products)} />}
+          {step === 6 && <StepDone orgName={form.name} orgId={createdOrgId} />}
         </div>
       </main>
 
       {/* Footer nav */}
-      {step > 1 && step < 5 && (
+      {step > 1 && step < 6 && (
         <footer className="h-[68px] flex items-center justify-between px-8 border-t border-[var(--border)] bg-[var(--background)] shrink-0">
-          <button
+          <Button
             onClick={() => advance((step - 1) as Step)}
-            className="flex items-center gap-2 text-[13px] font-medium text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors bg-transparent border-0 cursor-pointer"
+            variant="ghost"
+            size="sm"
           >
             <ArrowLeft01Icon size={14} />
             Back
-          </button>
+          </Button>
 
-          {step < 4 ? (
-            <button
+          {step < 5 ? (
+            <Button
               onClick={() => advance((step + 1) as Step)}
-              disabled={step === 2 && !step2Valid}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-[var(--radius)] text-[13px] font-semibold transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-              style={{
-                background: "var(--accent)",
-                color: "var(--accent-foreground)",
-              }}
+              disabled={(step === 2 && !step2Valid) || (step === 4 && !targetingValid)}
+              size="lg"
             >
               Continue
               <ArrowRight01Icon size={14} />
-            </button>
+            </Button>
           ) : (
-            <button
+            <Button
               onClick={handleCreate}
-              disabled={loading}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-[var(--radius)] text-[13px] font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              style={{
-                background: "var(--accent)",
-                color: "var(--accent-foreground)",
-              }}
+              disabled={loading || !productsValid}
+              size="lg"
             >
               {loading ? "Creating..." : "Create workspace"}
               {!loading && <ArrowRight01Icon size={14} />}
-            </button>
+            </Button>
           )}
         </footer>
       )}
@@ -290,14 +299,13 @@ function StepWelcome({ firstName, onNext }: { firstName: string; onNext: () => v
       <p className="text-[15px] text-[var(--muted-foreground)] leading-relaxed mb-12 max-w-[380px] mx-auto">
         We'll set up your workspace in three quick steps. Keywords, leads, content — all ready to go.
       </p>
-      <button
+      <Button
         onClick={onNext}
-        className="inline-flex items-center gap-3 px-7 py-3.5 rounded-[var(--radius)] text-[14px] font-semibold transition-all hover:opacity-90"
-        style={{ background: "var(--accent)", color: "var(--accent-foreground)" }}
+        size="lg"
       >
         Get started
         <ArrowRight01Icon size={15} />
-      </button>
+      </Button>
     </div>
   );
 }
@@ -326,13 +334,12 @@ function StepWorkspace({
       </p>
 
       {/* Name — large underline input */}
-      <input
+      <OnboardingInput
         autoFocus
-        type="text"
         value={name}
         onChange={e => onNameChange(e.target.value)}
         placeholder="Acme Inc."
-        className="w-full bg-transparent border-0 border-b-2 border-[var(--border)] focus:border-[var(--accent)] outline-none pb-3 text-[28px] font-semibold tracking-[-0.02em] text-[var(--foreground)] placeholder:text-[#2a2a2a] transition-colors"
+        size="hero"
       />
 
       {/* Slug preview */}
@@ -343,21 +350,22 @@ function StepWorkspace({
             {slug || "your-workspace"}
           </span>
         </span>
-        <button
+        <Button
           onClick={() => setEditingSlug(s => !s)}
-          className="text-[11px] text-[var(--accent)] bg-transparent border-0 cursor-pointer font-medium hover:underline"
+          variant="link"
+          size="xs"
         >
           {editingSlug ? "done" : "edit slug"}
-        </button>
+        </Button>
       </div>
 
       {editingSlug && (
         <div className="mt-2">
-          <Input
+          <OnboardingInput
             value={slug}
             onChange={e => onSlugChange(e.target.value)}
             placeholder="acme-inc"
-            className="text-[13px]"
+            size="compact"
           />
         </div>
       )}
@@ -367,12 +375,14 @@ function StepWorkspace({
         <label className="block text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--muted-foreground)] mb-2">
           Logo URL <span className="font-normal normal-case tracking-normal">— optional</span>
         </label>
-        <Input
+        <OnboardingInput
           type="url"
           value={logo}
           onChange={e => onLogoChange(e.target.value)}
           placeholder="https://example.com/logo.png"
+          size="standard"
         />
+        {logo && <div className="mt-3 flex items-center gap-2 text-[11px] text-[var(--muted-foreground)]"><img src={logo} alt="Logo preview" className="size-7 rounded-md object-cover" />Logo preview</div>}
       </div>
     </div>
   );
@@ -382,7 +392,7 @@ function StepWorkspace({
 
 function StepAbout({
   website, industry, companySize, description, companyName,
-  onWebsiteChange, onIndustryChange, onCompanySizeChange, onDescriptionChange,
+  onWebsiteChange, onIndustryChange, onCompanySizeChange, onDescriptionChange, onProductsFound, importedProducts,
 }: {
   website: string; industry: string; companySize: string;
   description: string; companyName: string;
@@ -390,32 +400,59 @@ function StepAbout({
   onIndustryChange: (v: string) => void;
   onCompanySizeChange: (v: string) => void;
   onDescriptionChange: (v: string) => void;
+  onProductsFound: (products: ImportedProduct[]) => void;
+  importedProducts: ImportedProduct[];
 }) {
   const [scraping, setScraping] = React.useState(false);
   const [scrapeError, setScrapeError] = React.useState("");
+  const [pricingMessage, setPricingMessage] = React.useState("");
+  const lastScannedWebsite = React.useRef<string | null>(null);
 
   async function handleWebsiteBlur() {
-    if (!website.trim() || !website.startsWith("http")) return;
+    const normalizedWebsite = website.trim();
+    if (!normalizedWebsite || !normalizedWebsite.startsWith("http") || normalizedWebsite === lastScannedWebsite.current) return;
+    lastScannedWebsite.current = normalizedWebsite;
     setScraping(true);
     setScrapeError("");
     try {
-      const res = await fetch("/api/workspace/generate-description", {
+      const [descriptionResponse, productsResponse] = await Promise.all([
+        fetch("/api/workspace/generate-description", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ website: website.trim(), name: companyName }),
-      });
-      const data = await res.json() as { description?: string; error?: string };
+        }),
+        fetch("/api/workspace/extract-products", {
+          method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ website: website.trim() }),
+        }),
+      ]);
+      const data = await descriptionResponse.json() as { description?: string; error?: string };
       if (data.description) {
         onDescriptionChange(data.description);
       } else {
         setScrapeError(data.error ?? "Couldn't read the website");
       }
+      const productData = await productsResponse.json() as { products?: ImportedProduct[]; industry?: string | null; message?: string };
+      if (productData.industry && !industry) onIndustryChange(productData.industry);
+      if (productData.products?.length) {
+        onProductsFound(productData.products);
+        setPricingMessage(`${productData.products.length} product${productData.products.length === 1 ? "" : "s"} found on the pricing page${productData.industry && !industry ? `; industry set to ${productData.industry}` : ""} — review them in settings.`);
+      } else {
+        onProductsFound([]);
+        setPricingMessage(productData.message ?? "No product information found — you can add it later.");
+      }
     } catch {
+      lastScannedWebsite.current = null;
       setScrapeError("Couldn't reach the website");
     } finally {
       setScraping(false);
     }
   }
+
+  React.useEffect(() => {
+    if (!website.trim().startsWith("http") || website.trim() === lastScannedWebsite.current) return;
+    const timer = window.setTimeout(() => { void handleWebsiteBlur(); }, 800);
+    return () => window.clearTimeout(timer);
+  }, [website]);
 
   return (
     <div>
@@ -424,7 +461,7 @@ function StepAbout({
         Tell us about your business
       </h2>
       <p className="text-[14px] text-[var(--muted-foreground)] mb-10">
-        Enter your website and we'll pull a description automatically.
+        Add your website, then scan its pricing page. You can review and configure every discovered offer in Products settings.
       </p>
 
       {/* Website */}
@@ -432,15 +469,14 @@ function StepAbout({
         <label className="block text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--muted-foreground)] mb-2">
           Website
         </label>
-        <Input
-          type="url"
-          value={website}
-          onChange={e => onWebsiteChange(e.target.value)}
-          onBlur={handleWebsiteBlur}
-          placeholder="https://example.com"
-          autoFocus
-        />
+        <div className="flex gap-2">
+          <OnboardingInput type="url" value={website} onChange={e => onWebsiteChange(e.target.value)} placeholder="https://example.com" autoFocus size="standard" />
+          <Button type="button" size="sm" onClick={() => { lastScannedWebsite.current = null; void handleWebsiteBlur(); }} disabled={scraping || !website.trim().startsWith("http")} className="mt-0.5 shrink-0">{scraping ? "Scanning…" : "Scan again"}</Button>
+        </div>
       </div>
+
+      {pricingMessage && <p className="-mt-5 mb-6 text-xs leading-5 text-muted-foreground">{pricingMessage}</p>}
+      {importedProducts.length > 0 && <div className="-mt-3 mb-6 rounded-[var(--radius)] border border-[var(--border)] p-3"><p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--muted-foreground)]">Offers to configure</p><ul className="mt-2 space-y-1 text-[12px] text-[var(--foreground)]">{importedProducts.map((product) => <li key={product.name}>• {product.name}{product.priceAmount != null ? ` — ${product.pricingModel === "starting_at" ? "from " : ""}${product.priceAmount} ${product.priceCurrency ?? ""}` : ""}</li>)}</ul><p className="mt-2 text-[11px] text-[var(--muted-foreground)]">These will be added as editable drafts in Products settings.</p></div>}
 
       {/* Description — auto-populated from scrape */}
       <div className="mb-8">
@@ -457,12 +493,10 @@ function StepAbout({
             <span className="text-[11px] text-destructive">{scrapeError}</span>
           )}
         </div>
-        <textarea
+        <OnboardingTextarea
           value={description}
           onChange={e => onDescriptionChange(e.target.value)}
           placeholder="What does your company do? Who are your customers?"
-          rows={3}
-          className="w-full rounded-(--radius) border border-border bg-transparent px-3 py-2 text-[13px] text-foreground placeholder:text-muted-foreground resize-none focus:outline-none focus:ring-1 focus:ring-accent transition-colors"
         />
       </div>
 
@@ -503,68 +537,92 @@ function StepAbout({
   );
 }
 
+function OnboardingInput({ size = "standard", className = "", ...props }: Omit<React.InputHTMLAttributes<HTMLInputElement>, "size"> & { size?: "hero" | "standard" | "compact" }) {
+  const sizes = {
+    hero: "pb-3 text-[28px] font-semibold tracking-[-0.02em]",
+    standard: "pb-2 text-[18px] font-medium tracking-[-0.01em]",
+    compact: "pb-1.5 text-[14px]",
+  };
+  return <input {...props} className={`w-full border-0 border-b-2 border-[var(--border)] bg-transparent text-[var(--foreground)] outline-none transition-colors duration-150 placeholder:text-[var(--muted-foreground)] placeholder:opacity-70 focus:border-[var(--accent)] ${sizes[size]} ${className}`} />;
+}
+
+function OnboardingTextarea({ className = "", value, ...props }: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
+  const textareaRef = React.useRef<HTMLTextAreaElement>(null);
+
+  React.useLayoutEffect(() => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+    textarea.style.height = "auto";
+    textarea.style.height = `${textarea.scrollHeight}px`;
+  }, [value]);
+
+  return (
+    <textarea
+      {...props}
+      ref={textareaRef}
+      value={value}
+      rows={1}
+      className={`w-full resize-none overflow-hidden border-0 border-b-2 border-[var(--border)] bg-transparent px-0 py-2 text-[16px] leading-relaxed text-[var(--foreground)] outline-none transition-colors placeholder:text-[var(--muted-foreground)] placeholder:opacity-70 focus:border-[var(--accent)] ${className}`}
+    />
+  );
+}
+
 // ─── Step 4: Focus areas ──────────────────────────────────────────────────────
 
-function StepFocus({
-  useCases, onToggle,
-}: {
-  useCases: string[];
-  onToggle: (uc: string) => void;
-}) {
+function StepTargeting({ icp, messaging, onIcpChange, onMessagingChange }: { icp: string; messaging: string; onIcpChange: (value: string) => void; onMessagingChange: (value: string) => void }) {
   return (
     <div>
-      <StepLabel>Focus</StepLabel>
+      <StepLabel>Targeting</StepLabel>
       <h2 className="text-[36px] font-bold tracking-[-0.03em] leading-tight mb-3 text-[var(--foreground)]">
-        What are you focusing on?
+        Who gets the most value?
       </h2>
       <p className="text-[14px] text-[var(--muted-foreground)] mb-10">
-        Pick up to three. This helps us highlight what matters most in your dashboard.
+        This grounds lead scoring, research, and every message from day one.
       </p>
-
-      <div className="grid grid-cols-2 gap-3">
-        {USE_CASES.map(uc => {
-          const selected = useCases.includes(uc);
-          const disabled = !selected && useCases.length >= 3;
-          return (
-            <button
-              key={uc}
-              onClick={() => onToggle(uc)}
-              disabled={disabled}
-              className={[
-                "flex items-center gap-3 px-4 py-3.5 rounded-[var(--radius)] border text-left text-[13px] font-medium transition-all cursor-pointer",
-                selected
-                  ? "border-[var(--accent)] bg-[var(--accent-subtle)] text-[var(--accent)]"
-                  : "border-[var(--border)] text-[var(--muted-foreground)] hover:border-[var(--accent)] hover:text-[var(--foreground)]",
-                disabled ? "opacity-35 cursor-not-allowed pointer-events-none" : "",
-              ].join(" ")}
-            >
-              <span className={[
-                "w-4 h-4 rounded-full border flex items-center justify-center shrink-0 transition-all",
-                selected ? "border-[var(--accent)] bg-[var(--accent)]" : "border-[var(--border)]",
-              ].join(" ")}>
-                {selected && <Tick01Icon size={9} style={{ color: "var(--accent-foreground)" }} />}
-              </span>
-              {uc}
-            </button>
-          );
-        })}
+      <div className="space-y-8">
+        <div>
+          <label className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--muted-foreground)]">Ideal customer profile</label>
+          <OnboardingTextarea value={icp} onChange={(event) => onIcpChange(event.target.value)} placeholder="e.g. Founders and revenue leaders at 10–100 person B2B SaaS companies who need a repeatable outbound pipeline." />
+          <p className="mt-2 text-[11px] text-[var(--muted-foreground)]">Include role, company type/size, pain, and a buying signal.</p>
+        </div>
+        <div>
+          <label className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--muted-foreground)]">Positioning and proof</label>
+          <OnboardingTextarea value={messaging} onChange={(event) => onMessagingChange(event.target.value)} placeholder="e.g. Replace manual prospect research with verified buying signals. Used by lean B2B teams to reach qualified buyers faster." />
+          <p className="mt-2 text-[11px] text-[var(--muted-foreground)]">State the promise, differentiator, and proof the agent can use accurately.</p>
+        </div>
       </div>
-
-      {useCases.length > 0 && (
-        <p className="text-[11px] text-[var(--muted-foreground)] mt-4 text-right">
-          {useCases.length}/3 selected
-        </p>
-      )}
     </div>
   );
 }
 
 // ─── Step 5: Success ──────────────────────────────────────────────────────────
 
+function StepProducts({ products, onChange }: { products: ImportedProduct[]; onChange: (products: ImportedProduct[]) => void }) {
+  function updateProduct(index: number, updates: Partial<ImportedProduct>) {
+    onChange(products.map((product, productIndex) => productIndex === index ? { ...product, ...updates } : product));
+  }
+  function addProduct() {
+    onChange([...products, { name: "", description: "", benefits: [], pricingModel: "custom", proofPoints: [] }]);
+  }
+  return <div>
+    <StepLabel>Offers</StepLabel>
+    <h2 className="mb-3 text-[36px] font-bold leading-tight tracking-[-0.03em] text-[var(--foreground)]">Confirm what you sell</h2>
+    <p className="mb-8 text-[14px] text-[var(--muted-foreground)]">These details are used to choose the right offer for each prospect. Review the scan or add your first offer.</p>
+    <div className="space-y-5">
+      {products.map((product, index) => <article key={index} className="rounded-[var(--radius)] border border-[var(--border)] p-4">
+        <div className="mb-4 flex items-center justify-between gap-3"><span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--muted-foreground)]">Offer {index + 1}</span><Button type="button" variant="ghost" size="xs" onClick={() => onChange(products.filter((_, productIndex) => productIndex !== index))}>Remove</Button></div>
+        <div className="space-y-4"><OnboardingInput value={product.name} onChange={(event) => updateProduct(index, { name: event.target.value })} placeholder="Offer name" size="standard" /><OnboardingTextarea value={product.description} onChange={(event) => updateProduct(index, { description: event.target.value })} placeholder="What outcome does this offer provide?" className="text-[15px]" /><OnboardingInput value={product.benefits.join(", ")} onChange={(event) => updateProduct(index, { benefits: event.target.value.split(",").map((value) => value.trim()).filter(Boolean) })} placeholder="Key benefits, separated by commas" size="compact" /></div>
+      </article>)}
+      <Button type="button" variant="outline" onClick={addProduct}>Add an offer</Button>
+      {products.length === 0 && <p className="text-sm text-destructive">Add at least one offer to give outreach a reliable product context.</p>}
+    </div>
+  </div>;
+}
+
 function StepDone({ orgName, orgId }: { orgName: string; orgId: string | null }) {
   React.useEffect(() => {
     if (!orgId) return;
-    const t = setTimeout(() => { window.location.href = `/${orgId}`; }, 3500);
+    const t = setTimeout(() => { window.location.href = `/${orgId}/pipeline`; }, 3500);
     return () => clearTimeout(t);
   }, [orgId]);
 
@@ -613,7 +671,7 @@ function StepDone({ orgName, orgId }: { orgName: string; orgId: string | null })
         {orgName ? `${orgName} is ready.` : "Your workspace is ready."}
       </h2>
       <p className="text-[14px] text-[var(--muted-foreground)] mb-10 max-w-[360px]">
-        Your workspace is live. Keywords, leads, content generation, and your AI agent are all waiting.
+        Your workspace, offer context, and targeting are ready. Start by adding or importing your first prospects.
       </p>
 
       {/* Feature pills */}
@@ -628,15 +686,14 @@ function StepDone({ orgName, orgId }: { orgName: string; orgId: string | null })
         ))}
       </div>
 
-      <button
-        onClick={() => { if (orgId) window.location.href = `/${orgId}`; }}
+      <Button
+        onClick={() => { if (orgId) window.location.href = `/${orgId}/pipeline`; }}
         disabled={!orgId}
-        className="inline-flex items-center gap-3 px-7 py-3.5 rounded-[var(--radius)] text-[14px] font-semibold transition-all hover:opacity-90 disabled:opacity-40"
-        style={{ background: "var(--accent)", color: "var(--accent-foreground)" }}
+        size="lg"
       >
-        Enter workspace
+        Add prospects
         <ArrowRight01Icon size={15} />
-      </button>
+      </Button>
 
       <p className="text-[11px] text-[var(--muted-foreground)] mt-4">
         Redirecting automatically…
@@ -663,16 +720,18 @@ function OptionPill({
   onSelect: () => void;
 }) {
   return (
-    <button
+    <Button
       onClick={onSelect}
+      variant="outline"
+      size="default"
       className={[
-        "px-4 py-2 rounded-[var(--radius)] border text-[13px] font-medium transition-all cursor-pointer",
+        "px-4 py-2 text-[13px]",
         selected
           ? "border-[var(--accent)] bg-[var(--accent-subtle)] text-[var(--accent)]"
           : "border-[var(--border)] text-[var(--muted-foreground)] hover:border-[var(--accent)] hover:text-[var(--foreground)]",
       ].join(" ")}
     >
       {label}
-    </button>
+    </Button>
   );
 }

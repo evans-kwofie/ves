@@ -18,6 +18,9 @@ export interface WorkspaceStats {
   bounceRate: number;
   deliveryRate: number;
   conversionRate: number;
+  positiveReplies: number;
+  meetings: number;
+  unsubscribes: number;
 }
 
 export interface SubjectStat {
@@ -81,19 +84,25 @@ function pct(num: number, denom: number): number {
 }
 
 export async function getWorkspaceStats(orgId: string): Promise<WorkspaceStats> {
-  const [leadRow, draftRow] = await Promise.all([
+  const [leadRow, draftRow, outcomeRow] = await Promise.all([
     db.execute({
       sql: `SELECT
         COUNT(*)::int AS total,
-        COUNT(*) FILTER (WHERE email_sent_at IS NOT NULL OR linkedin_sent_at IS NOT NULL)::int AS contacted,
+        COUNT(*) FILTER (WHERE email_sent_at IS NOT NULL OR linkedin_sent_at IS NOT NULL OR instagram_sent_at IS NOT NULL)::int AS contacted,
         COUNT(*) FILTER (WHERE replied_at IS NOT NULL)::int AS replied,
         COUNT(*) FILTER (WHERE status = 'converted')::int AS converted
       FROM leads WHERE organization_id = ?`,
       args: [orgId],
     }),
+    db.execute({ sql: `SELECT
+      COUNT(*) FILTER (WHERE oe.status = 'positive_reply')::int AS positive_replies,
+      COUNT(*) FILTER (WHERE oe.status IN ('meeting', 'meeting_intent'))::int AS meetings,
+      COUNT(*) FILTER (WHERE oe.status = 'unsubscribed')::int AS unsubscribes
+      FROM outreach_events oe JOIN leads l ON l.id = oe.lead_id WHERE l.organization_id = ?`, args: [orgId] }),
     db.execute({
       sql: `SELECT
         COUNT(*) FILTER (WHERE cd.status = 'sent' AND cd.channel = 'email')::int        AS email_sent,
+        COUNT(*) FILTER (WHERE cd.delivered_at IS NOT NULL AND cd.channel = 'email')::int AS email_delivered,
         COUNT(*) FILTER (WHERE cd.opened_at IS NOT NULL AND cd.channel = 'email')::int   AS email_opened,
         COUNT(*) FILTER (WHERE cd.clicked_at IS NOT NULL AND cd.channel = 'email')::int  AS email_clicked,
         COUNT(*) FILTER (WHERE cd.bounced_at IS NOT NULL AND cd.channel = 'email')::int  AS email_bounced,
@@ -108,6 +117,7 @@ export async function getWorkspaceStats(orgId: string): Promise<WorkspaceStats> 
 
   const l = leadRow.rows[0] ?? {};
   const d = draftRow.rows[0] ?? {};
+  const o = outcomeRow.rows[0] ?? {};
 
   const totalLeads = Number(l.total ?? 0);
   const totalContacted = Number(l.contacted ?? 0);
@@ -117,7 +127,7 @@ export async function getWorkspaceStats(orgId: string): Promise<WorkspaceStats> 
   const emailOpened = Number(d.email_opened ?? 0);
   const emailClicked = Number(d.email_clicked ?? 0);
   const emailBounced = Number(d.email_bounced ?? 0);
-  const emailDelivered = Math.max(0, emailSent - emailBounced);
+  const emailDelivered = Number(d.email_delivered ?? 0);
   const linkedinSent = Number(d.linkedin_sent ?? 0);
   const instagramSent = Number(d.instagram_sent ?? 0);
 
@@ -133,12 +143,16 @@ export async function getWorkspaceStats(orgId: string): Promise<WorkspaceStats> 
     emailDelivered,
     linkedinSent,
     instagramSent,
-    openRate: pct(emailOpened, emailSent),
-    clickRate: pct(emailClicked, emailSent),
+    // Provider events are only reliable once Resend has confirmed delivery.
+    openRate: pct(emailOpened, emailDelivered),
+    clickRate: pct(emailClicked, emailDelivered),
     replyRate: pct(totalReplied, totalContacted),
     bounceRate: pct(emailBounced, emailSent),
     deliveryRate: pct(emailDelivered, emailSent),
     conversionRate: pct(convertedLeads, totalContacted),
+    positiveReplies: Number(o.positive_replies ?? 0),
+    meetings: Number(o.meetings ?? 0),
+    unsubscribes: Number(o.unsubscribes ?? 0),
   };
 }
 
@@ -162,12 +176,13 @@ export async function getCampaignStats(orgId: string): Promise<CampaignStat[]> {
       args: [orgId],
     }),
     db.execute({
-      sql: `SELECT cl.campaign_id, COUNT(*)::int AS replied_count
-        FROM campaign_leads cl
-        JOIN leads l ON l.id = cl.lead_id
-        WHERE l.replied_at IS NOT NULL
-        GROUP BY cl.campaign_id`,
-      args: [],
+      sql: `SELECT oe.campaign_id, COUNT(DISTINCT oe.lead_id)::int AS replied_count
+        FROM outreach_events oe
+        JOIN campaigns c ON c.id = oe.campaign_id
+        WHERE c.organization_id = ?
+          AND oe.status IN ('replied', 'positive_reply', 'meeting_intent', 'conversion_intent', 'objection', 'meeting', 'converted')
+        GROUP BY oe.campaign_id`,
+      args: [orgId],
     }),
   ]);
 
@@ -198,7 +213,7 @@ export async function getCampaignStats(orgId: string): Promise<CampaignStat[]> {
       repliedCount,
       openRate: pct(openedCount, sentCount),
       clickRate: pct(clickedCount, sentCount),
-      replyRate: pct(repliedCount, leadCount > 0 ? leadCount : sentCount),
+    replyRate: pct(repliedCount, sentCount),
       bounceRate: pct(bouncedCount, sentCount),
       hasAB,
     };
@@ -247,13 +262,25 @@ export async function getStepDropoff(orgId: string): Promise<StepDropoff[]> {
       args: [orgId],
     }),
     db.execute({
-      sql: `SELECT cd.campaign_id, cd.step_number, COUNT(*)::int AS replied
-        FROM campaign_drafts cd
-        JOIN leads l ON l.id = cd.lead_id
-        JOIN campaigns c ON c.id = cd.campaign_id
-        WHERE c.organization_id = ? AND l.replied_at IS NOT NULL AND cd.status = 'sent'
-          AND cd.step_number IS NOT NULL
-        GROUP BY cd.campaign_id, cd.step_number`,
+      sql: `WITH attributed_replies AS (
+          SELECT DISTINCT ON (oe.id)
+            cd.campaign_id, cd.step_number
+          FROM outreach_events oe
+          JOIN campaign_drafts cd
+            ON cd.campaign_id = oe.campaign_id
+            AND cd.lead_id = oe.lead_id
+            AND cd.status = 'sent'
+            AND cd.step_number IS NOT NULL
+            AND cd.sent_at <= COALESCE(oe.replied_at, oe.sent_at)
+          JOIN campaigns c ON c.id = cd.campaign_id
+          WHERE c.organization_id = ?
+            AND oe.campaign_id IS NOT NULL
+            AND oe.status IN ('replied', 'positive_reply', 'meeting_intent', 'conversion_intent', 'objection', 'meeting', 'converted')
+          ORDER BY oe.id, cd.sent_at DESC NULLS LAST, cd.step_number DESC
+        )
+        SELECT campaign_id, step_number, COUNT(*)::int AS replied
+        FROM attributed_replies
+        GROUP BY campaign_id, step_number`,
       args: [orgId],
     }),
   ]);
@@ -282,22 +309,37 @@ export async function getStepDropoff(orgId: string): Promise<StepDropoff[]> {
 export async function getABSummary(orgId: string): Promise<ABSummary> {
   const [sentResult, repliedResult] = await Promise.all([
     db.execute({
-      sql: `SELECT cd.campaign_id, cd.ab_variant,
-          COUNT(*) FILTER (WHERE cd.status = 'sent')::int AS sent
-        FROM campaign_drafts cd
-        JOIN campaigns c ON c.id = cd.campaign_id
-        WHERE c.organization_id = ? AND cd.ab_variant IN ('a','b')
-        GROUP BY cd.campaign_id, cd.ab_variant`,
+      sql: `WITH first_sent AS (
+          SELECT DISTINCT ON (cd.campaign_id, cd.lead_id)
+            cd.campaign_id, cd.lead_id, cd.ab_variant
+          FROM campaign_drafts cd
+          JOIN campaigns c ON c.id = cd.campaign_id
+          WHERE c.organization_id = ?
+            AND cd.status = 'sent'
+            AND cd.ab_variant IN ('a', 'b')
+          ORDER BY cd.campaign_id, cd.lead_id, cd.sent_at ASC NULLS LAST, cd.step_number ASC
+        )
+        SELECT campaign_id, ab_variant, COUNT(*)::int AS sent
+        FROM first_sent
+        GROUP BY campaign_id, ab_variant`,
       args: [orgId],
     }),
     db.execute({
-      sql: `SELECT cd.campaign_id, cd.ab_variant, COUNT(*)::int AS replied
-        FROM campaign_drafts cd
-        JOIN leads l ON l.id = cd.lead_id
-        JOIN campaigns c ON c.id = cd.campaign_id
-        WHERE c.organization_id = ? AND cd.status = 'sent'
-          AND cd.ab_variant IN ('a','b') AND l.replied_at IS NOT NULL
-        GROUP BY cd.campaign_id, cd.ab_variant`,
+      sql: `WITH first_sent AS (
+          SELECT DISTINCT ON (cd.campaign_id, cd.lead_id)
+            cd.campaign_id, cd.lead_id, cd.ab_variant
+          FROM campaign_drafts cd
+          JOIN campaigns c ON c.id = cd.campaign_id
+          WHERE c.organization_id = ?
+            AND cd.status = 'sent'
+            AND cd.ab_variant IN ('a', 'b')
+          ORDER BY cd.campaign_id, cd.lead_id, cd.sent_at ASC NULLS LAST, cd.step_number ASC
+        )
+        SELECT fs.campaign_id, fs.ab_variant, COUNT(*)::int AS replied
+        FROM first_sent fs
+        JOIN leads l ON l.id = fs.lead_id
+        WHERE l.replied_at IS NOT NULL
+        GROUP BY fs.campaign_id, fs.ab_variant`,
       args: [orgId],
     }),
   ]);

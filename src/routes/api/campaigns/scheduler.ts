@@ -52,7 +52,7 @@ export const Route = createFileRoute("/api/campaigns/scheduler")({
             const prompt = buildCampaignPrompt(campaign, leads);
 
             try {
-              await runAgent(prompt, { maxIterations: 40, orgId: campaign.organizationId, voice });
+              await runAgent(prompt, { maxIterations: 40, orgId: campaign.organizationId, voice, allowedTools: ["notify_slack", "get_current_date"] });
               await updateCampaignLastRun(campaign.id);
               results.push({ campaignId: campaign.id, name: campaign.name, leadsCount: leads.length, ok: true });
             } catch (err) {

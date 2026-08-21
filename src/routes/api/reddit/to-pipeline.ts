@@ -61,6 +61,9 @@ export const Route = createFileRoute("/api/reddit/to-pipeline")({
             fit: "MEDIUM",
             notes: `Discovered via Reddit${intentType ? ` (${intentType} signal)` : ""}: ${url}\nNo email found — needs manual outreach`,
             source: "reddit",
+            sourceDetails: { author, subreddit, postUrl: url, intentType: intentType ?? null },
+            intentSignals: intentType ? [intentType] : [],
+            engagementHistory: [{ channel: "reddit", subreddit, postUrl: url, capturedAt: new Date().toISOString() }],
           });
           return Response.json({ lead });
         } catch (err) {

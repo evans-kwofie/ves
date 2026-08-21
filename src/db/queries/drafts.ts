@@ -6,7 +6,10 @@ export type DraftStatus =
   | "approved"
   | "skipped"
   | "sent"
-  | "scheduled";
+  | "scheduled"
+  | "sending"
+  | "generating"
+  | "failed";
 
 export interface CampaignDraft {
   id: string;
@@ -23,7 +26,9 @@ export interface CampaignDraft {
   openedAt: string | null;
   clickedAt: string | null;
   bouncedAt: string | null;
+  deliveredAt: string | null;
   abVariant: "a" | "b";
+  generationContext: Record<string, unknown>;
   createdAt: string;
   updatedAt: string;
 }
@@ -44,7 +49,9 @@ function rowToDraft(row: Record<string, unknown>): CampaignDraft {
     openedAt: (row.opened_at as string | null) ?? null,
     clickedAt: (row.clicked_at as string | null) ?? null,
     bouncedAt: (row.bounced_at as string | null) ?? null,
+    deliveredAt: (row.delivered_at as string | null) ?? null,
     abVariant: (row.ab_variant as string) === "b" ? "b" : "a",
+    generationContext: typeof row.generation_context === "string" ? JSON.parse(row.generation_context) as Record<string, unknown> : (row.generation_context as Record<string, unknown>) ?? {},
     createdAt: row.created_at as string,
     updatedAt: row.updated_at as string,
   };
@@ -90,6 +97,25 @@ export async function getDueCampaignSteps(): Promise<
   });
 }
 
+/** Atomically claims due scheduled drafts so overlapping cron workers cannot generate them twice. */
+export async function claimDueScheduledDrafts(campaignId: string, stepNumber: number): Promise<CampaignDraft[]> {
+  const now = new Date().toISOString();
+  const result = await db.execute({ sql: `UPDATE campaign_drafts SET status = 'generating', updated_at = ?
+    WHERE campaign_id = ? AND step_number = ? AND status = 'scheduled' AND (send_after IS NULL OR send_after <= ?)
+    RETURNING *`, args: [now, campaignId, stepNumber, now] });
+  return result.rows.map((row) => rowToDraft(row as Record<string, unknown>));
+}
+
+export async function releaseDraftGenerationClaim(id: string): Promise<void> {
+  await db.execute({ sql: "UPDATE campaign_drafts SET status = 'scheduled', updated_at = ? WHERE id = ? AND status = 'generating'", args: [new Date().toISOString(), id] });
+}
+
+export async function recoverStaleDraftGenerationClaims(leaseMs = 10 * 60_000): Promise<number> {
+  const staleBefore = new Date(Date.now() - leaseMs).toISOString();
+  const result = await db.execute({ sql: "UPDATE campaign_drafts SET status = 'scheduled', updated_at = ? WHERE status = 'generating' AND updated_at < ? RETURNING id", args: [new Date().toISOString(), staleBefore] });
+  return result.rows.length;
+}
+
 export async function getDraftByResendMessageId(
   messageId: string,
 ): Promise<CampaignDraft | null> {
@@ -110,21 +136,30 @@ export async function getDraft(id: string): Promise<CampaignDraft | null> {
   return rowToDraft(result.rows[0] as Record<string, unknown>);
 }
 
+export async function getLatestDraftBeforeStep(campaignId: string, leadId: string, stepNumber: number): Promise<CampaignDraft | null> {
+  const result = await db.execute({
+    sql: "SELECT * FROM campaign_drafts WHERE campaign_id = ? AND lead_id = ? AND step_number < ? ORDER BY step_number DESC LIMIT 1",
+    args: [campaignId, leadId, stepNumber],
+  });
+  return result.rows[0] ? rowToDraft(result.rows[0] as Record<string, unknown>) : null;
+}
+
 export async function upsertDraft(input: {
   campaignId: string;
   leadId: string;
-  stepNumber?: number;
+  stepNumber: number;
   channel: string;
   subject: string | null;
   body: string;
   abVariant?: "a" | "b";
+  generationContext?: Record<string, unknown>;
 }): Promise<CampaignDraft> {
   const now = new Date().toISOString();
   const variant = input.abVariant ?? "a";
 
   const existing = await db.execute({
-    sql: "SELECT id FROM campaign_drafts WHERE campaign_id = ? AND lead_id = ?",
-    args: [input.campaignId, input.leadId],
+    sql: "SELECT id FROM campaign_drafts WHERE campaign_id = ? AND lead_id = ? AND step_number = ?",
+    args: [input.campaignId, input.leadId, input.stepNumber],
   });
 
   if (existing.rows.length > 0) {
@@ -138,8 +173,8 @@ export async function upsertDraft(input: {
 
   const id = uuidv4();
   await db.execute({
-    sql: `INSERT INTO campaign_drafts (id, campaign_id, lead_id, channel, subject, body, status, step_number, ab_variant, created_at, updated_at)
-          VALUES (?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?)`,
+    sql: `INSERT INTO campaign_drafts (id, campaign_id, lead_id, channel, subject, body, status, step_number, ab_variant, generation_context, created_at, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?, ?)`,
     args: [
       id,
       input.campaignId,
@@ -147,8 +182,9 @@ export async function upsertDraft(input: {
       input.channel,
       input.subject,
       input.body,
-      input.stepNumber ?? null,
+      input.stepNumber,
       variant,
+      JSON.stringify(input.generationContext ?? {}),
       now,
       now,
     ],
@@ -169,6 +205,7 @@ export async function updateDraft(
     openedAt?: string;
     clickedAt?: string;
     bouncedAt?: string;
+    deliveredAt?: string;
   },
 ): Promise<CampaignDraft> {
   const now = new Date().toISOString();
@@ -215,6 +252,7 @@ export async function updateDraft(
     fields.push("bounced_at = ?");
     args.push(updates.bouncedAt);
   }
+  if (updates.deliveredAt !== undefined) { fields.push("delivered_at = ?"); args.push(updates.deliveredAt); }
 
   args.push(id);
   await db.execute({
@@ -237,6 +275,19 @@ export async function getDailySendCount(orgId: string): Promise<number> {
   return Number((result.rows[0] as Record<string, unknown>).count ?? 0);
 }
 
+export async function getCampaignDailySendCount(campaignId: string): Promise<number> {
+  const todayStart = new Date();
+  todayStart.setUTCHours(0, 0, 0, 0);
+  const result = await db.execute({ sql: "SELECT COUNT(*)::int AS count FROM campaign_drafts WHERE campaign_id = ? AND status = 'sent' AND sent_at >= ?", args: [campaignId, todayStart.toISOString()] });
+  return Number((result.rows[0] as Record<string, unknown>).count ?? 0);
+}
+
+export async function getCampaignChannelDailySendCount(campaignId: string, channel: string): Promise<number> {
+  const result = await db.execute({ sql: `SELECT COUNT(*)::int AS count FROM campaign_drafts
+    WHERE campaign_id = ? AND channel = ? AND status = 'sent' AND sent_at >= CURRENT_DATE::text`, args: [campaignId, channel] });
+  return Number((result.rows[0] as Record<string, unknown> | undefined)?.count ?? 0);
+}
+
 export async function scheduleDraftForNextStep(input: {
   campaignId: string;
   leadId: string;
@@ -246,18 +297,37 @@ export async function scheduleDraftForNextStep(input: {
 }): Promise<void> {
   const now = new Date().toISOString();
   await db.execute({
-    sql: `UPDATE campaign_drafts
-          SET step_number = ?, channel = ?, status = 'scheduled', send_after = ?,
-              subject = NULL, body = '', updated_at = ?
-          WHERE campaign_id = ? AND lead_id = ?`,
+    sql: `INSERT INTO campaign_drafts
+            (id, campaign_id, lead_id, channel, subject, body, status, send_after, step_number, ab_variant, generation_context, created_at, updated_at)
+          VALUES (?, ?, ?, ?, NULL, '', 'scheduled', ?, ?, 'a', '{}', ?, ?)
+          ON CONFLICT (campaign_id, lead_id, step_number) DO UPDATE
+          SET channel = EXCLUDED.channel,
+              status = 'scheduled',
+              send_after = EXCLUDED.send_after,
+              subject = NULL,
+              body = '',
+              updated_at = EXCLUDED.updated_at
+          WHERE campaign_drafts.status = 'scheduled'`,
     args: [
-      input.nextStepNumber,
-      input.channel,
-      input.sendAfter,
-      now,
+      uuidv4(),
       input.campaignId,
       input.leadId,
+      input.channel,
+      input.sendAfter,
+      input.nextStepNumber,
+      now,
+      now,
     ],
+  });
+}
+
+/** Stops any future campaign steps once a prospect replies on any channel. */
+export async function skipScheduledDraftsForLead(leadId: string): Promise<void> {
+  await db.execute({
+    sql: `UPDATE campaign_drafts
+          SET status = 'skipped', updated_at = ?
+          WHERE lead_id = ? AND status = 'scheduled'`,
+    args: [new Date().toISOString(), leadId],
   });
 }
 

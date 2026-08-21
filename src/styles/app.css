@@ -968,6 +968,10 @@ textarea.input {
   margin-bottom: 14px;
 }
 
+.form-group > [data-slot="label"] {
+  margin-bottom: 6px;
+}
+
 .form-label {
   display: block;
   font-size: 11px;
@@ -1328,4 +1332,3 @@ select.input {
     cursor: pointer;
   }
 }
-
