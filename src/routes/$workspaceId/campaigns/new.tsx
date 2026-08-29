@@ -124,13 +124,49 @@ function NewCampaignPage() {
   const [intentType, setIntentType] = React.useState<CampaignIntent | "">(
     existing?.campaign.intentType ?? "",
   );
-  const [batchSize, setBatchSize] = React.useState(existing?.campaign.batchSize ?? 25);
-  const [timezone, setTimezone] = React.useState(existing?.campaign.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone ?? "UTC");
-  const [sendWindowStart, setSendWindowStart] = React.useState(existing?.campaign.sendWindowStart ?? 8);
-  const [sendWindowEnd, setSendWindowEnd] = React.useState(existing?.campaign.sendWindowEnd ?? 18);
-  const [weekdaysOnly, setWeekdaysOnly] = React.useState(existing?.campaign.weekdaysOnly ?? true);
-  const [scheduledStartAt, setScheduledStartAt] = React.useState(existing?.campaign.scheduledStartAt ? existing.campaign.scheduledStartAt.slice(0, 16) : "");
-  const [channelSendRules, setChannelSendRules] = React.useState<Record<string, { maxPerDay?: number; windowStart?: number; windowEnd?: number; weekdaysOnly?: boolean }>>((existing?.campaign.channelSendRules ?? {}) as Record<string, { maxPerDay?: number; windowStart?: number; windowEnd?: number; weekdaysOnly?: boolean }>);
+  const [batchSize, setBatchSize] = React.useState(
+    existing?.campaign.batchSize ?? 25,
+  );
+  const [timezone, setTimezone] = React.useState(
+    existing?.campaign.timezone ??
+      Intl.DateTimeFormat().resolvedOptions().timeZone ??
+      "UTC",
+  );
+  const [sendWindowStart, setSendWindowStart] = React.useState(
+    existing?.campaign.sendWindowStart ?? 8,
+  );
+  const [sendWindowEnd, setSendWindowEnd] = React.useState(
+    existing?.campaign.sendWindowEnd ?? 18,
+  );
+  const [weekdaysOnly, setWeekdaysOnly] = React.useState(
+    existing?.campaign.weekdaysOnly ?? true,
+  );
+  const [scheduledStartAt, setScheduledStartAt] = React.useState(
+    existing?.campaign.scheduledStartAt
+      ? existing.campaign.scheduledStartAt.slice(0, 16)
+      : "",
+  );
+  const [channelSendRules, setChannelSendRules] = React.useState<
+    Record<
+      string,
+      {
+        maxPerDay?: number;
+        windowStart?: number;
+        windowEnd?: number;
+        weekdaysOnly?: boolean;
+      }
+    >
+  >(
+    (existing?.campaign.channelSendRules ?? {}) as Record<
+      string,
+      {
+        maxPerDay?: number;
+        windowStart?: number;
+        windowEnd?: number;
+        weekdaysOnly?: boolean;
+      }
+    >,
+  );
   const [selectedLeads, setSelectedLeads] =
     React.useState<Set<string>>(preselected);
 
@@ -146,8 +182,22 @@ function NewCampaignPage() {
       setSendWindowStart(existing.campaign.sendWindowStart);
       setSendWindowEnd(existing.campaign.sendWindowEnd);
       setWeekdaysOnly(existing.campaign.weekdaysOnly);
-      setScheduledStartAt(existing.campaign.scheduledStartAt ? existing.campaign.scheduledStartAt.slice(0, 16) : "");
-      setChannelSendRules(existing.campaign.channelSendRules as Record<string, { maxPerDay?: number; windowStart?: number; windowEnd?: number; weekdaysOnly?: boolean }>);
+      setScheduledStartAt(
+        existing.campaign.scheduledStartAt
+          ? existing.campaign.scheduledStartAt.slice(0, 16)
+          : "",
+      );
+      setChannelSendRules(
+        existing.campaign.channelSendRules as Record<
+          string,
+          {
+            maxPerDay?: number;
+            windowStart?: number;
+            windowEnd?: number;
+            weekdaysOnly?: boolean;
+          }
+        >,
+      );
       setSelectedLeads(new Set(existing.leadIds));
     }
   }, [existing]);
@@ -204,7 +254,15 @@ function NewCampaignPage() {
             channels: channels.length ? channels : [],
             goal: goal || null,
             intentType: intentType || null,
-            batchSize, timezone, sendWindowStart, sendWindowEnd, weekdaysOnly, channelSendRules, scheduledStartAt: scheduledStartAt ? new Date(scheduledStartAt).toISOString() : null,
+            batchSize,
+            timezone,
+            sendWindowStart,
+            sendWindowEnd,
+            weekdaysOnly,
+            channelSendRules,
+            scheduledStartAt: scheduledStartAt
+              ? new Date(scheduledStartAt).toISOString()
+              : null,
             leadIds: Array.from(selectedLeads),
           }),
         });
@@ -224,7 +282,15 @@ function NewCampaignPage() {
             channels: channels.length ? channels : undefined,
             goal: goal || undefined,
             intentType: intentType || undefined,
-            batchSize, timezone, sendWindowStart, sendWindowEnd, weekdaysOnly, channelSendRules, scheduledStartAt: scheduledStartAt ? new Date(scheduledStartAt).toISOString() : null,
+            batchSize,
+            timezone,
+            sendWindowStart,
+            sendWindowEnd,
+            weekdaysOnly,
+            channelSendRules,
+            scheduledStartAt: scheduledStartAt
+              ? new Date(scheduledStartAt).toISOString()
+              : null,
             leadIds: Array.from(selectedLeads),
           }),
         });
@@ -399,16 +465,139 @@ function NewCampaignPage() {
             </div>
 
             <div className="space-y-4 border-t pt-5">
-              <div><Label>Sending rules</Label><p className="mt-1 text-xs text-muted-foreground">Applied when sending email steps in this campaign.</p></div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-2"><Label>Daily batch size</Label><Input type="number" min={1} max={500} value={batchSize} onChange={(event) => setBatchSize(Math.max(1, Number(event.target.value) || 1))} /></div>
-                <div className="space-y-2"><Label>Timezone</Label><Input value={timezone} onChange={(event) => setTimezone(event.target.value)} placeholder="America/New_York" /></div>
-                <div className="space-y-2"><Label>Send from (hour)</Label><Input type="number" min={0} max={23} value={sendWindowStart} onChange={(event) => setSendWindowStart(Math.max(0, Math.min(23, Number(event.target.value) || 0)))} /></div>
-                <div className="space-y-2"><Label>Send until (hour)</Label><Input type="number" min={1} max={24} value={sendWindowEnd} onChange={(event) => setSendWindowEnd(Math.max(1, Math.min(24, Number(event.target.value) || 1)))} /></div>
+              <div>
+                <Label>Sending rules</Label>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Applied when sending email steps in this campaign.
+                </p>
               </div>
-              <label className="flex items-center gap-2 text-sm text-foreground"><Checkbox checked={weekdaysOnly} onCheckedChange={(checked) => setWeekdaysOnly(Boolean(checked))} /> Weekdays only</label>
-              <div className="space-y-2"><Label>Start exactly at (optional)</Label><Input type="datetime-local" value={scheduledStartAt} onChange={(event) => setScheduledStartAt(event.target.value)} /><p className="text-xs text-muted-foreground">The campaign will not generate or send before this time.</p></div>
-              {channels.length > 0 && <div className="space-y-3 rounded-md border p-3"><Label>Per-channel overrides</Label>{channels.map((channel) => { const rule = channelSendRules[channel] ?? {}; return <div className="grid grid-cols-3 gap-2" key={channel}><span className="self-center text-sm capitalize">{channel}</span><Input type="number" min={1} placeholder="Daily cap" value={rule.maxPerDay ?? ""} onChange={(event) => setChannelSendRules((rules) => ({ ...rules, [channel]: { ...rule, maxPerDay: event.target.value ? Number(event.target.value) : undefined } }))} /><label className="flex items-center gap-2 text-xs"><Checkbox checked={rule.weekdaysOnly ?? weekdaysOnly} onCheckedChange={(checked) => setChannelSendRules((rules) => ({ ...rules, [channel]: { ...rule, weekdaysOnly: Boolean(checked) } }))} />Weekdays only</label></div>; })}<p className="text-xs text-muted-foreground">Leave the daily cap empty to use the campaign batch limit. Each channel can also inherit the campaign time window.</p></div>}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label>Daily batch size</Label>
+                  <Input
+                    type="number"
+                    min={1}
+                    max={500}
+                    value={batchSize}
+                    onChange={(event) =>
+                      setBatchSize(Math.max(1, Number(event.target.value) || 1))
+                    }
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Timezone</Label>
+                  <Input
+                    value={timezone}
+                    onChange={(event) => setTimezone(event.target.value)}
+                    placeholder="America/New_York"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Send from (hour)</Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    max={23}
+                    value={sendWindowStart}
+                    onChange={(event) =>
+                      setSendWindowStart(
+                        Math.max(
+                          0,
+                          Math.min(23, Number(event.target.value) || 0),
+                        ),
+                      )
+                    }
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Send until (hour)</Label>
+                  <Input
+                    type="number"
+                    min={1}
+                    max={24}
+                    value={sendWindowEnd}
+                    onChange={(event) =>
+                      setSendWindowEnd(
+                        Math.max(
+                          1,
+                          Math.min(24, Number(event.target.value) || 1),
+                        ),
+                      )
+                    }
+                  />
+                </div>
+              </div>
+              <label className="flex items-center gap-2 text-sm text-foreground">
+                <Checkbox
+                  checked={weekdaysOnly}
+                  onCheckedChange={(checked) =>
+                    setWeekdaysOnly(Boolean(checked))
+                  }
+                />{" "}
+                Weekdays only
+              </label>
+              <div className="space-y-2">
+                <Label>Start exactly at (optional)</Label>
+                <Input
+                  type="datetime-local"
+                  value={scheduledStartAt}
+                  onChange={(event) => setScheduledStartAt(event.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">
+                  The campaign will not generate or send before this time.
+                </p>
+              </div>
+              {channels.length > 0 && (
+                <div className="space-y-3 rounded-md border p-3">
+                  <Label>Per-channel overrides</Label>
+                  {channels.map((channel) => {
+                    const rule = channelSendRules[channel] ?? {};
+                    return (
+                      <div className="grid grid-cols-3 gap-2" key={channel}>
+                        <span className="self-center text-sm capitalize">
+                          {channel}
+                        </span>
+                        <Input
+                          type="number"
+                          min={1}
+                          placeholder="Daily cap"
+                          value={rule.maxPerDay ?? ""}
+                          onChange={(event) =>
+                            setChannelSendRules((rules) => ({
+                              ...rules,
+                              [channel]: {
+                                ...rule,
+                                maxPerDay: event.target.value
+                                  ? Number(event.target.value)
+                                  : undefined,
+                              },
+                            }))
+                          }
+                        />
+                        <label className="flex items-center gap-2 text-xs">
+                          <Checkbox
+                            checked={rule.weekdaysOnly ?? weekdaysOnly}
+                            onCheckedChange={(checked) =>
+                              setChannelSendRules((rules) => ({
+                                ...rules,
+                                [channel]: {
+                                  ...rule,
+                                  weekdaysOnly: Boolean(checked),
+                                },
+                              }))
+                            }
+                          />
+                          Weekdays only
+                        </label>
+                      </div>
+                    );
+                  })}
+                  <p className="text-xs text-muted-foreground">
+                    Leave the daily cap empty to use the campaign batch limit.
+                    Each channel can also inherit the campaign time window.
+                  </p>
+                </div>
+              )}
             </div>
 
             <div className="flex flex-col gap-y-2" style={{ margin: 0 }}>
